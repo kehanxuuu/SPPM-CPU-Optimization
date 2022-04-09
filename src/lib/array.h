@@ -9,13 +9,17 @@ typedef struct {
     size_t size;
     size_t capacity;
     size_t item_size;
-    void* data;
+    void *data;
 } Array;
 
-void arr_add(Array* arr, void* item);
-void* arr_get(Array* arr, size_t index);
-size_t arr_size(Array* arr);
-void arr_init(Array* arr, size_t initial_size, size_t item_size);
-void arr_free(Array* arr);
+void arr_add(Array *arr, void *item);
+
+void *arr_get(Array *arr, size_t index);
+
+size_t arr_size(Array *arr);
+
+void arr_init(Array *arr, size_t capacity, size_t initial_size, size_t item_size);
+
+void arr_free(Array *arr);
 
 #endif
