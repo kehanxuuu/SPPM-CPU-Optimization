@@ -35,13 +35,17 @@ Vector vv_mul(const Vector *a, const Vector *b);  // element-wise product
 
 void vv_muleq(Vector *a, const Vector *b);  // a *= b
 
-Vector vs_mul(const Vector *a, float s);  // vector-scalar multiplication
-
-void vs_muleq(Vector *a, float b);  // a *= s
-
 Vector vv_div(const Vector *a, const Vector *b);  // element-wise division
 
 void vv_diveq(Vector *a, const Vector *b);  // a /= b
+
+float vv_dot(const Vector *a, const Vector *b);
+
+Vector vv_cross(const Vector *a, const Vector *b);
+
+Vector vs_mul(const Vector *a, float s);  // vector-scalar multiplication
+
+void vs_muleq(Vector *a, float s);  // a *= s
 
 Vector vs_div(const Vector *a, float s);
 
@@ -50,10 +54,6 @@ void vs_diveq(Vector *a, float s);  // a /= s
 Vector vvs_fma(const Vector *a, const Vector *b, float s);  // a + b * s
 
 void vvs_fmaeq(Vector *a, const Vector *b, float s);  // a += b * s
-
-float vv_dot(const Vector *a, const Vector *b);
-
-Vector vv_cross(const Vector *a, const Vector *b);
 
 float v_norm(const Vector *a);
 
