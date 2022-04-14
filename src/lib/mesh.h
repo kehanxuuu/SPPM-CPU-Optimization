@@ -2,6 +2,7 @@
 #define TEAM32_MESH_H
 
 #include "vector.h"
+#include "intersection.h"
 
 // Generic geometry class
 struct Geometry {

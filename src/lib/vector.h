@@ -19,6 +19,8 @@ typedef struct {
     float t_max;
 } Ray;
 
+Vector ray_at(const Ray *r, const float t); // point on ray at length t
+
 typedef struct {
     float x, y;
 } Vector2f;
@@ -60,6 +62,8 @@ float v_norm(const Vector *a);
 float v_norm_sqr(const Vector *a);
 
 void v_normalize(Vector *a);
+
+Vector v_normalized(const Vector *a);
 
 float v_cwise_min(const Vector *a);
 

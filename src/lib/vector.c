@@ -1,5 +1,10 @@
 #include "vector.h"
 
+Vector ray_at(const Ray *r, const float t) {
+    Vector dt = vs_mul(&r->d, t);
+    return vv_add(&r->o, &dt);
+}
+
 Vector vv_add(const Vector* a, const Vector* b) {
     Vector c = { a->x + b->x, a->y + b->y, a->z + b->z };
     return c;
@@ -114,6 +119,16 @@ void v_normalize(Vector* a) {
     a->x /= norm;
     a->y /= norm;
     a->z /= norm;
+}
+
+Vector v_normalized(const Vector* a) {
+    float norm = v_norm(a);
+    Vector c = {
+        a->x / norm,
+        a->y / norm,
+        a->z / norm,
+    };
+    return c;
 }
 
 float v_cwise_min(const Vector* a) {

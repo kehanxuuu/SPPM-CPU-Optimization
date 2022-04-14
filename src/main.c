@@ -32,7 +32,7 @@ int main() {
         }
     }
 
-    bitmap_save_exr(&film, "../../out/sample.exr");
+    bitmap_save_exr(&film, "../out/sample.exr");
     bitmap_free(&film);
     return 0;
 }
