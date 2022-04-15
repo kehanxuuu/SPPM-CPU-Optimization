@@ -43,7 +43,8 @@ struct Sphere {
 bool mesh_intersect(struct Mesh *mesh, Ray *ray, struct Intersection *isect);
 
 // Do only predicate: shadow ray test
-bool mesh_do_intersect(const struct Mesh *mesh, const Ray *ray);
+// record intersect time in ray to facililate scene intersection
+bool mesh_do_intersect(const struct Mesh *mesh, Ray *ray);
 
 
 #endif //TEAM32_MESH_H

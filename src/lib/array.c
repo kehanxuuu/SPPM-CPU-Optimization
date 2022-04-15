@@ -9,18 +9,18 @@ void arr_add(Array *arr, void *item) {
         arr->capacity = _ARRAY_INCRE_MULT * arr->capacity;
         arr->data = realloc(arr->data, arr->capacity * arr->item_size);
     }
-
+    
     void *target_addr = (uint8_t *) arr->data + arr->size * arr->item_size;
     memcpy(target_addr, item, arr->item_size);
     arr->size++;
 }
 
-void *arr_get(Array *arr, size_t index) {
+void *arr_get(const Array *arr, size_t index) {
     assert(index < arr->size);
     return (uint8_t *) arr->data + index * arr->item_size;
 }
 
-size_t arr_size(Array *arr) {
+size_t arr_size(const Array *arr) {
     return arr->size;
 }
 

@@ -14,9 +14,9 @@ typedef struct {
 
 void arr_add(Array *arr, void *item);
 
-void *arr_get(Array *arr, size_t index);
+void *arr_get(const Array *arr, size_t index);
 
-size_t arr_size(Array *arr);
+size_t arr_size(const Array *arr);
 
 void arr_init(Array *arr, size_t capacity, size_t initial_size, size_t item_size);
 
