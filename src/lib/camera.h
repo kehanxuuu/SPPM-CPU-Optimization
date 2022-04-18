@@ -19,6 +19,6 @@ void cam_set_resolution(struct Camera *camera, size_t W, size_t H);
 
 // Given image pixel coordinate 0 <= px < W, 0 <= py < H, return the ray pointing from pinhole to the image pixel
 // in world coordinates. `sample` is used to offsetting the pixel a bit for anti-aliasing
-Ray generate_ray(const struct Camera *camera, size_t px, size_t py, Vector2f sample);
+Ray generate_ray(const struct Camera * camera, size_t px, size_t py, Vector2f sample);
 
 #endif //TEAM32_CAMERA_H

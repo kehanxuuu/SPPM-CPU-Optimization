@@ -107,7 +107,7 @@ void vvs_fmaeq(Vector* a, const Vector* b, float s) {
 }
 
 float v_norm_sqr(const Vector* a) {
-    return a->x * a->x + a->y * a->y + a->z + a->z;
+    return a->x * a->x + a->y * a->y + a->z * a->z;
 }
 
 float v_norm(const Vector* a) {

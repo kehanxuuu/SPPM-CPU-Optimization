@@ -7,7 +7,7 @@
 // Generic geometry class
 struct Geometry {
     enum Type {
-        Sphere,
+        SPHERE = 0,
         // Plane
         // Triangle
         // ...
@@ -17,12 +17,12 @@ struct Geometry {
 
 // An instance in the scene, carrying geometry and material information
 struct Mesh {
-    struct Geometry geometry;
+    struct Geometry *geometry;
 
     enum Material {
-        Diffuse = 0,
-        Specular,
-        Dielectric,
+        DIFFUSE = 0,
+        SPECULAR,
+        DIELECTRIC,
     } material;
 
     // Color
@@ -37,13 +37,26 @@ struct Sphere {
     float r, r2;  // radius and radius^2
 };
 
+// Temporary initialization and free methods
+struct Sphere *sphere_init(Vector c, float r);
+
+struct Geometry *geometry_init_sphere(struct Sphere *sphere);
+
+struct Mesh *mesh_init(struct Geometry *geometry);
+
+struct Mesh *mesh_init_sphere(Vector c, float r);
+
+void geometry_free(struct Geometry *geometry);
+
+void mesh_free(struct Mesh *mesh);
+
 // Find the intersection between the mesh and the ray, stores the time to `ray.t_max`, and the intersection data to `isect`
 // Returns if intersect
 // Please switch case every possible geometry type and implement the intersection code accordingly
 bool mesh_intersect(struct Mesh *mesh, Ray *ray, struct Intersection *isect);
 
 // Do only predicate: shadow ray test
-// record intersect time in ray to facililate scene intersection
+// store intersect time in ray to facililate scene intersection
 bool mesh_do_intersect(const struct Mesh *mesh, Ray *ray);
 
 
