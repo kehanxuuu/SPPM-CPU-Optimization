@@ -13,7 +13,7 @@ void scene_add(struct Scene *scene, struct Mesh *mesh) {
 
 struct Mesh *scene_get(const struct Scene *scene, size_t index) {
 
-    struct Mesh *mesh = *(struct Mesh **)arr_get(&(scene->meshes), index);
+    struct Mesh *mesh = *(struct Mesh **)arr_get(&scene->meshes, index);
     return mesh;
 }
 
@@ -31,7 +31,7 @@ void scene_free(struct Scene *scene) {
     free(scene);
 }
 
-bool scene_intersect(struct Scene *scene, Ray *ray, struct Intersection *isect) {
+bool scene_intersect(const struct Scene *scene, Ray *ray, struct Intersection *isect) {
     size_t mesh_num = scene_size(scene);
     Ray ray_test = {ray->o, ray->d, INFINITY};
     float t_max_current = ray->t_max;

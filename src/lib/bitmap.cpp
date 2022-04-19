@@ -8,7 +8,7 @@
 extern "C" {
 
 void bitmap_save_exr(struct Bitmap *bitmap, char *c_filename) {
-    printf("Writing a %zu x %zu image to %s\n", bitmap->W, bitmap->H, c_filename);
+    printf("\nWriting a %zu x %zu image to %s\n", bitmap->W, bitmap->H, c_filename);
     std::string filename = c_filename;
     assert(filename.substr(filename.size() - 4, 4) == ".exr" && "EXR filename should end with `.exr`");
 

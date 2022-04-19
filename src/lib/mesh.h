@@ -42,9 +42,9 @@ struct Sphere *sphere_init(Vector c, float r);
 
 struct Geometry *geometry_init_sphere(struct Sphere *sphere);
 
-struct Mesh *mesh_init(struct Geometry *geometry);
+struct Mesh *mesh_init(struct Geometry *geometry, enum Material material, Vector albedo, Vector emission);
 
-struct Mesh *mesh_init_sphere(Vector c, float r);
+struct Mesh *mesh_init_sphere(Vector c, float r, enum Material material, Vector albedo, Vector emission);
 
 void geometry_free(struct Geometry *geometry);
 

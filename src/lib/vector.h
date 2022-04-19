@@ -10,6 +10,8 @@ typedef struct {
 
 typedef Vector3f Vector;
 
+static const Vector ZERO_VEC = {0, 0, 0};
+
 typedef struct {
     // Ray origin
     Vector o;
@@ -24,6 +26,8 @@ Vector ray_at(const Ray *r, const float t); // point on ray at length t
 typedef struct {
     float x, y;
 } Vector2f;
+
+Vector square_to_cosine_hemisphere(const Vector2f* sample, const Vector* normal);  // map [0, 1]x[0, 1] to cosine hemisphere, output direction in world space given normal
 
 Vector vv_add(const Vector *a, const Vector *b);  // vector-vector addition
 
@@ -44,6 +48,8 @@ void vv_diveq(Vector *a, const Vector *b);  // a /= b
 float vv_dot(const Vector *a, const Vector *b);
 
 Vector vv_cross(const Vector *a, const Vector *b);
+
+bool vv_equal(const Vector *a, const Vector *b);
 
 Vector vs_mul(const Vector *a, float s);  // vector-scalar multiplication
 

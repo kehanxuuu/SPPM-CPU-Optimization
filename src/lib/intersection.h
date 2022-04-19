@@ -2,6 +2,7 @@
 #define TEAM32_INTERSECTION_H
 
 #include "vector.h"
+#include "mesh.h"
 
 // This struct describes a surface intersection
 struct Intersection {
@@ -23,5 +24,23 @@ Vector bsdf_eval(struct Intersection *isect);
 
 // This method provides access to the probability density that is realized by the bsdf_sample() method.
 float bsdf_pdf(struct Intersection *isect);
+
+// 1. create separate bsdf function for each material (Is that good?)
+// !! 2. unless the material is microfacet, eval & pdf function are useless, only sample is used
+// TODO: Discuss
+
+// diffuse
+Vector bsdf_sample_diffuse(struct Intersection *isect, Vector2f sample);
+
+Vector bsdf_eval_diffuse(struct Intersection *isect);
+
+float bsdf_pdf_diffuse(struct Intersection *isect);
+
+// specular -> correspond to mirror in Nori, not conductor (so not considering fresnel), but add albedo
+Vector bsdf_sample_specular(struct Intersection *isect, Vector2f sample);
+
+Vector bsdf_eval_specular(struct Intersection *isect);
+
+float bsdf_pdf_specular(struct Intersection *isect);
 
 #endif //TEAM32_INTERSECTION_H

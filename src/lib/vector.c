@@ -1,5 +1,23 @@
 #include "vector.h"
 
+Vector square_to_cosine_hemisphere(const Vector2f* sample, const Vector* normal) {
+    float phi = 2 * M_PI * sample->y;
+    float theta = acos(sqrtf(sample->x));
+    Vector direction;
+    direction.x = sin(theta) * cos(phi);
+    direction.y = sin(theta) * sin(phi);
+    direction.z = cos(theta);
+    // normal = z axis
+    Vector up = {0, 1, 0};
+    Vector x_normal = vv_cross(normal, &up);
+    Vector y_normal = vv_cross(normal, &x_normal);
+    Vector direction_world = vs_mul(&x_normal, direction.x);
+    vvs_fmaeq(&direction_world, &y_normal, direction.y);
+    vvs_fmaeq(&direction_world, normal, direction.z);
+    v_normalize(&direction_world);
+    return direction_world;
+}
+
 Vector ray_at(const Ray *r, const float t) {
     Vector dt = vs_mul(&r->d, t);
     return vv_add(&r->o, &dt);
@@ -60,6 +78,17 @@ Vector vv_cross(const Vector* a, const Vector* b) {
         a->x * b->y - a->y * b->x,
     };
     return c;
+}
+
+bool vv_equal(const Vector *a, const Vector *b) {
+    const float epsilon = 1e-6;
+    if (fabsf(a->x - b->x) > epsilon)
+        return false;
+    if (fabsf(a->y - b->y) > epsilon)
+        return false;
+    if (fabsf(a->z - b->z) > epsilon)
+        return false;
+    return true;
 }
 
 Vector vs_mul(const Vector* a, float s) {

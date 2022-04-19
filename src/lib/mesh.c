@@ -15,20 +15,20 @@ struct Geometry *geometry_init_sphere(struct Sphere *sphere) {
     return geometry;
 }
 
-struct Mesh *mesh_init(struct Geometry *geometry) {
+struct Mesh *mesh_init(struct Geometry *geometry, enum Material material, Vector albedo, Vector emission) {
     struct Mesh *mesh = (struct Mesh *)malloc(sizeof(struct Mesh));
     mesh->geometry = geometry;
     // randomly initialize
-    mesh->material = DIFFUSE;
-    mesh->albedo.x = mesh->albedo.y = mesh->albedo.z = 0.5;
-    mesh->emission.x = mesh->emission.y = mesh->emission.z = 0;
+    mesh->material = material;
+    mesh->albedo = albedo;
+    mesh->emission = emission;
     return mesh;
 }
 
-struct Mesh *mesh_init_sphere(Vector c, float r) {
+struct Mesh *mesh_init_sphere(Vector c, float r, enum Material material, Vector albedo, Vector emission) {
     struct Sphere *sphere = sphere_init(c, r);
     struct Geometry *geometry = geometry_init_sphere(sphere);
-    struct Mesh *mesh = mesh_init(geometry);
+    struct Mesh *mesh = mesh_init(geometry, material, albedo, emission);
     return mesh;
 }
 
@@ -71,7 +71,7 @@ bool mesh_intersect(struct Mesh *mesh, Ray *ray, struct Intersection *isect) {
                 isect->p = ray_at(ray, root);
                 Vector sphere_normal = vv_sub(&isect->p, &sphere->c);
                 isect->n = v_normalized(&sphere_normal);
-                isect->wi = ray->d;
+                isect->wi = v_normalized(&ray->d);
             }
             break;
         }
