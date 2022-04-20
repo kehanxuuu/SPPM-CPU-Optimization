@@ -9,3 +9,11 @@ include_directories(lib)
 aux_source_directory(. SOURCES)
 add_executable(main ${SOURCES})
 target_link_libraries(main rt_lib)
+
+target_compile_options(main PUBLIC $<$<CONFIG:RELEASE>:-Wall>)
+
+target_compile_options(main PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined>)
+
+target_link_options(main PUBLIC $<$<CONFIG:RELEASE>:-Wall>)
+
+target_link_options(main PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined>)
