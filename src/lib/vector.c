@@ -2,11 +2,11 @@
 
 Vector square_to_cosine_hemisphere(const Vector2f* sample, const Vector* normal) {
     float phi = 2 * M_PI * sample->y;
-    float theta = acos(sqrtf(sample->x));
+    float theta = acosf(sqrtf(sample->x));
     Vector direction;
-    direction.x = sin(theta) * cos(phi);
-    direction.y = sin(theta) * sin(phi);
-    direction.z = cos(theta);
+    direction.x = sinf(theta) * cosf(phi);
+    direction.y = sinf(theta) * sinf(phi);
+    direction.z = cosf(theta);
     // normal = z axis
     Vector up = {0, 1, 0};
     Vector x_normal = vv_cross(normal, &up);
@@ -16,11 +16,6 @@ Vector square_to_cosine_hemisphere(const Vector2f* sample, const Vector* normal)
     vvs_fmaeq(&direction_world, normal, direction.z);
     v_normalize(&direction_world);
     return direction_world;
-}
-
-Vector ray_at(const Ray *r, const float t) {
-    Vector dt = vs_mul(&r->d, t);
-    return vv_add(&r->o, &dt);
 }
 
 Vector vv_add(const Vector* a, const Vector* b) {
@@ -81,7 +76,7 @@ Vector vv_cross(const Vector* a, const Vector* b) {
 }
 
 bool vv_equal(const Vector *a, const Vector *b) {
-    const float epsilon = 1e-6;
+    const float epsilon = 1e-6f;
     if (fabsf(a->x - b->x) > epsilon)
         return false;
     if (fabsf(a->y - b->y) > epsilon)

@@ -13,17 +13,6 @@ typedef Vector3f Vector;
 static const Vector ZERO_VEC = {0, 0, 0};
 
 typedef struct {
-    // Ray origin
-    Vector o;
-    // Ray direction
-    Vector d;
-    // Length of the ray
-    float t_max;
-} Ray;
-
-Vector ray_at(const Ray *r, const float t); // point on ray at length t
-
-typedef struct {
     float x, y;
 } Vector2f;
 

@@ -2,6 +2,7 @@
 #define TEAM32_CAMERA_H
 
 #include "vector.h"
+#include "ray.h"
 
 struct Camera {
     Vector c;  // pinhole

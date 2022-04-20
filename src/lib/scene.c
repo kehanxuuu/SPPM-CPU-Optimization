@@ -1,10 +1,8 @@
 #include "scene.h"
 
-struct Scene *scene_init_with_mesh(struct Mesh *mesh) {
-    struct Scene *scene = malloc(sizeof(struct Scene));
+void scene_init_with_mesh(struct Scene *scene, struct Mesh *mesh) {
     arr_init(&(scene->meshes), 50, 0, sizeof(struct Mesh *));
     arr_add(&(scene->meshes), &mesh);
-    return scene;
 }
 
 void scene_add(struct Scene *scene, struct Mesh *mesh) {
@@ -12,7 +10,6 @@ void scene_add(struct Scene *scene, struct Mesh *mesh) {
 }
 
 struct Mesh *scene_get(const struct Scene *scene, size_t index) {
-
     struct Mesh *mesh = *(struct Mesh **)arr_get(&scene->meshes, index);
     return mesh;
 }
@@ -28,7 +25,6 @@ void scene_free(struct Scene *scene) {
         mesh_free(mesh);
     }
     arr_free(&(scene->meshes));
-    free(scene);
 }
 
 bool scene_intersect(const struct Scene *scene, Ray *ray, struct Intersection *isect) {

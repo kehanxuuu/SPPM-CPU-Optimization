@@ -17,10 +17,17 @@
 // Forwarding definitions:
 
 struct Mesh;
+typedef struct Mesh Mesh;
 struct Geometry;
+typedef struct Geometry Geometry;
 struct Intersection;
+typedef struct Intersection Intersection;
 struct Scene;
+typedef struct Scene Scene;
 struct Camera;
+typedef struct Camera Camera;
+struct Ray;
+typedef struct Ray Ray;
 struct RayTracing;
 struct SPPM;
 

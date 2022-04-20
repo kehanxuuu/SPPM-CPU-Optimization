@@ -1,21 +1,24 @@
 #include "intersection.h"
 
 Vector bsdf_sample_diffuse(struct Intersection *isect, Vector2f sample) {
-    if (vv_dot(&isect->wi, &isect->n) >= 0)
+    if (vv_dot(&isect->wi, &isect->n) >= 0) {
         return ZERO_VEC;
+    }
     isect->wo = square_to_cosine_hemisphere(&sample, &isect->n);
     return isect->hit->albedo;
 }
 
 Vector bsdf_eval_diffuse(struct Intersection *isect) {
-    if (vv_dot(&isect->wi, &isect->n) >= 0 || vv_dot(&isect->wo, &isect->n) <= 0)
+    if (vv_dot(&isect->wi, &isect->n) >= 0 || vv_dot(&isect->wo, &isect->n) <= 0){
         return ZERO_VEC;
+    }
     return vs_mul(&isect->hit->albedo, INV_PI);
 }
 
 float bsdf_pdf_diffuse(struct Intersection *isect) {
-    if (vv_dot(&isect->wi, &isect->n) >= 0 || vv_dot(&isect->wo, &isect->n) <= 0)
-        return 0.0;
+    if (vv_dot(&isect->wi, &isect->n) >= 0 || vv_dot(&isect->wo, &isect->n) <= 0) {
+        return 0.0f;
+    }
     return vv_dot(&isect->wo, &isect->n) * INV_PI;
 }
 

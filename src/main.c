@@ -39,19 +39,21 @@ int main() {
     size_t W = 1920, H = 1080;
     struct Bitmap film;
     bitmap_init(&film, W, H);
-    
+
     // TODO: scene initialization codes
     // Simple scene & initialization, just for test
     Vector v1 = {0, 0, 0}, v2 = {2, 2, -7}, v3 = {-5, -5, -1};
     float r1 = 3, r2 = 4, r3 = 2;
     Vector albedo1 = {0.5, 0.5, 0.5}, albedo2 = {0.75, 1.0, 0.75}, albedo3 = {1.0, 0.96, 0.0};
     Vector emission1 = {0.4, 0, 0}, emission2 = ZERO_VEC, emission3 = ZERO_VEC;
-    struct Mesh *mesh1 = mesh_init_sphere(v1, r1, DIFFUSE, albedo1, emission1);
-    struct Mesh *mesh2 = mesh_init_sphere(v2, r2, DIFFUSE, albedo2, emission2);
-    struct Mesh *mesh3 = mesh_init_sphere(v3, r3, SPECULAR, albedo3, emission3);
-    struct Scene *scene = scene_init_with_mesh(mesh1);
-    scene_add(scene, mesh2);
-    scene_add(scene, mesh3);
+    struct Mesh mesh1, mesh2, mesh3;
+    mesh_init_sphere(&mesh1, v1, r1, DIFFUSE, albedo1, emission1);
+    mesh_init_sphere(&mesh2, v2, r2, DIFFUSE, albedo2, emission2);
+    mesh_init_sphere(&mesh3, v3, r3, SPECULAR, albedo3, emission3);
+    struct Scene scene;
+    scene_init_with_mesh(&scene, &mesh1);
+    scene_add(&scene, &mesh2);
+    scene_add(&scene, &mesh3);
 
     struct Camera camera;
     {
@@ -85,7 +87,7 @@ int main() {
             for (size_t s = 0; s < SPP; ++s) {
                 Vector2f sample = {randf(), randf()};
                 Ray ray = generate_ray(&camera, px, py, sample);
-                Vector light_path_color = ray_color(scene, &ray, 5, &background);
+                Vector light_path_color = ray_color(&scene, &ray, 5, &background);
                 vv_addeq(&color, &light_path_color);
             }
             vs_diveq(&color, (float)SPP);
@@ -95,10 +97,10 @@ int main() {
         }
     }
 
-    bitmap_save_exr(&film, "../out/sample.exr");
+    bitmap_save_exr(&film, "sample.exr");
     bitmap_free(&film);
 
-    scene_free(scene);
-
+    scene_free(&scene);
+    printf("Safe exit\n");
     return 0;
 }

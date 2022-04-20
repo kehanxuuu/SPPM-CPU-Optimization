@@ -11,7 +11,7 @@ struct Scene {
 };
 
 // Initialize scene struct with one mesh
-struct Scene *scene_init_with_mesh(struct Mesh *mesh);
+void scene_init_with_mesh(struct Scene *scene, struct Mesh *mesh);
 
 // Add a mesh to `scene->meshes`
 void scene_add(struct Scene *scene, struct Mesh *mesh);

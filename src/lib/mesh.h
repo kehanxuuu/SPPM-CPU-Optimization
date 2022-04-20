@@ -3,6 +3,7 @@
 
 #include "vector.h"
 #include "intersection.h"
+#include "ray.h"
 
 // Generic geometry class
 struct Geometry {
@@ -38,13 +39,13 @@ struct Sphere {
 };
 
 // Temporary initialization and free methods
-struct Sphere *sphere_init(Vector c, float r);
+void sphere_init(struct Sphere *sphere, Vector c, float r);
 
-struct Geometry *geometry_init_sphere(struct Sphere *sphere);
+void geometry_init_sphere(struct Geometry *geometry, struct Sphere *sphere);
 
-struct Mesh *mesh_init(struct Geometry *geometry, enum Material material, Vector albedo, Vector emission);
+void mesh_init(struct Mesh *mesh, struct Geometry *geometry, enum Material material, Vector albedo, Vector emission);
 
-struct Mesh *mesh_init_sphere(Vector c, float r, enum Material material, Vector albedo, Vector emission);
+void mesh_init_sphere(struct Mesh *mesh, Vector c, float r, enum Material material, Vector albedo, Vector emission);
 
 void geometry_free(struct Geometry *geometry);
 
@@ -53,7 +54,7 @@ void mesh_free(struct Mesh *mesh);
 // Find the intersection between the mesh and the ray, stores the time to `ray.t_max`, and the intersection data to `isect`
 // Returns if intersect
 // Please switch case every possible geometry type and implement the intersection code accordingly
-bool mesh_intersect(struct Mesh *mesh, Ray *ray, struct Intersection *isect);
+bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *isect);
 
 // Do only predicate: shadow ray test
 // store intersect time in ray to facililate scene intersection

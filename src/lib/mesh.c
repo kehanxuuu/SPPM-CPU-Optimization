@@ -1,48 +1,42 @@
 #include "mesh.h"
 
-struct Sphere *sphere_init(Vector c, float r) {
-    struct Sphere *sphere = (struct Sphere *)malloc(sizeof(struct Sphere));
+void sphere_init(struct Sphere *sphere, Vector c, float r) {
     sphere->c = c;
     sphere->r = r;
     sphere->r2 = r*r;
-    return sphere;
 }
 
-struct Geometry *geometry_init_sphere(struct Sphere *sphere) {
-    struct Geometry *geometry = (struct Geometry *)malloc(sizeof(struct Geometry));
+void geometry_init_sphere(struct Geometry *geometry, struct Sphere *sphere) {
     geometry->type = SPHERE;
     geometry->data = sphere;
-    return geometry;
 }
 
-struct Mesh *mesh_init(struct Geometry *geometry, enum Material material, Vector albedo, Vector emission) {
-    struct Mesh *mesh = (struct Mesh *)malloc(sizeof(struct Mesh));
+void mesh_init(struct Mesh *mesh, struct Geometry *geometry, enum Material material, Vector albedo, Vector emission) {
     mesh->geometry = geometry;
     // randomly initialize
     mesh->material = material;
     mesh->albedo = albedo;
     mesh->emission = emission;
-    return mesh;
 }
 
-struct Mesh *mesh_init_sphere(Vector c, float r, enum Material material, Vector albedo, Vector emission) {
-    struct Sphere *sphere = sphere_init(c, r);
-    struct Geometry *geometry = geometry_init_sphere(sphere);
-    struct Mesh *mesh = mesh_init(geometry, material, albedo, emission);
-    return mesh;
+void mesh_init_sphere(struct Mesh *mesh, Vector c, float r, enum Material material, Vector albedo, Vector emission) {
+    struct Sphere *sphere = (struct Sphere *)malloc(sizeof(struct Sphere));
+    sphere_init(sphere, c, r);
+    struct Geometry *geometry = (struct Geometry *)malloc(sizeof(struct Geometry));
+    geometry_init_sphere(geometry, sphere);
+    mesh_init(mesh, geometry, material, albedo, emission);
 }
 
 void geometry_free(struct Geometry *geometry) {
     free(geometry->data);
-    free(geometry);
 }
 
 void mesh_free(struct Mesh *mesh) {
     geometry_free(mesh->geometry);
-    free(mesh);
+    free(mesh->geometry);
 }
 
-bool mesh_intersect(struct Mesh *mesh, Ray *ray, struct Intersection *isect) {
+bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *isect) {
     struct Geometry *geometry = mesh->geometry;
     // determine intersect point according to geometry
     switch(geometry->type) {

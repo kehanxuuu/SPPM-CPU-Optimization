@@ -16,7 +16,7 @@ void cam_set_resolution(struct Camera *camera, size_t W, size_t H) {
     camera->aspect = (float) W / (float) H;
 }
 
-Ray generate_ray(const struct Camera * camera, size_t px, size_t py, Vector2f sample) {
+struct Ray generate_ray(const struct Camera * camera, size_t px, size_t py, Vector2f sample) {
     float tg = tanf(camera->fov / 2.0f);
     Vector dc = {
             camera->aspect * tg * (2 * ((float) px + sample.x) / (float) camera->W - 1),
@@ -28,6 +28,7 @@ Ray generate_ray(const struct Camera * camera, size_t px, size_t py, Vector2f sa
     vvs_fmaeq(&d, &camera->ez, dc.z);
     v_normalize(&d);
 
-    Ray ray = {camera->c, d, INFINITY};
+    struct Ray ray;
+    ray_init(&ray, &camera->c, &d, INFINITY);
     return ray;
 }
