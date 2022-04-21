@@ -1,12 +1,12 @@
 #include "sppm.h"
 
-void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num_iter, float initial_radius, Scene* scene, Camera* camera){
+void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num_iter, float initial_radius, Scene* scene, Camera* camera, Vector* background){
     sppm->num_iterations = num_iterations;
     sppm->ray_max_depth = ray_max_depth;
     sppm->num_photons = photon_num_iter;
     sppm->initial_radius = initial_radius;
     sppm->alpha = 2.0f / 3.0f;
-    sppm->background = (Vector){0.5f, 0.5f, 0.5f};
+    sppm->background = *background;
     sppm->scene = scene;
     sppm->camera = camera;
 }
@@ -335,4 +335,9 @@ void sppm_render(SPPM* sppm, Bitmap* bitmap){
     sppm_store(sppm, &pixel_datas, sppm->num_iterations, bitmap);
 
     arrfixed2d_free(&pixel_datas);
+}
+
+void sppm_free(SPPM* sppm){
+    arr_free(&sppm->emitters.emitters);
+    arr_free(&sppm->emitters.prefix_intensity);
 }

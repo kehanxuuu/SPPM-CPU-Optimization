@@ -53,6 +53,7 @@ int main() {
     scene_init_with_mesh(&scene, &mesh1);
     scene_add(&scene, &mesh2);
     scene_add(&scene, &mesh3);
+    Vector background = {0.5, 0.7, 1.0}; // mimic sky color for now, should be zero for physical correctness
 
     struct Camera camera;
     {
@@ -63,7 +64,7 @@ int main() {
     }
 
     SPPM sppm;
-    sppm_init(&sppm, 100, 20, 100000, 0.1, &scene, &camera);
+    sppm_init(&sppm, 100, 20, 100000, 0.1, &scene, &camera, &background);
     Bitmap film;
     sppm_render(&sppm, &film);
 
@@ -71,6 +72,8 @@ int main() {
     bitmap_free(&film);
 
     scene_free(&scene);
+
+    sppm_free(&sppm);
     printf("Safe exit\n");
     return 0;
 }

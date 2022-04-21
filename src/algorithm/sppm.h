@@ -66,7 +66,7 @@ typedef struct SPPM SPPM;
 
 #include "sppm.h"
 
-void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num_iter, float initial_radius, Scene* scene, Camera* camera);
+void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num_iter, float initial_radius, Scene* scene, Camera* camera, Vector* background);
 
 void sppm_pixel_data_lookup_init(PixelDataLookup* lookup, size_t init_size, float grid_size, Vector grid_min, Vector grid_max);
 
@@ -93,5 +93,7 @@ void sppm_consolidate(SPPM *sppm, ArrayFixed2D* pixel_datas);
 void sppm_store(SPPM *sppm, ArrayFixed2D* pixel_datas, int num_iters, Bitmap* bitmap);
 
 void sppm_render(SPPM* sppm, Bitmap* bitmap);
+
+void sppm_free(SPPM* sppm);
 
 #endif //TEAM32_SPPM_H
