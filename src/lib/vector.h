@@ -38,6 +38,10 @@ Vector vv_div(const Vector *a, const Vector *b);  // element-wise division
 
 void vv_diveq(Vector *a, const Vector *b);  // a /= b
 
+Vector vvv_fma(const Vector *a, const Vector *b, const Vector *c);  // a + b * c
+
+void vvv_fmaeq(Vector *a, const Vector *b, const Vector *c);  // a += b * c
+
 float vv_dot(const Vector *a, const Vector *b);
 
 Vector vv_cross(const Vector *a, const Vector *b);

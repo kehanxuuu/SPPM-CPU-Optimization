@@ -143,10 +143,11 @@ void sppm_camera_pass_pixel(SPPM *sppm, int x, int y, PixelData* pd) {
 
         was_specular = isect.hit->material == SPECULAR;
         vv_muleq(&attenuation, &cur_attenuation);
-        float max_attenuation = fmaxf(attenuation.x, fmaxf(attenuation.y, attenuation.z));
+        float max_attenuation = v_cwise_max(&attenuation);
+        // Russian Roulette
         if (max_attenuation < 0.25) {
             float continue_prob = fminf(1.0f, max_attenuation);
-            if (randf() > max_attenuation) {
+            if (randf() > continue_prob) {
                 break;
             }
             vs_diveq(&attenuation, continue_prob);
@@ -179,7 +180,7 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup* lookup) {
         }
     }
     Ray ray;
-    Mesh* mesh = *(Mesh**)arr_get(&sppm->scene->meshes, selected_mesh);
+    Mesh *mesh = scene_get(sppm->scene, selected_mesh);
     if(mesh->geometry->type == SPHERE){
         ray = sphere_surface_sample((Sphere*)mesh->geometry->data, (Vector2f){randf(), randf()}, (Vector2f){randf(), randf()});
     }else {
@@ -194,6 +195,7 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup* lookup) {
             break;
         }
 
+        // Direct illumination is accounted for in the camera pass
         if (i > 0) {
             Vector3u loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &isect.p);
             size_t ht_loc = sppm_pixel_data_lookup_hash(lookup, &loc_3d);
@@ -204,10 +206,8 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup* lookup) {
                 if(v_norm_sqr(&dist_between) < pd->radius * pd->radius){
                     pd->cur_vp.intersection.wo = vv_sub(&ZERO_VEC, &ray.d);
                     if(pd->cur_vp.intersection.hit->material == DIFFUSE){
-                        Vector sampled_albedo = bsdf_sample_diffuse(&pd->cur_vp.intersection,
-                                                                    (Vector2f) {randf(), randf()});
-                        vv_muleq(&sampled_albedo, &attenuation);
-                        vv_addeq(&pd->cur_flux, &sampled_albedo);
+                        Vector bsdf = bsdf_eval_diffuse(&pd->cur_vp.intersection);
+                        vvv_fmaeq(&pd->cur_flux, &bsdf, &attenuation);  // flux += bsdf * atten
                         pd->cur_photons++;
                     }else if(pd->cur_vp.intersection.hit->material == SPECULAR){
                         assert(false);
@@ -228,10 +228,11 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup* lookup) {
         }
 
         vv_muleq(&attenuation, &cur_attenuation);
-        float max_attenuation = fmaxf(attenuation.x, fmaxf(attenuation.y, attenuation.z));
+        float max_attenuation = v_cwise_max(&attenuation);
+        // Russian Roulette
         if (max_attenuation < 0.25) {
             float continue_prob = fminf(1.0f, max_attenuation);
-            if (randf() > max_attenuation) {
+            if (randf() > continue_prob) {
                 break;
             }
             vs_diveq(&attenuation, continue_prob);
@@ -272,7 +273,6 @@ void sppm_store(SPPM *sppm, ArrayFixed2D* pixel_datas, int num_iters, Bitmap* bi
     size_t W, H;
     W = sppm->camera->W;
     H = sppm->camera->H;
-    bitmap_init(bitmap, W, H);
     int num_photons_total = num_iters * sppm->num_photons;
     for(int i = 0; i < H; i++){
         for(int j = 0; j < W; j++){
@@ -305,14 +305,13 @@ void sppm_render(SPPM* sppm, Bitmap* bitmap){
     arr_init(&sppm->emitters.prefix_intensity, 20, 0, sizeof(float));
     float cur_sum = 0;
     arr_add(&sppm->emitters.prefix_intensity, &cur_sum);
-    for(int i = 0; i < sppm->scene->meshes.size; i++) {
-        Mesh *cur_mesh = *(Mesh **) arr_get(&sppm->scene->meshes, i);
+    for(size_t i = 0; i < sppm->scene->meshes.size; i++) {
+        Mesh *cur_mesh = scene_get(sppm->scene, i);
         if (vv_equal(&cur_mesh->emission, &ZERO_VEC)) {
             continue;
         }
         cur_sum += v_norm(&cur_mesh->emission);
-        size_t size_t_i = i;
-        arr_add(&sppm->emitters.emitters, &size_t_i);
+        arr_add(&sppm->emitters.emitters, &i);
         arr_add(&sppm->emitters.prefix_intensity, &cur_sum);
     }
     for(int i = 0; i < sppm->emitters.prefix_intensity.size; i++) {

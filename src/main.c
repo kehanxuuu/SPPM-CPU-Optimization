@@ -64,11 +64,12 @@ int main() {
     }
 
     SPPM sppm;
-    sppm_init(&sppm, 100, 20, 100000, 0.1, &scene, &camera, &background);
+    sppm_init(&sppm, 100, 20, 100000, 0.1f, &scene, &camera, &background);
     Bitmap film;
+    bitmap_init(&film, W, H);
     sppm_render(&sppm, &film);
 
-    bitmap_save_exr(&film, "sample.exr");
+    bitmap_save_exr(&film, "../../out/sample.exr");
     bitmap_free(&film);
 
     scene_free(&scene);
