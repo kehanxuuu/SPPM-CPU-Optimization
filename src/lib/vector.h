@@ -8,6 +8,10 @@ typedef struct {
     float x, y, z;
 } Vector3f;
 
+typedef struct {
+    size_t x, y, z;
+} Vector3u;
+
 typedef Vector3f Vector;
 
 static const Vector ZERO_VEC = {0, 0, 0};
@@ -67,6 +71,10 @@ float v_cwise_max(const Vector *a);
 float v_cwise_sum(const Vector *a);
 
 float v_cwise_mean(const Vector *a);
+
+Vector vv_max(const Vector *a, const Vector *b);
+
+Vector vv_min(const Vector *a, const Vector *b);
 
 // Random float [0, 1)
 float randf();

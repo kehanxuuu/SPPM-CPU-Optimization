@@ -41,6 +41,8 @@ struct Sphere {
 // Temporary initialization and free methods
 void sphere_init(struct Sphere *sphere, Vector c, float r);
 
+Ray sphere_surface_sample(struct Sphere *sphere, Vector2f sample1, Vector2f sample2);
+
 void geometry_init_sphere(struct Geometry *geometry, struct Sphere *sphere);
 
 void mesh_init(struct Mesh *mesh, struct Geometry *geometry, enum Material material, Vector albedo, Vector emission);

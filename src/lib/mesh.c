@@ -6,6 +6,21 @@ void sphere_init(struct Sphere *sphere, Vector c, float r) {
     sphere->r2 = r*r;
 }
 
+Ray sphere_surface_sample(struct Sphere *sphere, Vector2f sample1, Vector2f sample2){
+    float z = sample1.x * 2 - 1;
+    float theta = sample1.y * 2 * M_PI - M_PI;
+    float x = sinf(theta) * sqrtf(sphere->r2 - z * z);
+    float y = cosf(theta) * sqrtf(sphere->r2 - z * z);
+    Vector normal = (Vector){x, y, z};
+    Vector origin = vv_add(&sphere->c, &normal);
+
+    v_normalize(&normal);
+    Vector direction = square_to_cosine_hemisphere(&sample2, &normal);
+    struct Ray ray;
+    ray_init(&ray, &origin, &direction, INFINITY);
+    return ray;
+}
+
 void geometry_init_sphere(struct Geometry *geometry, struct Sphere *sphere) {
     geometry->type = SPHERE;
     geometry->data = sphere;

@@ -171,6 +171,14 @@ float v_cwise_mean(const Vector* a) {
     return v_cwise_sum(a) / 3;
 }
 
+Vector vv_max(const Vector *a, const Vector *b){
+    return (Vector){.x = fmaxf(a->x, b->x), .y = fmaxf(a->y, b->y), .z = fmaxf(a->z, b->z)};
+}
+
+Vector vv_min(const Vector *a, const Vector *b) {
+    return (Vector){.x = fminf(a->x, b->x), .y = fminf(a->y, b->y), .z = fminf(a->z, b->z)};
+}
+
 float randf() {
     return (float)rand() / (float)RAND_MAX;
 }

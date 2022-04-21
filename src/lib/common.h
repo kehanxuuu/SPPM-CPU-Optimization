@@ -28,6 +28,10 @@ struct Camera;
 typedef struct Camera Camera;
 struct Ray;
 typedef struct Ray Ray;
+struct Bitmap;
+typedef struct Bitmap Bitmap;
+struct Sphere;
+typedef struct Sphere Sphere;
 struct RayTracing;
 struct SPPM;
 
