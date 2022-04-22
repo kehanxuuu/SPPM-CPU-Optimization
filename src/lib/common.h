@@ -32,7 +32,7 @@ struct Bitmap;
 typedef struct Bitmap Bitmap;
 struct Sphere;
 typedef struct Sphere Sphere;
-struct RayTracing;
+struct PathTracing;
 struct SPPM;
 
 #define NOT_USED(x) ((void)(x))

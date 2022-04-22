@@ -1,9 +1,9 @@
 #include "camera.h"
 
-void cam_look_at(struct Camera *camera, const Vector *eye, const Vector *target, const Vector *up) {
-    camera->c = *eye;
-    camera->ez = vv_sub(target, eye);  // front
-    camera->ex = vv_cross(&camera->ez, up);  // right
+void cam_look_at(struct Camera *camera, Vector eye, Vector target, Vector up) {
+    camera->c = eye;
+    camera->ez = vv_sub(&target, &eye);  // front
+    camera->ex = vv_cross(&camera->ez, &up);  // right
     camera->ey = vv_cross(&camera->ez, &camera->ex);  // down
     v_normalize(&camera->ex);
     v_normalize(&camera->ey);

@@ -47,7 +47,7 @@ void geometry_init_sphere(struct Geometry *geometry, struct Sphere *sphere);
 
 void mesh_init(struct Mesh *mesh, struct Geometry *geometry, enum Material material, Vector albedo, Vector emission);
 
-void mesh_init_sphere(struct Mesh *mesh, Vector c, float r, enum Material material, Vector albedo, Vector emission);
+Mesh *mesh_make_sphere(Vector c, float r, enum Material material, Vector albedo, Vector emission);
 
 void geometry_free(struct Geometry *geometry);
 

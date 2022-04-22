@@ -64,7 +64,7 @@ typedef struct PixelDataLookup PixelDataLookup;
 typedef struct Emitters Emitters;
 typedef struct SPPM SPPM;
 
-void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num_iter, float initial_radius, Scene* scene, Camera* camera, Vector* background);
+void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num_iter, float initial_radius, Scene* scene, Camera* camera, Vector background);
 
 void sppm_pixel_data_lookup_init(PixelDataLookup* lookup, size_t init_size, float grid_size, Vector grid_min, Vector grid_max);
 

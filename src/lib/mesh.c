@@ -34,12 +34,14 @@ void mesh_init(struct Mesh *mesh, struct Geometry *geometry, enum Material mater
     mesh->emission = emission;
 }
 
-void mesh_init_sphere(struct Mesh *mesh, Vector c, float r, enum Material material, Vector albedo, Vector emission) {
+Mesh *mesh_make_sphere(Vector c, float r, enum Material material, Vector albedo, Vector emission) {
+    Mesh *mesh = (Mesh *) malloc(sizeof(Mesh));
     struct Sphere *sphere = (struct Sphere *)malloc(sizeof(struct Sphere));
     sphere_init(sphere, c, r);
     struct Geometry *geometry = (struct Geometry *)malloc(sizeof(struct Geometry));
     geometry_init_sphere(geometry, sphere);
     mesh_init(mesh, geometry, material, albedo, emission);
+    return mesh;
 }
 
 void geometry_free(struct Geometry *geometry) {
@@ -78,8 +80,8 @@ bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *ise
                 ray->t_max = root;
                 isect->hit = mesh;
                 isect->p = ray_at(ray, root);
-                Vector sphere_normal = vv_sub(&isect->p, &sphere->c);
-                isect->n = v_normalized(&sphere_normal);
+                isect->n = vv_sub(&isect->p, &sphere->c);
+                v_normalize(&isect->n);
                 isect->wi = v_normalized(&ray->d);
             }
             break;

@@ -2,80 +2,61 @@
 #include "camera.h"
 #include "bitmap.h"
 #include "sppm.h"
+#include "pt.h"
 
-// recursive ray tracing
-Vector ray_color(const Scene *scene, Ray* ray, int depth, const Vector *background) {
-    if (depth <= 0)
-        return ZERO_VEC;
-    Intersection isect;
-    if (!scene_intersect(scene, ray, &isect)) {
-        return *background;
-    }
-
-    Vector emitted = isect.hit->emission;
-
-    Vector2f sample = {randf(), randf()};
-    Vector attenuation = ZERO_VEC;
-    switch (isect.hit->material) {
-        case DIFFUSE:
-            attenuation = bsdf_sample_diffuse(&isect, sample);
-            break;
-        case SPECULAR:
-            attenuation = bsdf_sample_specular(&isect, sample);
-            break;
-        default:
-            break;
-    }
-    if (vv_equal(&attenuation, &ZERO_VEC)) {
-        return emitted;
-    }
-    Ray ray_next_bounce = {isect.p, isect.wo, INFINITY};
-    Vector recursive_color = ray_color(scene, &ray_next_bounce, depth - 1, background);
-    Vector color = vv_mul(&attenuation, &recursive_color);
-    return vv_add(&emitted, &color);
+void init_cornell_box(Scene *scene, Camera *camera) {
+    const float inf = 1e5f;
+    scene_init(scene);
+    Mesh *left = mesh_make_sphere((Vector) {inf + 1, 40.8f, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .25f, .25f}, ZERO_VEC);
+    Mesh *right = mesh_make_sphere((Vector) {-inf + 99, 40.8f, 81.6f}, inf, DIFFUSE, (Vector) {.25f, .25f, .75f}, ZERO_VEC);
+    Mesh *back = mesh_make_sphere((Vector) {50, 40.8f, inf}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC);
+    Mesh *front = mesh_make_sphere((Vector) {50, 40.8f, -inf + 170}, inf, DIFFUSE, ZERO_VEC, ZERO_VEC);
+    Mesh *bottom = mesh_make_sphere((Vector) {50, inf, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC);
+    Mesh *top = mesh_make_sphere((Vector) {50, -inf + 81.6f, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC);
+    Mesh *mirror = mesh_make_sphere((Vector) {27, 16.5f, 47}, 16.5f, SPECULAR, (Vector) {.999f, .999f, .999f}, ZERO_VEC);
+    Mesh *glass = mesh_make_sphere((Vector) {73, 16.5f, 78}, 16.5f, DIFFUSE, (Vector) {.999f, .999f, .999f}, ZERO_VEC);
+    Mesh *light = mesh_make_sphere((Vector) {50, 81.6f - 16.5f, 81.6f}, 10.5f, DIFFUSE, ZERO_VEC, (Vector) {40, 40, 40});
+    scene_add(scene, left);
+    scene_add(scene, right);
+    scene_add(scene, back);
+//    scene_add(scene, front);
+    scene_add(scene, bottom);
+    scene_add(scene, top);
+    scene_add(scene, mirror);
+    scene_add(scene, glass);
+    scene_add(scene, light);
+    camera->fov = 30 * M_PI / 180.f;
+    Vector eye = {50, 52, 295.6f}, target = vv_add(&eye, &(Vector) {0, -0.042612f, -1}), up = {0, 1, 0};
+    cam_look_at(camera, eye, target, up);
 }
 
 int main() {
     srand(0);
-    size_t W = 500, H = 500;
+    size_t W = 1024, H = 768;
 
-    // TODO: scene initialization codes
-    // Simple scene & initialization, just for test
-    Vector v1 = {0, 0, 0}, v2 = {2, 2, -7}, v3 = {-5, -5, -1};
-    float r1 = 3, r2 = 4, r3 = 2;
-    Vector albedo1 = {0.5, 0.5, 0.5}, albedo2 = {0.75, 1.0, 0.75}, albedo3 = {1.0, 0.96, 0.0};
-    Vector emission1 = {0.4, 0, 0}, emission2 = ZERO_VEC, emission3 = ZERO_VEC;
-    Mesh mesh1, mesh2, mesh3;
-    mesh_init_sphere(&mesh1, v1, r1, DIFFUSE, albedo1, emission1);
-    mesh_init_sphere(&mesh2, v2, r2, DIFFUSE, albedo2, emission2);
-    mesh_init_sphere(&mesh3, v3, r3, SPECULAR, albedo3, emission3);
     Scene scene;
-    scene_init(&scene);
-    scene_add(&scene, &mesh1);
-    scene_add(&scene, &mesh2);
-    scene_add(&scene, &mesh3);
-    Vector background = {0.5, 0.7, 1.0}; // mimic sky color for now, should be zero for physical correctness
+    Camera camera;
+    init_cornell_box(&scene, &camera);
+    cam_set_resolution(&camera, W, H);
 
-    struct Camera camera;
-    {
-        cam_set_resolution(&camera, W, H);
-        camera.fov = M_PI_2;
-        Vector eye = {0, 0, 10}, target = {0, 0, 0}, up = {0, 1, 0};
-        cam_look_at(&camera, &eye, &target, &up);
-    }
-
-    SPPM sppm;
-    sppm_init(&sppm, 100, 20, 100000, 0.1f, &scene, &camera, &background);
     Bitmap film;
     bitmap_init(&film, W, H);
-    sppm_render(&sppm, &film);
 
-    bitmap_save_exr(&film, "../../out/sample.exr");
+    Vector background = ZERO_VEC; // mimic sky color for now, should be zero for physical correctness
+
+    PathTracing pt;
+    pt_init(&pt, 4, 5, &scene, &camera, background);
+    pt_render(&pt, &film);
+//    SPPM sppm;
+//    sppm_init(&sppm, 100, 20, 100000, 0.1f, &scene, &camera, &background);
+//    sppm_render(&sppm, &film);
+
+    bitmap_save_exr(&film, "../../out/cornell.exr");
     bitmap_free(&film);
 
     scene_free(&scene);
 
-    sppm_free(&sppm);
+//    sppm_free(&sppm);
     printf("Safe exit\n");
     return 0;
 }

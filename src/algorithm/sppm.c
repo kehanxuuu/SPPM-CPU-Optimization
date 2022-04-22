@@ -1,12 +1,12 @@
 #include "sppm.h"
 
-void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num_iter, float initial_radius, Scene* scene, Camera* camera, Vector* background){
+void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num_iter, float initial_radius, Scene* scene, Camera* camera, Vector background){
     sppm->num_iterations = num_iterations;
     sppm->ray_max_depth = ray_max_depth;
     sppm->num_photons = photon_num_iter;
     sppm->initial_radius = initial_radius;
     sppm->alpha = 2.0f / 3.0f;
-    sppm->background = *background;
+    sppm->background = background;
     sppm->scene = scene;
     sppm->camera = camera;
 }
