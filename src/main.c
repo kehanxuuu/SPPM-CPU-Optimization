@@ -50,7 +50,8 @@ int main() {
     mesh_init_sphere(&mesh2, v2, r2, DIFFUSE, albedo2, emission2);
     mesh_init_sphere(&mesh3, v3, r3, SPECULAR, albedo3, emission3);
     Scene scene;
-    scene_init_with_mesh(&scene, &mesh1);
+    scene_init(&scene);
+    scene_add(&scene, &mesh1);
     scene_add(&scene, &mesh2);
     scene_add(&scene, &mesh3);
     Vector background = {0.5, 0.7, 1.0}; // mimic sky color for now, should be zero for physical correctness
