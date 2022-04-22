@@ -1,4 +1,5 @@
 #include "mesh.h"
+#include "warping.h"
 
 void sphere_init(struct Sphere *sphere, Vector c, float r) {
     sphere->c = c;
@@ -15,7 +16,7 @@ Ray sphere_surface_sample(struct Sphere *sphere, Vector2f sample1, Vector2f samp
     Vector origin = vv_add(&sphere->c, &normal);
 
     v_normalize(&normal);
-    Vector direction = square_to_cosine_hemisphere(&sample2, &normal);
+    Vector direction = square_to_cosine_hemisphere(sample2, &normal);
     struct Ray ray;
     ray_init(&ray, &origin, &direction, INFINITY);
     return ray;
@@ -76,19 +77,25 @@ bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *ise
                     if (root < 0 || root > ray->t_max) {
                         return false;
                     }
+                    // Intersect at interior
+                    interior = true;
+                } else {
+                    // Intersect at exterior
+                    interior = false;
                 }
                 ray->t_max = root;
                 isect->hit = mesh;
                 isect->p = ray_at(ray, root);
                 isect->n = vv_sub(&isect->p, &sphere->c);
                 v_normalize(&isect->n);
+                if (interior) vs_muleq(&isect->n, -1);
                 isect->wi = v_normalized(&ray->d);
             }
             break;
         }
 
         default:
-            break;
+            UNIMPLEMENTED;
     }
 
     return true;
@@ -124,7 +131,7 @@ bool mesh_do_intersect(const struct Mesh *mesh, Ray *ray) {
         }
 
         default:
-            break;
+            UNIMPLEMENTED;
     }
 
     return true;

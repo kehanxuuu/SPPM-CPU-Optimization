@@ -1,10 +1,12 @@
 #include "intersection.h"
+#include "warping.h"
 
 Vector bsdf_sample_diffuse(struct Intersection *isect, Vector2f sample) {
     if (vv_dot(&isect->wi, &isect->n) >= 0) {
         return ZERO_VEC;
     }
-    isect->wo = square_to_cosine_hemisphere(&sample, &isect->n);
+    isect->wo = square_to_cosine_hemisphere(sample, &isect->n);
+//    isect->wo = square_to_uniform_sphere(sample);
     return isect->hit->albedo;
 }
 

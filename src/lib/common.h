@@ -36,10 +36,12 @@ struct PathTracing;
 struct SPPM;
 
 #define NOT_USED(x) ((void)(x))
+#define UNIMPLEMENTED fprintf(stderr, "Unimplemented error at %s:%d\n", __FILE__, __LINE__); exit(1)
 
 // a few useful constants
 #undef M_PI
 #define M_PI         3.14159265358979323846f
 #define INV_PI       0.31830988618379067154f
+#define EPSILON      1e-2f
 
 #endif //TEAM32_COMMON_H

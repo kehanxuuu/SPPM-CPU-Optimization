@@ -15,12 +15,13 @@ typedef struct {
 typedef Vector3f Vector;
 
 static const Vector ZERO_VEC = {0, 0, 0};
+static const Vector UNIT_X = {1, 0, 0};
+static const Vector UNIT_Y = {0, 1, 0};
+static const Vector UNIT_Z = {0, 0, 1};
 
 typedef struct {
     float x, y;
 } Vector2f;
-
-Vector square_to_cosine_hemisphere(const Vector2f* sample, const Vector* normal);  // map [0, 1]x[0, 1] to cosine hemisphere, output direction in world space given normal
 
 Vector vv_add(const Vector *a, const Vector *b);  // vector-vector addition
 

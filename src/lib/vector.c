@@ -1,23 +1,5 @@
 #include "vector.h"
 
-Vector square_to_cosine_hemisphere(const Vector2f *sample, const Vector *normal) {
-    float phi = 2 * M_PI * sample->y;
-    float theta = acosf(sqrtf(sample->x));
-    Vector direction;
-    direction.x = sinf(theta) * cosf(phi);
-    direction.y = sinf(theta) * sinf(phi);
-    direction.z = cosf(theta);
-    // normal = z axis
-    Vector up = {0, 1, 0};
-    Vector x_normal = vv_cross(normal, &up);
-    Vector y_normal = vv_cross(normal, &x_normal);
-    Vector direction_world = vs_mul(&x_normal, direction.x);
-    vvs_fmaeq(&direction_world, &y_normal, direction.y);
-    vvs_fmaeq(&direction_world, normal, direction.z);
-    v_normalize(&direction_world);
-    return direction_world;
-}
-
 Vector vv_add(const Vector *a, const Vector *b) {
     Vector c = {a->x + b->x, a->y + b->y, a->z + b->z};
     return c;

@@ -34,14 +34,16 @@ Vector radiance(const Scene *scene, Ray *ray, int depth, const Vector *backgroun
     if (!scene_intersect(scene, ray, &isect)) {
         return *background;
     }
-    Vector n = vv_add(&isect.n, &(Vector){1, 1, 1});
-    vs_diveq(&n, 2);
-    return n;
+//    Vector n = vv_add(&isect.n, &(Vector){1, 1, 1});
+//    vs_diveq(&n, 2);
+//    return n;
+//    return isect.hit->albedo;
+//    return vs_mul(&isect.hit->albedo, -vv_dot(&isect.wi, &isect.n));
 
     Vector emitted = isect.hit->emission;
 
     Vector2f sample = {randf(), randf()};
-    Vector attenuation = ZERO_VEC;
+    Vector attenuation = {0.99f, 0.99f, 0.99f};
     switch (isect.hit->material) {
         case DIFFUSE:
             attenuation = bsdf_sample_diffuse(&isect, sample);
@@ -50,12 +52,13 @@ Vector radiance(const Scene *scene, Ray *ray, int depth, const Vector *backgroun
             attenuation = bsdf_sample_specular(&isect, sample);
             break;
         default:
-            break;
+            UNIMPLEMENTED;
     }
     if (vv_equal(&attenuation, &ZERO_VEC)) {
         return emitted;
     }
     Ray ray_next_bounce = {isect.p, isect.wo, INFINITY};
+    ray_next_bounce.o = ray_at(&ray_next_bounce, EPSILON);
     Vector recursive_color = radiance(scene, &ray_next_bounce, depth - 1, background);
     Vector color = vv_mul(&attenuation, &recursive_color);
     return vv_add(&emitted, &color);
