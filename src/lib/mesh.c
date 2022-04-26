@@ -73,26 +73,25 @@ bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *ise
             else {
                 float sqrt_d = sqrtf(discriminant);
                 float root = (-half_b - sqrt_d) / a;
-                bool interior;
-                if (root < 0 || root > ray->t_max) {
+                if (root > ray->t_max) return false;
+                if (root < 0) {
                     root = (-half_b + sqrt_d) / a;
                     if (root < 0 || root > ray->t_max) {
                         return false;
                     }
                     // Intersect at interior
-                    interior = true;
+                    isect->interior = true;
                 } else {
                     // Intersect at exterior
-                    interior = false;
+                    isect->interior = false;
                 }
                 ray->t_max = root;
                 isect->hit = mesh;
                 isect->p = ray_at(ray, root);
                 isect->n = vv_sub(&isect->p, &sphere->c);
                 v_normalize(&isect->n);
-                if (interior) vs_muleq(&isect->n, -1);
+                if (isect->interior) vs_muleq(&isect->n, -1);
                 isect->wi = v_normalized(&ray->d);
-                isect->interior = interior;
             }
             break;
         }
@@ -105,7 +104,7 @@ bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *ise
 }
 
 
-bool mesh_do_intersect(const struct Mesh *mesh, Ray *ray) {
+bool mesh_do_intersect(const struct Mesh *mesh, const Ray *ray) {
     struct Geometry *geometry = mesh->geometry;
     switch(geometry->type) {
         case SPHERE: {
@@ -122,13 +121,13 @@ bool mesh_do_intersect(const struct Mesh *mesh, Ray *ray) {
             else {
                 float sqrt_d = sqrtf(discriminant);
                 float root = (-half_b - sqrt_d) / a;
-                if (root < 0 || root > ray->t_max) {
+                if (root > ray->t_max) return false;
+                if (root < 0) {
                     root = (-half_b + sqrt_d) / a;
                     if (root < 0 || root > ray->t_max) {
                         return false;
                     }
                 }
-                ray->t_max = root;
             }
             break;
         }

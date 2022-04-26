@@ -62,8 +62,8 @@ void mesh_free(struct Mesh *mesh);
 bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *isect);
 
 // Do only predicate: shadow ray test
-// store intersect time in ray to facililate scene intersection
-bool mesh_do_intersect(const struct Mesh *mesh, Ray *ray);
+// store intersect time in ray to facilitate scene intersection
+bool mesh_do_intersect(const struct Mesh *mesh, const Ray *ray);
 
 
 #endif //TEAM32_MESH_H

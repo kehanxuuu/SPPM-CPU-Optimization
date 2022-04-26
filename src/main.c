@@ -6,7 +6,7 @@
 
 void init_cornell_box(Scene *scene, Camera *camera) {
     const float inf = 1e4f;
-    // scene_init(scene);
+    scene_init(scene);
     Mesh *left = mesh_make_sphere((Vector) {inf + 1, 40.8f, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .25f, .25f}, ZERO_VEC, 1.0);
     Mesh *right = mesh_make_sphere((Vector) {-inf + 99, 40.8f, 81.6f}, inf, DIFFUSE, (Vector) {.25f, .25f, .75f}, ZERO_VEC, 1.0);
     Mesh *back = mesh_make_sphere((Vector) {50, 40.8f, inf}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
@@ -16,8 +16,7 @@ void init_cornell_box(Scene *scene, Camera *camera) {
     Mesh *mirror = mesh_make_sphere((Vector) {27, 16.5f, 47}, 16.5f, SPECULAR, (Vector) {.999f, .999f, .999f}, ZERO_VEC, 1.0);
     Mesh *glass = mesh_make_sphere((Vector) {73, 16.5f, 78}, 16.5f, DIELECTRIC, (Vector) {.999f, .999f, .999f}, ZERO_VEC, 1.5);
     Mesh *light = mesh_make_sphere((Vector) {50, 81.6f - 16.5f, 81.6f}, 10.5f, DIFFUSE, ZERO_VEC, (Vector) {20, 20, 20}, 1.0);
-    scene_init_with_mesh(scene, left);
-    // scene_add(scene, left);
+    scene_add(scene, left);
     scene_add(scene, right);
     scene_add(scene, back);
 //    scene_add(scene, front);
@@ -52,7 +51,7 @@ int main() {
 //    sppm_init(&sppm, 100, 20, 100000, 0.1f, &scene, &camera, &background);
 //    sppm_render(&sppm, &film);
 
-    bitmap_save_exr(&film, "../out/cornell.exr");
+    bitmap_save_exr(&film, "../../out/cornell2.exr");
     bitmap_free(&film);
 
     scene_free(&scene);

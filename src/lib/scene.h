@@ -10,8 +10,8 @@ struct Scene {
     Array meshes; // store pointers to meshes
 };
 
-// Initialize scene struct with one mesh
-void scene_init_with_mesh(struct Scene *scene, struct Mesh *mesh);
+// Initialize scene struct
+void scene_init(struct Scene *scene);
 
 // Add a mesh to `scene->meshes`
 void scene_add(struct Scene *scene, struct Mesh *mesh);
