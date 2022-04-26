@@ -223,6 +223,8 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup* lookup) {
             cur_attenuation = bsdf_sample_diffuse(&isect, (Vector2f){randf(), randf()});
         }else if(isect.hit->material == SPECULAR){
             cur_attenuation = bsdf_sample_specular(&isect, (Vector2f){randf(), randf()});
+        }else if(isect.hit->material == DIELECTRIC){
+            cur_attenuation = bsdf_sample_dielectic(&isect, (Vector2f){randf(), randf()});
         }else{
             assert(false);
         }

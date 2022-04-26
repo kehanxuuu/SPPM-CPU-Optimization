@@ -10,4 +10,7 @@ Vector square_to_cosine_hemisphere(Vector2f sample, const Vector *normal);
 
 Vector square_to_uniform_sphere(Vector2f sample);
 
+// return the probability of reflection
+float fresnel(float costheta1, float n1, float n2);
+
 #endif //TEAM32_WARPING_H

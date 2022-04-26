@@ -30,6 +30,9 @@ struct Mesh {
     Vector albedo;
     Vector emission;
 
+    // Index of Reflection
+    float ir;
+
     // Texture?
 };
 
@@ -45,9 +48,9 @@ Ray sphere_surface_sample(struct Sphere *sphere, Vector2f sample1, Vector2f samp
 
 void geometry_init_sphere(struct Geometry *geometry, struct Sphere *sphere);
 
-void mesh_init(struct Mesh *mesh, struct Geometry *geometry, enum Material material, Vector albedo, Vector emission);
+void mesh_init(struct Mesh *mesh, struct Geometry *geometry, enum Material material, Vector albedo, Vector emission, float ir);
 
-Mesh *mesh_make_sphere(Vector c, float r, enum Material material, Vector albedo, Vector emission);
+Mesh *mesh_make_sphere(Vector c, float r, enum Material material, Vector albedo, Vector emission, float ir);
 
 void geometry_free(struct Geometry *geometry);
 

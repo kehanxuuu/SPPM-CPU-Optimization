@@ -51,6 +51,9 @@ Vector radiance(const Scene *scene, Ray *ray, int depth, const Vector *backgroun
         case SPECULAR:
             attenuation = bsdf_sample_specular(&isect, sample);
             break;
+        case DIELECTRIC:
+            attenuation = bsdf_sample_dielectic(&isect, sample);
+            break;
         default:
             UNIMPLEMENTED;
     }

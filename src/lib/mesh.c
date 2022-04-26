@@ -27,21 +27,22 @@ void geometry_init_sphere(struct Geometry *geometry, struct Sphere *sphere) {
     geometry->data = sphere;
 }
 
-void mesh_init(struct Mesh *mesh, struct Geometry *geometry, enum Material material, Vector albedo, Vector emission) {
+void mesh_init(struct Mesh *mesh, struct Geometry *geometry, enum Material material, Vector albedo, Vector emission, float ir) {
     mesh->geometry = geometry;
     // randomly initialize
     mesh->material = material;
     mesh->albedo = albedo;
     mesh->emission = emission;
+    mesh->ir = ir;
 }
 
-Mesh *mesh_make_sphere(Vector c, float r, enum Material material, Vector albedo, Vector emission) {
+Mesh *mesh_make_sphere(Vector c, float r, enum Material material, Vector albedo, Vector emission, float ir) {
     Mesh *mesh = (Mesh *) malloc(sizeof(Mesh));
     struct Sphere *sphere = (struct Sphere *)malloc(sizeof(struct Sphere));
     sphere_init(sphere, c, r);
     struct Geometry *geometry = (struct Geometry *)malloc(sizeof(struct Geometry));
     geometry_init_sphere(geometry, sphere);
-    mesh_init(mesh, geometry, material, albedo, emission);
+    mesh_init(mesh, geometry, material, albedo, emission, ir);
     return mesh;
 }
 
@@ -72,6 +73,7 @@ bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *ise
             else {
                 float sqrt_d = sqrtf(discriminant);
                 float root = (-half_b - sqrt_d) / a;
+                bool interior;
                 if (root < 0 || root > ray->t_max) {
                     root = (-half_b + sqrt_d) / a;
                     if (root < 0 || root > ray->t_max) {
@@ -90,6 +92,7 @@ bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *ise
                 v_normalize(&isect->n);
                 if (interior) vs_muleq(&isect->n, -1);
                 isect->wi = v_normalized(&ray->d);
+                isect->interior = interior;
             }
             break;
         }

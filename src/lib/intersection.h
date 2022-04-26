@@ -11,6 +11,7 @@ struct Intersection {
     Vector n;    // intersection normal for shading
     Vector wi;  // incident direction (in world frame)
     Vector wo;  // excident direction
+    bool interior; // whether intersects at mesh interior
 };
 
 // TODO: for the implementation of this section, please refer to `Nori/bsdf.h`
@@ -42,5 +43,12 @@ Vector bsdf_sample_specular(struct Intersection *isect, Vector2f sample);
 Vector bsdf_eval_specular(struct Intersection *isect);
 
 float bsdf_pdf_specular(struct Intersection *isect);
+
+// dielectic
+Vector bsdf_sample_dielectic(struct Intersection *isect, Vector2f sample);
+
+Vector bsdf_eval_dielectic(struct Intersection *isect);
+
+float bsdf_pdf_dielectic(struct Intersection *isect);
 
 #endif //TEAM32_INTERSECTION_H
