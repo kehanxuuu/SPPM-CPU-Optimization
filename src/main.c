@@ -15,7 +15,8 @@ void init_cornell_box(Scene *scene, Camera *camera) {
     Mesh *top = mesh_make_sphere((Vector) {50, -inf + 81.6f, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
     Mesh *mirror = mesh_make_sphere((Vector) {27, 16.5f, 47}, 16.5f, SPECULAR, (Vector) {.999f, .999f, .999f}, ZERO_VEC, 1.0);
     Mesh *glass = mesh_make_sphere((Vector) {73, 16.5f, 78}, 16.5f, DIELECTRIC, (Vector) {.999f, .999f, .999f}, ZERO_VEC, 1.5);
-    Mesh *light = mesh_make_sphere((Vector) {50, 81.6f - 16.5f, 81.6f}, 10.5f, DIFFUSE, ZERO_VEC, (Vector) {20, 20, 20}, 1.0);
+    Mesh *light1 = mesh_make_sphere((Vector) {20, 81.6f - 16.5f, 81.6f}, 7.5f, DIFFUSE, ZERO_VEC, (Vector) {20, 10, 10}, 1.0);
+    Mesh *light2 = mesh_make_sphere((Vector) {80, 81.6f - 16.5f, 81.6f}, 5, DIFFUSE, ZERO_VEC, (Vector) {10, 10, 20}, 1.0);
     scene_add(scene, left);
     scene_add(scene, right);
     scene_add(scene, back);
@@ -24,7 +25,8 @@ void init_cornell_box(Scene *scene, Camera *camera) {
     scene_add(scene, top);
     scene_add(scene, mirror);
     scene_add(scene, glass);
-    scene_add(scene, light);
+    scene_add(scene, light1);
+    scene_add(scene, light2);
     scene_finish(scene);
     camera->fov = 30 * M_PI / 180.f;
     Vector eye = {50, 52, 295.6f}, target = vv_add(&eye, &(Vector) {0, -0.042612f, -1}), up = {0, 1, 0};
@@ -46,13 +48,13 @@ int main() {
     Vector background = ZERO_VEC; // mimic sky color for now, should be zero for physical correctness
 
     PathTracing pt;
-    pt_init(&pt, 64, 10, &scene, &camera, background);
+    pt_init(&pt, 16, 10, &scene, &camera, background);
     pt_render(&pt, &film);
 //    SPPM sppm;
 //    sppm_init(&sppm, 100, 20, 100000, 0.1f, &scene, &camera, &background);
 //    sppm_render(&sppm, &film);
 
-    bitmap_save_exr(&film, "../../out/cornell3.exr");
+    bitmap_save_exr(&film, "../../out/cornell-nee-2lights.exr");
     bitmap_free(&film);
 
     scene_free(&scene);
