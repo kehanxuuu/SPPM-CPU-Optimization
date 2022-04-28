@@ -16,7 +16,7 @@ struct PathTracing {
 
 typedef struct PathTracing PathTracing;
 
-Vector radiance(const Scene *scene, Ray *ray, int depth, const Vector *background);
+Vector radiance(const Scene *scene, Ray *ray, int max_depth, const Vector *background);
 
 void pt_init(PathTracing *pt, int spp, int ray_max_depth, Scene *scene, Camera *camera, Vector background);
 

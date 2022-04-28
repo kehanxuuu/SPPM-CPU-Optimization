@@ -37,6 +37,7 @@ struct SPPM;
 
 #define NOT_USED(x) ((void)(x))
 #define UNIMPLEMENTED fprintf(stderr, "Unimplemented error at %s:%d\n", __FILE__, __LINE__); exit(1)
+#define UNREACHABLE fprintf(stderr, "Unreachable code at %s:%d\n", __FILE__, __LINE__); exit(1)
 
 // a few useful constants
 #undef M_PI

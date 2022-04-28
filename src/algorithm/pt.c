@@ -27,42 +27,53 @@ void pt_render(PathTracing *pt, Bitmap *film) {
 }
 
 // recursive ray tracing
-Vector radiance(const Scene *scene, Ray *ray, int depth, const Vector *background) {
-    if (depth <= 0)
-        return ZERO_VEC;
-    Intersection isect;
-    if (!scene_intersect(scene, ray, &isect)) {
-        return *background;
-    }
-//    Vector n = vv_add(&isect.n, &(Vector){1, 1, 1});
-//    vs_diveq(&n, 2);
-//    return n;
-//    return isect.hit->albedo;
-//    return vs_mul(&isect.hit->albedo, -vv_dot(&isect.wi, &isect.n));
+Vector radiance(const Scene *scene, Ray *ray, int max_depth, const Vector *background) {
+    Vector beta = {0.99f, 0.99f, 0.99f};  // throughput
+    Vector L = ZERO_VEC;  // radiance
+    bool after_NEE = false;
 
-    Vector emitted = isect.hit->emission;
+    while (true) {
+        Intersection isect;
+        if (!scene_intersect(scene, ray, &isect)) {
+            vvv_fmaeq(&L, &beta, background);  // L += beta * background
+            break;
+        }
 
-    Vector2f sample = {randf(), randf()};
-    Vector attenuation = {0.99f, 0.99f, 0.99f};
-    switch (isect.hit->material) {
-        case DIFFUSE:
-            attenuation = bsdf_sample_diffuse(&isect, sample);
+        if (!after_NEE) {
+            vvv_fmaeq(&L, &beta, &isect.hit->emission);  // L += beta * emission
+        }
+
+        if (isect.hit->material == DIFFUSE) {
+            // Next event estimation
+            Vector Ld = estimate_direct_lighting(scene, &isect);
+            vvv_fmaeq(&L, &beta, &Ld);  // L += beta * direct_lighting
+            after_NEE = true;
+        } else {
+            after_NEE = false;
+        }
+
+        Vector attenuation = bsdf_sample(&isect, (Vector2f) {randf(), randf()});
+        vv_muleq(&beta, &attenuation);
+
+        if (--max_depth <= 0 || vv_equal(&beta, &ZERO_VEC)) {
             break;
-        case SPECULAR:
-            attenuation = bsdf_sample_specular(&isect, sample);
-            break;
-        case DIELECTRIC:
-            attenuation = bsdf_sample_dielectic(&isect, sample);
-            break;
-        default:
-            UNIMPLEMENTED;
+        }
+
+        // Russian Roulette
+        float max_beta = v_cwise_max(&beta);
+        if (max_beta <= 0.25) {
+            float P_contd = fminf(max_beta, 0.99f);
+            if (randf() <= P_contd) {
+                vs_diveq(&beta, P_contd);
+            }
+            else {
+                break;
+            }
+        }
+
+        *ray = (Ray) {isect.p, isect.wo, INFINITY};
+        ray->o = ray_at(ray, EPSILON);
     }
-    if (vv_equal(&attenuation, &ZERO_VEC)) {
-        return emitted;
-    }
-    Ray ray_next_bounce = {isect.p, isect.wo, INFINITY};
-    ray_next_bounce.o = ray_at(&ray_next_bounce, EPSILON);
-    Vector recursive_color = radiance(scene, &ray_next_bounce, depth - 1, background);
-    Vector color = vv_mul(&attenuation, &recursive_color);
-    return vv_add(&emitted, &color);
+
+    return L;
 }

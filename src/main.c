@@ -25,6 +25,7 @@ void init_cornell_box(Scene *scene, Camera *camera) {
     scene_add(scene, mirror);
     scene_add(scene, glass);
     scene_add(scene, light);
+    scene_finish(scene);
     camera->fov = 30 * M_PI / 180.f;
     Vector eye = {50, 52, 295.6f}, target = vv_add(&eye, &(Vector) {0, -0.042612f, -1}), up = {0, 1, 0};
     cam_look_at(camera, eye, target, up);
@@ -45,13 +46,13 @@ int main() {
     Vector background = ZERO_VEC; // mimic sky color for now, should be zero for physical correctness
 
     PathTracing pt;
-    pt_init(&pt, 64, 5, &scene, &camera, background);
+    pt_init(&pt, 64, 10, &scene, &camera, background);
     pt_render(&pt, &film);
 //    SPPM sppm;
 //    sppm_init(&sppm, 100, 20, 100000, 0.1f, &scene, &camera, &background);
 //    sppm_render(&sppm, &film);
 
-    bitmap_save_exr(&film, "../../out/cornell2.exr");
+    bitmap_save_exr(&film, "../../out/cornell3.exr");
     bitmap_free(&film);
 
     scene_free(&scene);

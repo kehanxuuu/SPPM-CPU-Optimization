@@ -21,7 +21,7 @@ struct Intersection {
 Vector bsdf_sample(struct Intersection *isect, Vector2f sample);
 
 // Return the BSDF(wi, wo) * albedo
-Vector bsdf_eval(struct Intersection *isect);
+Vector bsdf_eval(const struct Intersection *isect);
 
 // This method provides access to the probability density that is realized by the bsdf_sample() method.
 float bsdf_pdf(struct Intersection *isect);
@@ -33,21 +33,21 @@ float bsdf_pdf(struct Intersection *isect);
 // diffuse
 Vector bsdf_sample_diffuse(struct Intersection *isect, Vector2f sample);
 
-Vector bsdf_eval_diffuse(struct Intersection *isect);
+Vector bsdf_eval_diffuse(const struct Intersection *isect);
 
 float bsdf_pdf_diffuse(struct Intersection *isect);
 
 // specular -> correspond to mirror in Nori, not conductor (so not considering fresnel), but add albedo
 Vector bsdf_sample_specular(struct Intersection *isect, Vector2f sample);
 
-Vector bsdf_eval_specular(struct Intersection *isect);
+Vector bsdf_eval_specular(const struct Intersection *isect);
 
 float bsdf_pdf_specular(struct Intersection *isect);
 
 // dielectic
 Vector bsdf_sample_dielectic(struct Intersection *isect, Vector2f sample);
 
-Vector bsdf_eval_dielectic(struct Intersection *isect);
+Vector bsdf_eval_dielectic(const struct Intersection *isect);
 
 float bsdf_pdf_dielectic(struct Intersection *isect);
 
