@@ -133,7 +133,7 @@ Vector estimate_direct_lighting(const struct Scene *scene, struct Intersection *
     }
 
     shadow_ray.o = ray_at(&shadow_ray, EPSILON);
-    shadow_ray.t_max -= 2 * EPSILON;
+    shadow_ray.t_max -= 4 * EPSILON;
     if (G <= 0 || scene_do_intersect(scene, &shadow_ray)) {
         // Shadowed by some obstacle
         return ZERO_VEC;
