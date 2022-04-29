@@ -44,7 +44,7 @@ struct Sphere {
 // Temporary initialization and free methods
 void sphere_init(struct Sphere *sphere, Vector c, float r);
 
-Ray sphere_surface_photon_sample(struct Sphere *sphere, Vector2f sample1, Vector2f sample2);
+Ray sphere_surface_photon_sample(struct Sphere *sphere, Vector2f sample1, Vector2f sample2, float *pdf_pos, float *pdf_dir);
 
 void geometry_init_sphere(struct Geometry *geometry, struct Sphere *sphere);
 

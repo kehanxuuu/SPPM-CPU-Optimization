@@ -26,6 +26,13 @@ Vector square_to_cosine_hemisphere(Vector2f sample, const Vector *ez) {
     return to_world(&d.xyz, ez);
 }
 
+Vector square_to_uniform_hemisphere(Vector2f sample, const Vector *ez) {
+    float sin_theta = sqrtf(fmaxf(0.0f, 1 - sample.x * sample.x));
+    float phi = sample.y * 2 * M_PI;
+    Vector d = {cosf(phi) * sin_theta, sinf(phi) * sin_theta, sample.x};
+    return to_world(&d, ez);
+}
+
 Vector square_to_uniform_sphere(Vector2f sample) {
     float phi = 2 * M_PI * sample.x, z = 1 - 2 * sample.y, r = sqrtf(1 - z * z);
     return (Vector) {r * cosf(phi), r * sinf(phi), z};

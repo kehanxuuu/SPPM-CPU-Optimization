@@ -113,7 +113,6 @@ void sppm_camera_pass_pixel(SPPM *sppm, int x, int y, PixelData *pd) {
     Vector attenuation = {1.0f, 1.0f, 1.0f};
     pd->cur_vp.attenuation = ZERO_VEC;
 
-    bool after_NEE = false;
     for (int i = 0; i < sppm->ray_max_depth; i++) {
         Intersection isect;
         if (!scene_intersect(sppm->scene, &ray, &isect)) {
@@ -121,25 +120,19 @@ void sppm_camera_pass_pixel(SPPM *sppm, int x, int y, PixelData *pd) {
             return;
         }
 
-        if (!after_NEE) {
-            // Emission
-            vvv_fmaeq(&pd->direct_radiance, &attenuation, &isect.hit->emission);
-        }
+        // Emission
+        vvv_fmaeq(&pd->direct_radiance, &attenuation, &isect.hit->emission);
 
         if (isect.hit->material == DIFFUSE) {
-            // NEE
+            // Compute direct lighting and break loop when hitting any diffuse surface
             Vector Ld = estimate_direct_lighting(sppm->scene, &isect);
             vvv_fmaeq(&pd->direct_radiance, &attenuation, &Ld);
-            after_NEE = true;
-        } else {
-            after_NEE = false;
+            pd->cur_vp = (VisiblePoint) {isect, attenuation};
+            return;
         }
 
         Vector cur_attenuation;
         switch (isect.hit->material) {
-            case DIFFUSE:
-                pd->cur_vp = (VisiblePoint) {isect, attenuation};
-                return;
             case SPECULAR:
                 cur_attenuation = bsdf_sample_specular(&isect);
                 break;
@@ -147,7 +140,7 @@ void sppm_camera_pass_pixel(SPPM *sppm, int x, int y, PixelData *pd) {
                 cur_attenuation = bsdf_sample_dielectic(&isect, randf());
                 break;
             default:
-                UNIMPLEMENTED;
+            UNIMPLEMENTED;
         }
 
         if (vv_equal(&cur_attenuation, &ZERO_VEC)) {
@@ -182,24 +175,25 @@ void sppm_camera_pass(SPPM *sppm, ArrayFixed2D *pixel_datas) {
 
 void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup) {
     Ray ray;
-    float pdf;
-    Mesh *emitter = sample_emitter(sppm->scene, randf(), &pdf);
+    float pdf_emitter, pdf_pos, pdf_dir;
+    Mesh *emitter = sample_emitter(sppm->scene, randf(), &pdf_emitter);
     switch (emitter->geometry->type) {
         case SPHERE:
-            ray = sphere_surface_photon_sample((Sphere *) emitter->geometry->data, (Vector2f) {randf(), randf()}, (Vector2f) {randf(), randf()});
+            ray = sphere_surface_photon_sample((Sphere *) emitter->geometry->data, (Vector2f) {randf(), randf()}, (Vector2f) {randf(), randf()},
+                                               &pdf_pos, &pdf_dir);
             break;
         default:
-            UNIMPLEMENTED;
+        UNIMPLEMENTED;
     }
 
-    Vector light_radiance = emitter->emission;
+    Vector light_radiance = vs_div(&emitter->emission, pdf_emitter * pdf_pos * pdf_dir);
 
     for (int i = 0; i < sppm->ray_max_depth; i++) {
         Intersection isect;
         if (!scene_intersect(sppm->scene, &ray, &isect)) {
             break;
         }
-        Vector light_dir = vs_mul(&ray.d, -1);
+        Vector wo = vs_mul(&ray.d, -1);
 
         if (i > 0) {  // Direct illumination is accounted for in the camera pass
             Vector3u loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &isect.p);
@@ -209,7 +203,7 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup) {
                 PixelData *pd = cur_node->content;
                 Vector dist_between = vv_sub(&pd->cur_vp.intersection.p, &isect.p);
                 if (v_norm_sqr(&dist_between) < pd->radius * pd->radius) {
-                    pd->cur_vp.intersection.wo = light_dir;
+                    pd->cur_vp.intersection.wo = wo;
                     // Only contribute energy to diffuse materials
                     if (pd->cur_vp.intersection.hit->material == DIFFUSE) {
                         Vector bsdf = bsdf_eval_diffuse(&pd->cur_vp.intersection);
@@ -261,6 +255,8 @@ void sppm_consolidate(SPPM *sppm, ArrayFixed2D *pixel_datas) {
                 }
                 pd->num_photons = new_num_photons;
                 pd->radius = new_radius;
+                pd->cur_photons = 0;
+                pd->cur_flux = ZERO_VEC;
             }
 
         }
@@ -272,6 +268,7 @@ void sppm_store(SPPM *sppm, ArrayFixed2D *pixel_datas, int num_iters, Bitmap *bi
     W = sppm->camera->W;
     H = sppm->camera->H;
     int num_photons_total = num_iters * sppm->num_photons;
+    printf("num_photons_total: %d\n", num_photons_total);
     for (int i = 0; i < H; i++) {
         for (int j = 0; j < W; j++) {
             PixelData *pd = (PixelData *) arrfixed2d_get(pixel_datas, i, j);
@@ -291,6 +288,7 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
     H = sppm->camera->H;
     ArrayFixed2D pixel_datas;
     arrfixed2d_init(&pixel_datas, H, W, sizeof(PixelData));
+    memset(pixel_datas.arr.data, 0, H * W * sizeof(PixelData));
     for (int i = 0; i < pixel_datas.height; i++) {
         for (int j = 0; j < pixel_datas.width; j++) {
             PixelData *pd = (PixelData *) arrfixed2d_get(&pixel_datas, i, j);

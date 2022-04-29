@@ -48,6 +48,7 @@ Vector radiance(const Scene *scene, Ray *ray, int max_depth, const Vector *backg
             Vector Ld = estimate_direct_lighting(scene, &isect);
             vvv_fmaeq(&L, &beta, &Ld);  // L += beta * direct_lighting
             after_NEE = true;
+            break;
         } else {
             after_NEE = false;
         }
