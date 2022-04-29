@@ -10,9 +10,11 @@ void sphere_init(struct Sphere *sphere, Vector c, float r) {
 Ray sphere_surface_photon_sample(struct Sphere *sphere, Vector2f sample1, Vector2f sample2, float *pdf_pos, float *pdf_dir) {
     Vector normal = square_to_uniform_sphere(sample1);
     Vector origin = vvs_fma(&sphere->c, &normal, sphere->r + EPSILON);
-    Vector direction = square_to_uniform_hemisphere(sample2, &normal);
     *pdf_pos = 1.0f / (2 * M_PI * sphere->r2);
-    *pdf_dir = M_1_PI * 0.5;
+//    Vector direction = square_to_uniform_hemisphere(sample2, &normal);
+//    *pdf_dir = M_1_PI * 0.5;
+    Vector direction = square_to_cosine_hemisphere(sample2, &normal);
+    *pdf_dir = vv_dot(&normal, &direction) * INV_PI;  // cos_theta / Pi
     return (Ray) {origin, direction, INFINITY};
 }
 
