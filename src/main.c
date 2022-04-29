@@ -51,7 +51,7 @@ int main() {
 //    pt_init(&pt, 16, 10, &scene, &camera, background);
 //    pt_render(&pt, &film);
     SPPM sppm;
-    sppm_init(&sppm, 8, 20, 200000, 1.0f, &scene, &camera, background);
+    sppm_init(&sppm, 8, 20, 200000, 2.0f, &scene, &camera, background);
     sppm_render(&sppm, &film);
 
     bitmap_save_exr(&film, "../../out/cornell-sppm.exr");
