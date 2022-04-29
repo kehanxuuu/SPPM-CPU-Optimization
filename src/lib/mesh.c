@@ -4,22 +4,14 @@
 void sphere_init(struct Sphere *sphere, Vector c, float r) {
     sphere->c = c;
     sphere->r = r;
-    sphere->r2 = r*r;
+    sphere->r2 = r * r;
 }
 
-Ray sphere_surface_sample(struct Sphere *sphere, Vector2f sample1, Vector2f sample2){
-    float z = sample1.x * 2 - 1;
-    float theta = sample1.y * 2 * M_PI - M_PI;
-    float x = sinf(theta) * sqrtf(sphere->r2 - z * z);
-    float y = cosf(theta) * sqrtf(sphere->r2 - z * z);
-    Vector normal = (Vector){x, y, z};
-    Vector origin = vv_add(&sphere->c, &normal);
-
-    v_normalize(&normal);
+Ray sphere_surface_photon_sample(struct Sphere *sphere, Vector2f sample1, Vector2f sample2) {
+    Vector normal = square_to_uniform_sphere(sample1);
+    Vector origin = vvs_fma(&sphere->c, &normal, sphere->r + EPSILON);
     Vector direction = square_to_cosine_hemisphere(sample2, &normal);
-    struct Ray ray;
-    ray_init(&ray, &origin, &direction, INFINITY);
-    return ray;
+    return (Ray) {origin, direction, INFINITY};
 }
 
 void geometry_init_sphere(struct Geometry *geometry, struct Sphere *sphere) {
@@ -38,9 +30,9 @@ void mesh_init(struct Mesh *mesh, struct Geometry *geometry, enum Material mater
 
 Mesh *mesh_make_sphere(Vector c, float r, enum Material material, Vector albedo, Vector emission, float ir) {
     Mesh *mesh = (Mesh *) malloc(sizeof(Mesh));
-    struct Sphere *sphere = (struct Sphere *)malloc(sizeof(struct Sphere));
+    struct Sphere *sphere = (struct Sphere *) malloc(sizeof(struct Sphere));
     sphere_init(sphere, c, r);
-    struct Geometry *geometry = (struct Geometry *)malloc(sizeof(struct Geometry));
+    struct Geometry *geometry = (struct Geometry *) malloc(sizeof(struct Geometry));
     geometry_init_sphere(geometry, sphere);
     mesh_init(mesh, geometry, material, albedo, emission, ir);
     return mesh;
@@ -58,10 +50,10 @@ void mesh_free(struct Mesh *mesh) {
 bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *isect) {
     struct Geometry *geometry = mesh->geometry;
     // determine intersect point according to geometry
-    switch(geometry->type) {
+    switch (geometry->type) {
         case SPHERE: {
             // t^2 d*d + 2t d*(O-C) + (O-C)*(O-C) - r*r = 0
-            struct Sphere *sphere = (struct Sphere *)geometry->data;
+            struct Sphere *sphere = (struct Sphere *) geometry->data;
             Vector oc = vv_sub(&ray->o, &sphere->c);
             float a = vv_dot(&ray->d, &ray->d);
             float half_b = vv_dot(&ray->d, &oc);
@@ -81,7 +73,8 @@ bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *ise
                     }
                     // Intersect at interior
                     isect->interior = true;
-                } else {
+                }
+                else {
                     // Intersect at exterior
                     isect->interior = false;
                 }
@@ -97,7 +90,7 @@ bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *ise
         }
 
         default:
-            UNIMPLEMENTED;
+        UNIMPLEMENTED;
     }
 
     return true;
@@ -106,10 +99,10 @@ bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *ise
 
 bool mesh_do_intersect(const struct Mesh *mesh, const Ray *ray) {
     struct Geometry *geometry = mesh->geometry;
-    switch(geometry->type) {
+    switch (geometry->type) {
         case SPHERE: {
             // t^2 d*d + 2t d*(O-C) + (O-C)*(O-C) - r*r = 0
-            struct Sphere *sphere = (struct Sphere *)geometry->data;
+            struct Sphere *sphere = (struct Sphere *) geometry->data;
             Vector oc = vv_sub(&ray->o, &sphere->c);
             float a = vv_dot(&ray->d, &ray->d);
             float half_b = vv_dot(&ray->d, &oc);
@@ -133,7 +126,7 @@ bool mesh_do_intersect(const struct Mesh *mesh, const Ray *ray) {
         }
 
         default:
-            UNIMPLEMENTED;
+        UNIMPLEMENTED;
     }
 
     return true;

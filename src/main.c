@@ -47,14 +47,14 @@ int main() {
 
     Vector background = ZERO_VEC; // mimic sky color for now, should be zero for physical correctness
 
-    PathTracing pt;
-    pt_init(&pt, 16, 10, &scene, &camera, background);
-    pt_render(&pt, &film);
-//    SPPM sppm;
-//    sppm_init(&sppm, 100, 20, 100000, 0.1f, &scene, &camera, &background);
-//    sppm_render(&sppm, &film);
+//    PathTracing pt;
+//    pt_init(&pt, 16, 10, &scene, &camera, background);
+//    pt_render(&pt, &film);
+    SPPM sppm;
+    sppm_init(&sppm, 1, 10, 100000, 1.0f, &scene, &camera, background);
+    sppm_render(&sppm, &film);
 
-    bitmap_save_exr(&film, "../../out/cornell-nee-2lights.exr");
+    bitmap_save_exr(&film, "../../out/cornell-nee-2lights-sppm.exr");
     bitmap_free(&film);
 
     scene_free(&scene);

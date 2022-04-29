@@ -12,8 +12,7 @@ struct Ray {
     float t_max;
 };
 
-void ray_init(struct Ray* ray, const Vector* o, const Vector* d, const float t_max);
-
-Vector ray_at(const struct Ray *r, const float t); // point on ray at length t
+// point on ray at length t
+inline Vector ray_at(const struct Ray *r, float t) { return vvs_fma(&r->o, &r->d, t); }
 
 #endif //TEAM32_RAY_H

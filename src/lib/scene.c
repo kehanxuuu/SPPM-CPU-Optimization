@@ -40,15 +40,13 @@ bool scene_intersect(const struct Scene *scene, Ray *ray, struct Intersection *i
 }
 
 bool scene_do_intersect(const struct Scene *scene, const Ray *ray) {
-    bool do_intersect = false;
     for (size_t mesh_idx = 0; mesh_idx < scene->n_meshes; ++mesh_idx) {
         struct Mesh *mesh = scene_get(scene, mesh_idx);
         if (mesh_do_intersect(mesh, ray)) {
-            do_intersect = true;
-            break;
+            return true;
         }
     }
-    return do_intersect;
+    return false;
 }
 
 void scene_finish(struct Scene *scene) {
@@ -138,11 +136,11 @@ Vector estimate_direct_lighting(const struct Scene *scene, struct Intersection *
         // Shadowed by some obstacle
         return ZERO_VEC;
     }
-    // Ld = Le * f * G / pdf
+    // Ld = Le * bsdf * G / pdf
     Vector Ld = emitter->emission;
     isect->wo = shadow_ray.d;
-    Vector f = bsdf_eval(isect);
-    vv_muleq(&Ld, &f);
+    Vector bsdf = bsdf_eval(isect);
+    vv_muleq(&Ld, &bsdf);
     vs_muleq(&Ld, G / pdf);
     return Ld;
 }

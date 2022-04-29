@@ -6,9 +6,9 @@ Vector bsdf_sample(struct Intersection *isect, Vector2f sample) {
         case DIFFUSE:
             return bsdf_sample_diffuse(isect, sample);
         case SPECULAR:
-            return bsdf_sample_specular(isect, sample);
+            return bsdf_sample_specular(isect);
         case DIELECTRIC:
-            return bsdf_sample_dielectic(isect, sample);
+            return bsdf_sample_dielectic(isect, sample.x);
         default:
         UNIMPLEMENTED;
     }
@@ -49,7 +49,7 @@ float bsdf_pdf_diffuse(struct Intersection *isect) {
     return vv_dot(&isect->wo, &isect->n) * INV_PI;
 }
 
-Vector bsdf_sample_specular(struct Intersection *isect, Vector2f sample) {
+Vector bsdf_sample_specular(struct Intersection *isect) {
     float cos_wi_N = -vv_dot(&isect->wi, &isect->n);
     Vector scaled_N = vs_mul(&isect->n, cos_wi_N);
     Vector scaled_N_2 = vs_mul(&scaled_N, 2);
@@ -65,12 +65,12 @@ float bsdf_pdf_specular(struct Intersection *isect) {
     return 0.0f;
 }
 
-Vector bsdf_sample_dielectic(struct Intersection *isect, Vector2f sample) {
+Vector bsdf_sample_dielectic(struct Intersection *isect, float sample) {
     float costheta1 = -vv_dot(&isect->wi, &isect->n);
     float n1 = isect->interior ? isect->hit->ir : 1.0;
     float n2 = isect->interior ? 1.0 : isect->hit->ir;
     float fresnel_term = fresnel(costheta1, n1, n2);
-    if (sample.x < fresnel_term) {
+    if (sample < fresnel_term) {
         // reflect
         Vector scaled_N = vs_mul(&isect->n, costheta1);
         Vector scaled_N_2 = vs_mul(&scaled_N, 2);

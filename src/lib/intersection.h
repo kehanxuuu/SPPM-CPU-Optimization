@@ -38,14 +38,14 @@ Vector bsdf_eval_diffuse(const struct Intersection *isect);
 float bsdf_pdf_diffuse(struct Intersection *isect);
 
 // specular -> correspond to mirror in Nori, not conductor (so not considering fresnel), but add albedo
-Vector bsdf_sample_specular(struct Intersection *isect, Vector2f sample);
+Vector bsdf_sample_specular(struct Intersection *isect);
 
 Vector bsdf_eval_specular(const struct Intersection *isect);
 
 float bsdf_pdf_specular(struct Intersection *isect);
 
 // dielectic
-Vector bsdf_sample_dielectic(struct Intersection *isect, Vector2f sample);
+Vector bsdf_sample_dielectic(struct Intersection *isect, float sample);
 
 Vector bsdf_eval_dielectic(const struct Intersection *isect);
 
