@@ -33,17 +33,87 @@ void init_cornell_box(Scene *scene, Camera *camera) {
     cam_look_at(camera, eye, target, up);
 }
 
-int main() {
+typedef struct {
+    int width;
+    int height;
+    int num_iterations;
+    int ray_max_depth;
+    int photon_num_per_iter;
+    float initial_radius;
+    char *output_path;
+} Params;
+
+void parse_args(int argc, char *argv[], Params *params) {
+#define parse_long(field, field_name, short_param_name, full_param_name) \
+if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) == 0) { \
+    if (i + 1 >= argc) { \
+        fprintf(stderr, "Argument `%s` is missing a value!\n", field_name); \
+        exit(1); \
+    } \
+    params->field = strtol(argv[i + 1], &endptr, 10); \
+    if (*endptr != '\0') { \
+        fprintf(stderr, "Argument `%s` is invalid!\n", field_name); \
+        exit(1); \
+    } \
+}
+#define parse_float(field, field_name, short_param_name, full_param_name) \
+if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) == 0) { \
+    if (i + 1 >= argc) { \
+        fprintf(stderr, "Argument `%s` is missing a value!\n", field_name); \
+        exit(1); \
+    } \
+    params->field = strtof(argv[i + 1], &endptr); \
+    if (*endptr != '\0') { \
+        fprintf(stderr, "Argument `%s` is invalid!\n", field_name); \
+        exit(1); \
+    } \
+}
+    for (int i = 1; i < argc; i += 2) {
+        char *endptr;
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            printf("Usage: ./main [options] output_path\n");
+            printf("Options:\n");
+            printf("    -w --width             image width\n");
+            printf("    -h --height            image height\n");
+            printf("    -i --iterations        number of iterations\n");
+            printf("    -d --depth             ray max depth\n");
+            printf("    -p --photons_per_iter  number of photons per iteration\n");
+            printf("    -r --init_radius       initial search radius\n");
+            printf("    -h --help              print this help text\n");
+            exit(0);
+        }
+        else parse_long(width, "width", "-w", "--width")
+        else parse_long(height, "height", "-h", "--height")
+        else parse_long(num_iterations, "num_iterations", "-i", "--iterations")
+        else parse_long(ray_max_depth, "ray_max_depth", "-d", "--depth")
+        else parse_long(photon_num_per_iter, "photon_num_per_iter", "-p", "--photons_per_iter")
+        else parse_float(initial_radius, "initial_radius", "-r", "--init_radius")
+        else if (argv[i][0] == '-') {
+            fprintf(stderr, "Unknown argument `%s`\n", argv[i]);
+            exit(1);
+        }
+        else {
+            params->output_path = argv[i];
+            --i;
+        }
+    }
+    printf("Parameters: width = %d, height = %d, num_iterations = %d, ray_max_depth = %d, photon_num_per_iter = %d, initial_radius = %f, output_path = \"%s\"\n",
+           params->width, params->height, params->num_iterations, params->ray_max_depth, params->photon_num_per_iter, params->initial_radius,
+           params->output_path);
+}
+
+int main(int argc, char *argv[]) {
     srand(0);
-    size_t W = 1024, H = 768;
+    Params params = {1024, 768, 8, 20, 200000, 2.0f, "out.exr"};
+    parse_args(argc, argv, &params);
 
     Scene scene;
     Camera camera;
     init_cornell_box(&scene, &camera);
-    cam_set_resolution(&camera, W, H);
+    cam_set_resolution(&camera, params.width, params.height);
 
     Bitmap film;
-    bitmap_init(&film, W, H);
+    bitmap_init(&film, params.width, params.height);
 
     Vector background = ZERO_VEC; // mimic sky color for now, should be zero for physical correctness
 
@@ -51,15 +121,15 @@ int main() {
 //    pt_init(&pt, 16, 10, &scene, &camera, background);
 //    pt_render(&pt, &film);
     SPPM sppm;
-    sppm_init(&sppm, 8, 20, 200000, 2.0f, &scene, &camera, background);
+    sppm_init(&sppm, params.num_iterations, params.ray_max_depth, params.photon_num_per_iter, params.initial_radius,
+              &scene, &camera, background);
     sppm_render(&sppm, &film);
 
-    bitmap_save_exr(&film, "../../out/cornell-sppm.exr");
+    bitmap_save_exr(&film, params.output_path);
     bitmap_free(&film);
 
     scene_free(&scene);
 
-//    sppm_free(&sppm);
     printf("Safe exit\n");
     return 0;
 }
