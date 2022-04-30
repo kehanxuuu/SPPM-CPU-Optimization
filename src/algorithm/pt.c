@@ -48,7 +48,6 @@ Vector radiance(const Scene *scene, Ray *ray, int max_depth, const Vector *backg
             Vector Ld = estimate_direct_lighting(scene, &isect);
             vvv_fmaeq(&L, &beta, &Ld);  // L += beta * direct_lighting
             after_NEE = true;
-            break;
         } else {
             after_NEE = false;
         }
@@ -61,9 +60,8 @@ Vector radiance(const Scene *scene, Ray *ray, int max_depth, const Vector *backg
         }
 
         // Russian Roulette
-        float max_beta = v_cwise_max(&beta);
-        if (max_beta <= 0.25) {
-            float P_contd = fminf(max_beta, 0.99f);
+        float P_contd = v_cwise_max(&beta);
+        if (P_contd <= 0.25) {
             if (randf() <= P_contd) {
                 vs_diveq(&beta, P_contd);
             }

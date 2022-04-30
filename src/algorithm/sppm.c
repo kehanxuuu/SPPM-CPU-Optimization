@@ -148,10 +148,9 @@ void sppm_camera_pass_pixel(SPPM *sppm, int x, int y, PixelData *pd) {
         }
 
         vv_muleq(&attenuation, &cur_attenuation);
-        float max_attenuation = v_cwise_max(&attenuation);
+        float continue_prob = v_cwise_max(&attenuation);
         // Russian Roulette
-        if (max_attenuation < 0.25) {
-            float continue_prob = fminf(1.0f, max_attenuation);
+        if (continue_prob < 0.25) {
             if (randf() > continue_prob) return;
             vs_diveq(&attenuation, continue_prob);
         }
@@ -220,10 +219,9 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup) {
 
         Vector cur_attenuation = bsdf_sample(&isect, (Vector2f) {randf(), randf()});
         vv_muleq(&light_radiance, &cur_attenuation);
-        float max_attenuation = v_cwise_max(&light_radiance);
+        float continue_prob = v_cwise_max(&light_radiance);
         // Russian Roulette
-        if (max_attenuation < 0.25) {
-            float continue_prob = fminf(1.0f, max_attenuation);
+        if (continue_prob < 0.25) {
             if (randf() > continue_prob) {
                 break;
             }
