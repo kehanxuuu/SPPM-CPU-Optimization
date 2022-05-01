@@ -84,10 +84,6 @@ void scene_finish(struct Scene *scene) {
     for (size_t i = 0; i <= scene->n_emitters; ++i) {
         scene->accum_probabilities[i] /= accum_area;
     }
-    printf("Scene accum_probabilities:\n");
-    for (int i = 0; i <= scene->n_emitters; ++i) {
-        printf("\t%d: %f\n", i, scene->accum_probabilities[i]);
-    }
 }
 
 struct Mesh *sample_emitter(const struct Scene *scene, float sample, float *pdf) {

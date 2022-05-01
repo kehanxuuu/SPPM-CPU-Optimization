@@ -49,14 +49,11 @@ Vector3u sppm_pixel_data_lookup_to_grid(PixelDataLookup *lookup, Vector *loc) {
 
 void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, Vector3u *loc_3d, PixelData *pd) {
     size_t ht_loc = sppm_pixel_data_lookup_hash(lookup, loc_3d);
-    PixelDataLookupNode *prev_node = &lookup->hash_table[ht_loc];
-    while (prev_node->next != NULL) {
-        prev_node = prev_node->next;
-    }
+    PixelDataLookupNode *head_node = &lookup->hash_table[ht_loc];
     PixelDataLookupNode *cur_node = malloc(sizeof(PixelDataLookupNode));
-    prev_node->next = cur_node;
-    cur_node->next = NULL;
+    cur_node->next = head_node->next;
     cur_node->content = pd;
+    head_node->next = cur_node;
 }
 
 void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_datas) {
@@ -80,9 +77,7 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_d
             max_radius = fmaxf(max_radius, pd->radius);
         }
     }
-//    Vector diagonal = vv_sub(&grid_max, &grid_min);
-//    max_radius = v_cwise_max(&diagonal) / 200.0f;
-    sppm_pixel_data_lookup_init(lookup, pixel_datas->arr.size, max_radius, grid_min, grid_max);
+    sppm_pixel_data_lookup_init(lookup, pixel_datas->arr.size, 2 * max_radius, grid_min, grid_max);
 
 //    build grid
     for (int i = 0; i < pixel_datas->height; i++) {
