@@ -32,8 +32,6 @@ struct Bitmap;
 typedef struct Bitmap Bitmap;
 struct Sphere;
 typedef struct Sphere Sphere;
-struct PathTracing;
-struct SPPM;
 
 #define NOT_USED(x) ((void)(x))
 #define UNIMPLEMENTED fprintf(stderr, "Unimplemented error at %s:%d\n", __FILE__, __LINE__); exit(1)

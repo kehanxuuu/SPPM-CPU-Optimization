@@ -67,26 +67,27 @@ float bsdf_pdf_specular(struct Intersection *isect) {
 
 Vector bsdf_sample_dielectic(struct Intersection *isect, float sample) {
     float costheta1 = -vv_dot(&isect->wi, &isect->n);
-    float n1 = isect->interior ? isect->hit->ir : 1.0;
-    float n2 = isect->interior ? 1.0 : isect->hit->ir;
+    float n1 = isect->interior ? isect->hit->ir : 1;
+    float n2 = isect->interior ? 1 : isect->hit->ir;
     float fresnel_term = fresnel(costheta1, n1, n2);
     if (sample < fresnel_term) {
         // reflect
-        Vector scaled_N = vs_mul(&isect->n, costheta1);
-        Vector scaled_N_2 = vs_mul(&scaled_N, 2);
-        isect->wo = vv_add(&isect->wi, &scaled_N_2);
+        isect->wo = vvs_fma(&isect->wi, &isect->n, 2 * costheta1);
     }
     else {
         // refract
         float eta = n1 / n2;
-        float sintheta2 = eta * eta * (1.0 - costheta1 * costheta1);
-        float tantheta2 = sqrtf(1.0 / (1.0 - sintheta2 * sintheta2) - 1.0);
-        Vector scaled_N = vs_mul(&isect->n, costheta1);
-        Vector perpendicular_N = vv_add(&isect->wi, &scaled_N);
-        v_normalize(&perpendicular_N);
-        vs_muleq(&perpendicular_N, tantheta2);
-        Vector wo = vv_sub(&perpendicular_N, &isect->n);
-        isect->wo = v_normalized(&wo);
+        float sintheta2 = eta * eta * (1 - costheta1 * costheta1);
+        Vector tangent = vvs_fma(&isect->wi, &isect->n, costheta1);  // tangent = wi + (-wi).dot(n) n
+        if (vv_equal(&tangent, &ZERO_VEC)) {  // gazing angle
+            isect->wo = isect->wi;
+        }
+        else {
+            float costheta2 = sqrtf(1 - sintheta2 * sintheta2);
+            v_normalize(&tangent);
+            vs_muleq(&tangent, sintheta2);
+            isect->wo = vvs_fma(&tangent, &isect->n, -costheta2);  // wo = -n costheta2 + tangent sintheta2
+        }
     }
     return isect->hit->albedo;
 }

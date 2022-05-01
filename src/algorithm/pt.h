@@ -9,7 +9,6 @@ struct PathTracing {
     int spp;
     int ray_max_depth;
     Vector background;
-//    struct Emitters emitters;
     Scene *scene;
     Camera *camera;
 };
