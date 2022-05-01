@@ -3,6 +3,7 @@
 #include "bitmap.h"
 #include "sppm.h"
 #include "pt.h"
+#include "normal.h"
 #include <time.h>
 
 void init_cornell_box(Scene *scene, Camera *camera) {
@@ -11,7 +12,7 @@ void init_cornell_box(Scene *scene, Camera *camera) {
     Mesh *left = mesh_make_sphere((Vector) {inf + 1, 40.8f, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .25f, .25f}, ZERO_VEC, 1.0);
     Mesh *right = mesh_make_sphere((Vector) {-inf + 99, 40.8f, 81.6f}, inf, DIFFUSE, (Vector) {.25f, .25f, .75f}, ZERO_VEC, 1.0);
     Mesh *back = mesh_make_sphere((Vector) {50, 40.8f, inf}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
-    Mesh *front = mesh_make_sphere((Vector) {50, 40.8f, -inf + 170}, inf, DIFFUSE, ZERO_VEC, ZERO_VEC, 1.0);
+//    Mesh *front = mesh_make_sphere((Vector) {50, 40.8f, -inf + 170}, inf, DIFFUSE, ZERO_VEC, ZERO_VEC, 1.0);
     Mesh *bottom = mesh_make_sphere((Vector) {50, inf, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
     Mesh *top = mesh_make_sphere((Vector) {50, -inf + 81.6f, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
     Mesh *mirror = mesh_make_sphere((Vector) {27, 16.5f, 47}, 16.5f, SPECULAR, (Vector) {.999f, .999f, .999f}, ZERO_VEC, 1.0);
@@ -41,6 +42,7 @@ typedef struct {
     int ray_max_depth;
     int photon_num_per_iter;
     float initial_radius;
+    char *algorithm;
     char *output_path;
 } Params;
 
@@ -69,18 +71,27 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
         exit(1); \
     } \
 }
+#define parse_str(field, field_name, short_param_name, full_param_name) \
+if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) == 0) { \
+    if (i + 1 >= argc) { \
+        fprintf(stderr, "Argument `%s` is missing a value!\n", field_name); \
+        exit(1); \
+    } \
+    params->field = argv[i + 1]; \
+}
     for (int i = 1; i < argc; i += 2) {
         char *endptr;
-        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+        if (strcmp(argv[i], "--help") == 0) {
             printf("Usage: ./main [options] output_path\n");
             printf("Options:\n");
             printf("    -w --width             image width\n");
             printf("    -h --height            image height\n");
-            printf("    -i --iterations        number of iterations\n");
+            printf("    -i --iterations        number of iterations (sample per pixel for path tracing)\n");
             printf("    -d --depth             ray max depth\n");
             printf("    -p --photons_per_iter  number of photons per iteration\n");
             printf("    -r --init_radius       initial search radius\n");
-            printf("    -h --help              print this help text\n");
+            printf("    -a --algorithm         integrator: \"pt\" for path tracing, \"sppm\" for photon mapping, or \"normal\" for quick visualization\n");
+            printf("    --help                 print this help text\n");
             exit(0);
         }
         else parse_long(width, "width", "-w", "--width")
@@ -89,6 +100,7 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
         else parse_long(ray_max_depth, "ray_max_depth", "-d", "--depth")
         else parse_long(photon_num_per_iter, "photon_num_per_iter", "-p", "--photons_per_iter")
         else parse_float(initial_radius, "initial_radius", "-r", "--init_radius")
+        else parse_str(algorithm, "algorithm", "-a", "--algorithm")
         else if (argv[i][0] == '-') {
             fprintf(stderr, "Unknown argument `%s`\n", argv[i]);
             exit(1);
@@ -98,9 +110,9 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
             --i;
         }
     }
-    printf("Parameters: width = %d, height = %d, num_iterations = %d, ray_max_depth = %d, photon_num_per_iter = %d, initial_radius = %f, output_path = \"%s\"\n",
+    printf("Parameters: width = %d, height = %d, num_iterations = %d, ray_max_depth = %d, photon_num_per_iter = %d, initial_radius = %f, algorithm = %s, output_path = \"%s\"\n",
            params->width, params->height, params->num_iterations, params->ray_max_depth, params->photon_num_per_iter, params->initial_radius,
-           params->output_path);
+           params->algorithm, params->output_path);
 #undef parse_long
 #undef parse_float
 }
@@ -108,7 +120,7 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
 int main(int argc, char *argv[]) {
     clock_t tic = clock();
     srand(0);
-    Params params = {512, 384, 6, 5, 200000, 2.0f, "out.exr"};
+    Params params = {512, 384, 6, 5, 200000, 2.0f, "sppm", "out.exr"};
     parse_args(argc, argv, &params);
 
     Scene scene;
@@ -119,15 +131,28 @@ int main(int argc, char *argv[]) {
     Bitmap film;
     bitmap_init(&film, params.width, params.height);
 
-    Vector background = ZERO_VEC; // mimic sky color for now, should be zero for physical correctness
+    Vector background = ZERO_VEC;
 
-//    PathTracing pt;
-//    pt_init(&pt, 16, 10, &scene, &camera, background);
-//    pt_render(&pt, &film);
-    SPPM sppm;
-    sppm_init(&sppm, params.num_iterations, params.ray_max_depth, params.photon_num_per_iter, params.initial_radius,
-              &scene, &camera, background);
-    sppm_render(&sppm, &film);
+    if (strcmp(params.algorithm, "pt") == 0) {
+        PathTracing pt;
+        pt_init(&pt, params.num_iterations, params.ray_max_depth, &scene, &camera, background);
+        pt_render(&pt, &film);
+    }
+    else if (strcmp(params.algorithm, "sppm") == 0) {
+        SPPM sppm;
+        sppm_init(&sppm, params.num_iterations, params.ray_max_depth, params.photon_num_per_iter, params.initial_radius,
+                  &scene, &camera, background);
+        sppm_render(&sppm, &film);
+    }
+    else if (strcmp(params.algorithm, "normal") == 0) {
+        NormalVisualizer nv;
+        nv_init(&nv, &scene, &camera, background);
+        nv_render(&nv, &film);
+    }
+    else {
+        fprintf(stderr, "Invalid algorithm `%s`\n", params.algorithm);
+        exit(1);
+    }
 
     bitmap_save_exr(&film, params.output_path);
     bitmap_free(&film);

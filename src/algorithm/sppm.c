@@ -41,9 +41,9 @@ size_t sppm_pixel_data_lookup_hash(PixelDataLookup *lookup, Vector3u *loc) {
 
 Vector3u sppm_pixel_data_lookup_to_grid(PixelDataLookup *lookup, Vector *loc) {
     Vector from_min = vv_sub(loc, &lookup->grid_min);
-    size_t loc_x = (size_t) (from_min.x / lookup->grid_res);
-    size_t loc_y = (size_t) (from_min.y / lookup->grid_res);
-    size_t loc_z = (size_t) (from_min.z / lookup->grid_res);
+    size_t loc_x = (size_t) fmaxf(0, from_min.x / lookup->grid_res);
+    size_t loc_y = (size_t) fmaxf(0, from_min.y / lookup->grid_res);
+    size_t loc_z = (size_t) fmaxf(0, from_min.z / lookup->grid_res);
     return (Vector3u) {loc_x, loc_y, loc_z};
 }
 

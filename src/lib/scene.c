@@ -22,6 +22,7 @@ void scene_free(struct Scene *scene) {
     for (size_t i = 0; i < scene->n_meshes; ++i) {
         struct Mesh *mesh = scene_get(scene, i);
         mesh_free(mesh);
+        free(mesh);
     }
     arr_free(&scene->meshes);
     free(scene->emitters);
