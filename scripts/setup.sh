@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
 
+sudo apt remove --purge --auto-remove cmake -y
+sudo apt update && \
+sudo apt install -y software-properties-common lsb-release && \
+sudo apt clean all
+wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+sudo apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"
+sudo apt update
+sudo apt install kitware-archive-keyring
+sudo rm /etc/apt/trusted.gpg.d/kitware.gpg
+sudo apt update
+
 sudo apt-get -y install \
     gcc \
     g++ \
@@ -16,7 +27,7 @@ sudo apt-get -y install \
 
 
 #* Clear pagecache, dentries, and inodes.
-echo "echo 3 > /proc/sys/vm/drop_caches"
+echo 3 | sudo tee /proc/sys/vm/drop_caches
 
 #* Disable hyperthreads.
 echo off | sudo tee /sys/devices/system/cpu/smt/control
@@ -52,5 +63,8 @@ for core in $cores; do
 done
 
 # Build 
-cmake -DCMAKE_BUILD_TYPE=profile
+cd src/ext
+git clone git@github.com:mitsuba-renderer/openexr.git
+cd ../..
+cmake . -DCMAKE_BUILD_TYPE=profile
 make
