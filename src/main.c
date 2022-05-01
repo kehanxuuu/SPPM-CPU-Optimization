@@ -3,6 +3,7 @@
 #include "bitmap.h"
 #include "sppm.h"
 #include "pt.h"
+#include <time.h>
 
 void init_cornell_box(Scene *scene, Camera *camera) {
     const float inf = 1e4f;
@@ -100,11 +101,14 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
     printf("Parameters: width = %d, height = %d, num_iterations = %d, ray_max_depth = %d, photon_num_per_iter = %d, initial_radius = %f, output_path = \"%s\"\n",
            params->width, params->height, params->num_iterations, params->ray_max_depth, params->photon_num_per_iter, params->initial_radius,
            params->output_path);
+#undef parse_long
+#undef parse_float
 }
 
 int main(int argc, char *argv[]) {
+    clock_t tic = clock();
     srand(0);
-    Params params = {1024, 768, 8, 20, 200000, 2.0f, "out.exr"};
+    Params params = {512, 384, 6, 5, 200000, 2.0f, "out.exr"};
     parse_args(argc, argv, &params);
 
     Scene scene;
@@ -130,6 +134,7 @@ int main(int argc, char *argv[]) {
 
     scene_free(&scene);
 
-    printf("Safe exit\n");
+    float elapse = (float) (clock() - tic) / CLOCKS_PER_SEC;
+    printf("Safe exit in %f seconds\n", elapse);
     return 0;
 }

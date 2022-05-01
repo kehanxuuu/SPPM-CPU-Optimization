@@ -86,7 +86,7 @@ void scene_finish(struct Scene *scene) {
     }
     printf("Scene accum_probabilities:\n");
     for (int i = 0; i <= scene->n_emitters; ++i) {
-        printf("%d: %f\n", i, scene->accum_probabilities[i]);
+        printf("\t%d: %f\n", i, scene->accum_probabilities[i]);
     }
 }
 
@@ -109,6 +109,7 @@ Vector estimate_direct_lighting(const struct Scene *scene, struct Intersection *
     switch (emitter->geometry->type) {
         case SPHERE: {
             Sphere *s = (Sphere *) emitter->geometry->data;
+            // Sample the cone from the intersection point to the sphere silhouette
             Vector to_light = vv_sub(&s->c, &isect->p);
             vvs_fmaeq(&to_light, &isect->n, EPSILON);
             float dist = v_norm(&to_light);

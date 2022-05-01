@@ -1,4 +1,5 @@
 #include "sppm.h"
+#include <time.h>
 
 void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num_iter, float initial_radius, Scene *scene, Camera *camera,
                Vector background) {
@@ -79,6 +80,8 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_d
             max_radius = fmaxf(max_radius, pd->radius);
         }
     }
+//    Vector diagonal = vv_sub(&grid_max, &grid_min);
+//    max_radius = v_cwise_max(&diagonal) / 200.0f;
     sppm_pixel_data_lookup_init(lookup, pixel_datas->arr.size, max_radius, grid_min, grid_max);
 
 //    build grid
@@ -296,16 +299,28 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
 
 //    Loop
     for (int i = 0; i < sppm->num_iterations; i++) {
+        clock_t start;
+        float elapse;
+#define tic start = clock()
+#define toc elapse = (float) (clock() - start) / CLOCKS_PER_SEC; fprintf(stderr, "\t%f sec\n", elapse)
+
         fprintf(stderr, "Current %d out of %d\n", i, sppm->num_iterations);
-        sppm_camera_pass(sppm, &pixel_datas);
-        fprintf(stderr, "\tLookup\n");
+        fprintf(stderr, "\tCamera pass ");
+        tic, sppm_camera_pass(sppm, &pixel_datas), toc;
+
+        fprintf(stderr, "\tBuild lookup");
         struct PixelDataLookup lookup;
-        sppm_build_pixel_data_lookup(&lookup, &pixel_datas);
-        fprintf(stderr, "\tPhoton\n");
-        sppm_photon_pass(sppm, &lookup);
-        fprintf(stderr, "\tconsolidate\n");
-        sppm_consolidate(sppm, &pixel_datas);
+        tic, sppm_build_pixel_data_lookup(&lookup, &pixel_datas), toc;
+
+        fprintf(stderr, "\tPhoton pass ");
+        tic, sppm_photon_pass(sppm, &lookup), toc;
+
+        fprintf(stderr, "\tConsolidate ");
+        tic, sppm_consolidate(sppm, &pixel_datas), toc;
+
         sppm_pixel_data_lookup_free(&lookup);
+#undef tic
+#undef toc
     }
     sppm_store(sppm, &pixel_datas, sppm->num_iterations, bitmap);
 
