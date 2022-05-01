@@ -20,6 +20,5 @@ bin/
 *.so
 main
 /build
-
-ext
+ext/
 CMakeLists.txt
