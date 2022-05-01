@@ -1,4 +1,5 @@
 import subprocess
+import os
 import sys
 import csv
 import argparse
@@ -19,6 +20,7 @@ def run_iter():
     num_iter = 1
     for _ in range(10):
         num_iter *= 2
+        os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
         out = subprocess.getoutput(' '.join(cmd + ['--iterations', str(num_iter)]))
         num_cycles = get_cycles(out)
 
@@ -36,6 +38,7 @@ def run_photon():
     num_potons = int(12.5e3/2)
     for _ in range(7):
         num_potons *= 2
+        os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
         out = subprocess.getoutput(' '.join(cmd + ['--photons_per_iter', str(num_potons)]))
         num_cycles = get_cycles(out)
 
@@ -55,6 +58,7 @@ def run_size():
     for _ in range(6):
         h *= 2
         w *= 2
+        os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
         out = subprocess.getoutput(' '.join(cmd + ['--height', str(h), '--width', str(w)]))
         num_cycles = get_cycles(out)
 

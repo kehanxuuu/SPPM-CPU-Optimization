@@ -64,7 +64,7 @@ done
 
 # Build 
 cd src/ext
-git clone git@github.com:mitsuba-renderer/openexr.git
+git clone https://github.com/mitsuba-renderer/openexr.git
 cd ../..
 cmake . -DCMAKE_BUILD_TYPE=profile
 make
