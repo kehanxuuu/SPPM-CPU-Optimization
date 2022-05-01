@@ -19,6 +19,7 @@ python*
 bin/
 *.so
 main
+/build
 
 ext
 CMakeLists.txt

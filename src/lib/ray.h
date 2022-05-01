@@ -13,6 +13,6 @@ struct Ray {
 };
 
 // point on ray at length t
-inline Vector ray_at(const struct Ray *r, float t) { return vvs_fma(&r->o, &r->d, t); }
+Vector ray_at(const struct Ray *r, float t);
 
 #endif //TEAM32_RAY_H
