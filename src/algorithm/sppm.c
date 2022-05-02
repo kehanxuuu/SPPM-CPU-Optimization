@@ -13,23 +13,29 @@ void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num
     sppm->camera = camera;
 }
 
-void sppm_pixel_data_lookup_init(PixelDataLookup *lookup, size_t init_size, float grid_size, Vector grid_min, Vector grid_max) {
+void sppm_pixel_data_lookup_init(PixelDataLookup *lookup, size_t init_size) {
     lookup->fixed_size = init_size;
-//    NULL the next pointers
-    lookup->hash_table = calloc(sizeof(PixelDataLookupNode), init_size);
+    lookup->hash_table = malloc(sizeof(Array) * init_size);
+    for(int i = 0; i < init_size; i++){
+        arr_init(&lookup->hash_table[i], 20, 0, sizeof(PixelData*));
+    }
+}
+
+void sppm_pixel_data_loopup_assign(PixelDataLookup *lookup, float grid_size, Vector grid_min, Vector grid_max){
     lookup->grid_res = grid_size;
     lookup->grid_min = grid_min;
     lookup->grid_max = grid_max;
 }
 
+void sppm_pixel_data_loopup_clear(PixelDataLookup *lookup) {
+    for (int i = 0; i < lookup->fixed_size; i++) {
+        lookup->hash_table[i].size = 0;
+    }
+}
+
 void sppm_pixel_data_lookup_free(PixelDataLookup *lookup) {
     for (int i = 0; i < lookup->fixed_size; i++) {
-        PixelDataLookupNode *cur_node = lookup->hash_table[i].next;
-        while (cur_node != NULL) {
-            PixelDataLookupNode *prev_node = cur_node;
-            cur_node = prev_node->next;
-            free(prev_node);
-        }
+        arr_free(&lookup->hash_table[i]);
     }
     free(lookup->hash_table);
 }
@@ -49,11 +55,7 @@ Vector3u sppm_pixel_data_lookup_to_grid(PixelDataLookup *lookup, Vector *loc) {
 
 void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, Vector3u *loc_3d, PixelData *pd) {
     size_t ht_loc = sppm_pixel_data_lookup_hash(lookup, loc_3d);
-    PixelDataLookupNode *head_node = &lookup->hash_table[ht_loc];
-    PixelDataLookupNode *cur_node = malloc(sizeof(PixelDataLookupNode));
-    cur_node->next = head_node->next;
-    cur_node->content = pd;
-    head_node->next = cur_node;
+    arr_add(&lookup->hash_table[ht_loc], &pd);
 }
 
 void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_datas) {
@@ -77,7 +79,8 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_d
             max_radius = fmaxf(max_radius, pd->radius);
         }
     }
-    sppm_pixel_data_lookup_init(lookup, pixel_datas->arr.size, 2 * max_radius, grid_min, grid_max);
+    sppm_pixel_data_loopup_clear(lookup);
+    sppm_pixel_data_loopup_assign(lookup, 2 * max_radius, grid_min, grid_max);
 
 //    build grid
     for (int i = 0; i < pixel_datas->height; i++) {
@@ -138,7 +141,7 @@ void sppm_camera_pass_pixel(SPPM *sppm, int x, int y, PixelData *pd) {
                 cur_attenuation = bsdf_sample_dielectic(&isect, randf());
                 break;
             default:
-            UNIMPLEMENTED;
+                UNIMPLEMENTED;
         }
 
         if (vv_equal(&cur_attenuation, &ZERO_VEC)) {
@@ -180,7 +183,7 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup) {
                                                &pdf_pos, &pdf_dir);
             break;
         default:
-        UNIMPLEMENTED;
+            UNIMPLEMENTED;
     }
 
     Vector light_radiance = vs_div(&emitter->emission, pdf_emitter * pdf_pos * pdf_dir);
@@ -195,9 +198,8 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup) {
         if (i > 0) {  // Direct illumination is accounted for in the camera pass
             Vector3u loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &isect.p);
             size_t ht_loc = sppm_pixel_data_lookup_hash(lookup, &loc_3d);
-            PixelDataLookupNode *cur_node = lookup->hash_table[ht_loc].next;
-            while (cur_node != NULL) {
-                PixelData *pd = cur_node->content;
+            for(int cur_arr_ind = 0; cur_arr_ind < lookup->hash_table[ht_loc].size; cur_arr_ind++) {
+                PixelData *pd = *(PixelData **)arr_get(&lookup->hash_table[ht_loc], cur_arr_ind);
                 Vector dist_between = vv_sub(&pd->cur_vp.intersection.p, &isect.p);
                 if (v_norm_sqr(&dist_between) < pd->radius * pd->radius) {
                     pd->cur_vp.intersection.wo = wo;
@@ -211,7 +213,6 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup) {
                         UNREACHABLE;
                     }
                 }
-                cur_node = cur_node->next;
             }
         }
 
@@ -293,6 +294,8 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
     }
 
 //    Loop
+    struct PixelDataLookup lookup;
+    sppm_pixel_data_lookup_init(&lookup, pixel_datas.arr.size);
     for (int i = 0; i < sppm->num_iterations; i++) {
         clock_t start;
         float elapse;
@@ -304,7 +307,6 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
         tic, sppm_camera_pass(sppm, &pixel_datas), toc;
 
         fprintf(stderr, "\tBuild lookup");
-        struct PixelDataLookup lookup;
         tic, sppm_build_pixel_data_lookup(&lookup, &pixel_datas), toc;
 
         fprintf(stderr, "\tPhoton pass ");
@@ -313,11 +315,11 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
         fprintf(stderr, "\tConsolidate ");
         tic, sppm_consolidate(sppm, &pixel_datas), toc;
 
-        sppm_pixel_data_lookup_free(&lookup);
 #undef tic
 #undef toc
     }
     sppm_store(sppm, &pixel_datas, sppm->num_iterations, bitmap);
 
+    sppm_pixel_data_lookup_free(&lookup);
     arrfixed2d_free(&pixel_datas);
 }

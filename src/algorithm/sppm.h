@@ -28,22 +28,12 @@ struct PixelData {
     struct VisiblePoint cur_vp;
 };
 
-struct PixelDataLookupNode {
-    struct PixelData *content;
-    struct PixelDataLookupNode *next;
-};
-
 struct PixelDataLookup {
     size_t fixed_size;
-    struct PixelDataLookupNode *hash_table;
+    Array *hash_table;
     float grid_res;
     Vector3f grid_min;
     Vector3f grid_max;
-};
-
-struct Emitters {
-    Array emitters;
-    Array prefix_intensity;
 };
 
 struct SPPM {
@@ -59,14 +49,17 @@ struct SPPM {
 
 typedef struct VisiblePoint VisiblePoint;
 typedef struct PixelData PixelData;
-typedef struct PixelDataLookupNode PixelDataLookupNode;
 typedef struct PixelDataLookup PixelDataLookup;
 typedef struct SPPM SPPM;
 
 void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num_iter, float initial_radius, Scene *scene, Camera *camera,
                Vector background);
 
-void sppm_pixel_data_lookup_init(PixelDataLookup *lookup, size_t init_size, float grid_size, Vector grid_min, Vector grid_max);
+void sppm_pixel_data_lookup_init(PixelDataLookup *lookup, size_t init_size);
+
+void sppm_pixel_data_loopup_assign(PixelDataLookup *lookup, float grid_size, Vector grid_min, Vector grid_max);
+
+void sppm_pixel_data_loopup_clear(PixelDataLookup *lookup);
 
 void sppm_pixel_data_lookup_free(PixelDataLookup *lookup);
 
