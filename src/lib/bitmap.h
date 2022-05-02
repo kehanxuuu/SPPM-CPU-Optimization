@@ -25,6 +25,8 @@ void bitmap_free(struct Bitmap *bitmap);
 
 void bitmap_save_exr(struct Bitmap *bitmap, char *filename);
 
+double bitmap_checksum(struct Bitmap *bitmap);
+
 #endif
 
 #endif //TEAM32_BITMAP_H

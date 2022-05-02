@@ -155,6 +155,7 @@ int main(int argc, char *argv[]) {
     }
 
     bitmap_save_exr(&film, params.output_path);
+    printf("Checksum: %.10f\n", bitmap_checksum(&film));
     bitmap_free(&film);
 
     scene_free(&scene);
