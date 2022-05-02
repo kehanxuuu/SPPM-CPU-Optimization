@@ -18,9 +18,9 @@ Vector *bitmap_get(struct Bitmap *bitmap, size_t px, size_t py) {
 
 double bitmap_checksum(struct Bitmap *bitmap) {
     double sum = 0;
-    for(int i = 0; i < bitmap->W; i++){
-        for(int j = 0; j < bitmap->H; j++){
-            size_t index = i + j * bitmap->W;
+    for(int i = 0; i < bitmap->H; i++){
+        for(int j = 0; j < bitmap->W; j++){
+            size_t index = j + i * bitmap->W;
             Vector* cur_vector = arr_get(&bitmap->pixels, index);
             sum += v_norm(cur_vector);
         }
