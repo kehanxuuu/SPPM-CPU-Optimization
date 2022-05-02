@@ -18,7 +18,7 @@ def get_cycles(out):
 def run_iter():
     results = []
     num_iter = 1
-    for _ in range(10):
+    for _ in range(6):
         num_iter *= 2
         os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
         out = subprocess.getoutput(' '.join(cmd + ['--iterations', str(num_iter)]))
@@ -53,8 +53,8 @@ def run_photon():
 
 def run_size():
     results = []
-    h = 32
-    w = 24
+    h = 24
+    w = 32
     for _ in range(6):
         h *= 2
         w *= 2
