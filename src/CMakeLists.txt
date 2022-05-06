@@ -34,3 +34,11 @@ else()
     target_compile_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math -march=native>)
     target_link_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math -march=native>)
 endif()
+
+if(DEFINED _SPPM_RADIUS_MULT)
+    target_compile_definitions(rt_alg PRIVATE _SPPM_RADIUS_MULT=${_SPPM_RADIUS_MULT})
+endif()
+if(DEFINED _SPPM_RADIUS_TYPE)
+    target_compile_definitions(rt_alg PRIVATE _SPPM_RADIUS_TYPE=${_SPPM_RADIUS_TYPE})
+endif()
+

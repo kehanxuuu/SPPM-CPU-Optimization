@@ -10,6 +10,13 @@
 #include "arrayfixed2d.h"
 #include "bitmap.h"
 
+#ifndef _SPPM_RADIUS_MULT
+    #define _SPPM_RADIUS_MULT 2.0
+#endif
+
+#ifndef _SPPM_RADIUS_TYPE
+    #define _SPPM_RADIUS_TYPE 0
+#endif
 
 struct VisiblePoint {
     Intersection intersection;

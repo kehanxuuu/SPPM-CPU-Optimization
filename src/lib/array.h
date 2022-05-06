@@ -3,7 +3,9 @@
 
 #include <stddef.h>
 
-#define _ARRAY_INCRE_MULT 2
+#ifndef _ARRAY_INCRE_MULT
+    #define _ARRAY_INCRE_MULT 2
+#endif
 
 typedef struct {
     size_t size;

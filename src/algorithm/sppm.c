@@ -62,7 +62,11 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_d
 //    grid data computation
     Vector grid_min = (Vector) {FLT_MAX, FLT_MAX, FLT_MAX};
     Vector grid_max = (Vector) {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+#if _SPPM_RADIUS_TYPE == 0
     float max_radius = -FLT_MAX;
+#elif _SPPM_RADIUS_TYPE == 1
+    float avg_radius = 0;
+#endif
     for (int i = 0; i < pixel_datas->height; i++) {
         for (int j = 0; j < pixel_datas->width; j++) {
             PixelData *pd = (PixelData *) arrfixed2d_get(pixel_datas, i, j);
@@ -76,11 +80,20 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_d
             Vector pos_max = vv_add(pos, &radius);
             grid_min = vv_min(&grid_min, &pos_min);
             grid_max = vv_max(&grid_max, &pos_max);
+#if _SPPM_RADIUS_TYPE == 0
             max_radius = fmaxf(max_radius, pd->radius);
+#elif _SPPM_RADIUS_TYPE == 1
+            avg_radius += pd->radius;
+#endif
         }
     }
     sppm_pixel_data_loopup_clear(lookup);
-    sppm_pixel_data_loopup_assign(lookup, 2 * max_radius, grid_min, grid_max);
+#if _SPPM_RADIUS_TYPE == 0
+    sppm_pixel_data_loopup_assign(lookup, _SPPM_RADIUS_MULT * max_radius, grid_min, grid_max);
+#elif _SPPM_RADIUS_TYPE == 1
+    sppm_pixel_data_loopup_assign(lookup, _SPPM_RADIUS_MULT * avg_radius, grid_min, grid_max);
+#endif
+
 
 //    build grid
     for (int i = 0; i < pixel_datas->height; i++) {
@@ -279,6 +292,7 @@ void sppm_store(SPPM *sppm, ArrayFixed2D *pixel_datas, int num_iters, Bitmap *bi
 }
 
 void sppm_render(SPPM *sppm, Bitmap *bitmap) {
+    fprintf(stderr, "_SPPM_RADIUS_MULT = %f; _SPPM_RADIUS_TYPE = %d\n", _SPPM_RADIUS_MULT, _SPPM_RADIUS_TYPE);
 //    initialise data
     size_t W, H;
     W = sppm->camera->W;
@@ -312,7 +326,7 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
         fprintf(stderr, "\tPhoton pass ");
         tic, sppm_photon_pass(sppm, &lookup), toc;
 
-        fprintf(stderr, "\tConsolidate ");
+        fprintf(stderr, "\tConsolida1te ");
         tic, sppm_consolidate(sppm, &pixel_datas), toc;
 
 #undef tic
