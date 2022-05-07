@@ -1,11 +1,14 @@
 add_subdirectory(ext)
-
 include_directories(${OPENEXR_INCLUDE_DIRS})
+
+# TODO: separate CMakeLists into own directory
+
 aux_source_directory(lib LIB_SOURCES)
-aux_source_directory(algorithm ALG_SOURCES)
 add_library(rt_lib ${LIB_SOURCES})
-add_library(rt_alg ${ALG_SOURCES})
 target_link_libraries(rt_lib IlmImf)
+
+aux_source_directory(algorithm ALG_SOURCES)
+add_library(rt_alg ${ALG_SOURCES})
 target_link_libraries(rt_alg rt_lib)
 
 include_directories(lib)
