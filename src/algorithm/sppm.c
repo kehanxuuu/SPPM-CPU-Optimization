@@ -91,6 +91,7 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_d
 #if _SPPM_RADIUS_TYPE == 0
     sppm_pixel_data_loopup_assign(lookup, _SPPM_RADIUS_MULT * max_radius, grid_min, grid_max);
 #elif _SPPM_RADIUS_TYPE == 1
+    avg_radius /= (float) (pixel_datas->height * pixel_datas->width);
     sppm_pixel_data_loopup_assign(lookup, _SPPM_RADIUS_MULT * avg_radius, grid_min, grid_max);
 #endif
 
