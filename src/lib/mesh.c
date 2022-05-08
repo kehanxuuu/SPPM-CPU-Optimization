@@ -94,7 +94,7 @@ bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *ise
         }
 
         default:
-        UNIMPLEMENTED;
+            UNIMPLEMENTED;
     }
 
     return true;
@@ -130,7 +130,7 @@ bool mesh_do_intersect(const struct Mesh *mesh, const Ray *ray) {
         }
 
         default:
-        UNIMPLEMENTED;
+            UNIMPLEMENTED;
     }
 
     return true;

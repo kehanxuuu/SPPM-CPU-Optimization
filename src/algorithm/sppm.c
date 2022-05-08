@@ -15,19 +15,20 @@ void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num
 
 void sppm_pixel_data_lookup_init(PixelDataLookup *lookup, size_t init_size) {
     lookup->fixed_size = init_size;
-    lookup->hash_table = malloc(sizeof(Array) * init_size);
+    lookup->hash_table = malloc(sizeof(PointerArray) * init_size);
     for(int i = 0; i < init_size; i++){
-        arr_init(&lookup->hash_table[i], 20, 0, sizeof(PixelData*));
+        // arr_init(&lookup->hash_table[i], 20, 0, sizeof(PixelData*));
+        arr_init_pointer(&lookup->hash_table[i], 20, 0);
     }
 }
 
-void sppm_pixel_data_loopup_assign(PixelDataLookup *lookup, float grid_size, Vector grid_min, Vector grid_max){
+void sppm_pixel_data_lookup_assign(PixelDataLookup *lookup, float grid_size, Vector grid_min, Vector grid_max){
     lookup->grid_res = grid_size;
     lookup->grid_min = grid_min;
     lookup->grid_max = grid_max;
 }
 
-void sppm_pixel_data_loopup_clear(PixelDataLookup *lookup) {
+void sppm_pixel_data_lookup_clear(PixelDataLookup *lookup) {
     for (int i = 0; i < lookup->fixed_size; i++) {
         lookup->hash_table[i].size = 0;
     }
@@ -35,7 +36,7 @@ void sppm_pixel_data_loopup_clear(PixelDataLookup *lookup) {
 
 void sppm_pixel_data_lookup_free(PixelDataLookup *lookup) {
     for (int i = 0; i < lookup->fixed_size; i++) {
-        arr_free(&lookup->hash_table[i]);
+        arr_free_pointer(&lookup->hash_table[i]);
     }
     free(lookup->hash_table);
 }
@@ -55,7 +56,7 @@ Vector3u sppm_pixel_data_lookup_to_grid(PixelDataLookup *lookup, Vector *loc) {
 
 void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, Vector3u *loc_3d, PixelData *pd) {
     size_t ht_loc = sppm_pixel_data_lookup_hash(lookup, loc_3d);
-    arr_add(&lookup->hash_table[ht_loc], &pd);
+    arr_add_pointer(&lookup->hash_table[ht_loc], &pd);
 }
 
 void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_datas) {
@@ -87,12 +88,12 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_d
 #endif
         }
     }
-    sppm_pixel_data_loopup_clear(lookup);
+    sppm_pixel_data_lookup_clear(lookup);
 #if _SPPM_RADIUS_TYPE == 0
-    sppm_pixel_data_loopup_assign(lookup, _SPPM_RADIUS_MULT * max_radius, grid_min, grid_max);
+    sppm_pixel_data_lookup_assign(lookup, _SPPM_RADIUS_MULT * max_radius, grid_min, grid_max);
 #elif _SPPM_RADIUS_TYPE == 1
     avg_radius /= (float) (pixel_datas->height * pixel_datas->width);
-    sppm_pixel_data_loopup_assign(lookup, _SPPM_RADIUS_MULT * avg_radius, grid_min, grid_max);
+    sppm_pixel_data_lookup_assign(lookup, _SPPM_RADIUS_MULT * avg_radius, grid_min, grid_max);
 #endif
 
 
@@ -213,13 +214,18 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup) {
             Vector3u loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &isect.p);
             size_t ht_loc = sppm_pixel_data_lookup_hash(lookup, &loc_3d);
             for(int cur_arr_ind = 0; cur_arr_ind < lookup->hash_table[ht_loc].size; cur_arr_ind++) {
-                PixelData *pd = *(PixelData **)arr_get(&lookup->hash_table[ht_loc], cur_arr_ind);
+                PixelData *pd = (PixelData *)arr_get_pointer(&lookup->hash_table[ht_loc], cur_arr_ind);
                 Vector dist_between = vv_sub(&pd->cur_vp.intersection.p, &isect.p);
                 if (v_norm_sqr(&dist_between) < pd->radius * pd->radius) {
-                    pd->cur_vp.intersection.wo = wo;
+                    // pd->cur_vp.intersection.wo = wo;
                     // Only contribute energy to diffuse materials
                     if (pd->cur_vp.intersection.hit->material == DIFFUSE) {
-                        Vector bsdf = bsdf_eval_diffuse(&pd->cur_vp.intersection);
+                        // Vector bsdf = bsdf_eval_diffuse(&pd->cur_vp.intersection);
+                        // manually inline bsdf_eval_diffuse
+                        Vector bsdf = ZERO_VEC;
+                        Intersection isect = pd->cur_vp.intersection;
+                        if (vv_dot(&isect.wi, &isect.n) < 0 && vv_dot(&wo, &isect.n) > 0)
+                            bsdf = vs_mul(&isect.hit->albedo, INV_PI);
                         vvv_fmaeq(&pd->cur_flux, &bsdf, &light_radiance);  // flux += bsdf * L
                         pd->cur_photons++;
                     }

@@ -37,7 +37,7 @@ struct PixelData {
 
 struct PixelDataLookup {
     size_t fixed_size;
-    Array *hash_table;
+    PointerArray *hash_table;
     float grid_res;
     Vector3f grid_min;
     Vector3f grid_max;
@@ -64,9 +64,9 @@ void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num
 
 void sppm_pixel_data_lookup_init(PixelDataLookup *lookup, size_t init_size);
 
-void sppm_pixel_data_loopup_assign(PixelDataLookup *lookup, float grid_size, Vector grid_min, Vector grid_max);
+void sppm_pixel_data_lookup_assign(PixelDataLookup *lookup, float grid_size, Vector grid_min, Vector grid_max);
 
-void sppm_pixel_data_loopup_clear(PixelDataLookup *lookup);
+void sppm_pixel_data_lookup_clear(PixelDataLookup *lookup);
 
 void sppm_pixel_data_lookup_free(PixelDataLookup *lookup);
 

@@ -65,5 +65,4 @@ bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *ise
 // store intersect time in ray to facilitate scene intersection
 bool mesh_do_intersect(const struct Mesh *mesh, const Ray *ray);
 
-
 #endif //TEAM32_MESH_H
