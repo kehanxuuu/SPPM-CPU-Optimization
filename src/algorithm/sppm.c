@@ -217,15 +217,10 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup) {
                 PixelData *pd = (PixelData *)arr_get_pointer(&lookup->hash_table[ht_loc], cur_arr_ind);
                 Vector dist_between = vv_sub(&pd->cur_vp.intersection.p, &isect.p);
                 if (v_norm_sqr(&dist_between) < pd->radius * pd->radius) {
-                    // pd->cur_vp.intersection.wo = wo;
+                    pd->cur_vp.intersection.wo = wo;
                     // Only contribute energy to diffuse materials
                     if (pd->cur_vp.intersection.hit->material == DIFFUSE) {
-                        // Vector bsdf = bsdf_eval_diffuse(&pd->cur_vp.intersection);
-                        // manually inline bsdf_eval_diffuse
-                        Vector bsdf = ZERO_VEC;
-                        Intersection isect = pd->cur_vp.intersection;
-                        if (vv_dot(&isect.wi, &isect.n) < 0 && vv_dot(&wo, &isect.n) > 0)
-                            bsdf = vs_mul(&isect.hit->albedo, INV_PI);
+                        Vector bsdf = bsdf_eval_diffuse(&pd->cur_vp.intersection);
                         vvv_fmaeq(&pd->cur_flux, &bsdf, &light_radiance);  // flux += bsdf * L
                         pd->cur_photons++;
                     }
