@@ -15,11 +15,11 @@
 #include "bitmap.h"
 
 #ifndef _SPPM_RADIUS_MULT
-    #define _SPPM_RADIUS_MULT 2.0
+#define _SPPM_RADIUS_MULT 2.0
 #endif
 
 #ifndef _SPPM_RADIUS_TYPE
-    #define _SPPM_RADIUS_TYPE 0
+#define _SPPM_RADIUS_TYPE 0
 #endif
 
 struct VisiblePoint {
@@ -41,7 +41,7 @@ struct PixelData {
 
 struct PixelDataLookup {
     size_t fixed_size;
-    PointerArray *hash_table;
+    IntArray *hash_table;
     float grid_res;
     Vector3f grid_min;
     Vector3f grid_max;
@@ -78,7 +78,7 @@ size_t sppm_pixel_data_lookup_hash(PixelDataLookup *lookup, Vector3u *loc);
 
 Vector3u sppm_pixel_data_lookup_to_grid(PixelDataLookup *lookup, Vector *loc);
 
-void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, Vector3u *loc_3d, PixelData *pd);
+void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, Vector3u *loc_3d, int pd_index);
 
 void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_datas);
 
@@ -86,9 +86,9 @@ void sppm_camera_pass_pixel(SPPM *sppm, int x, int y, PixelData *pd);
 
 void sppm_camera_pass(SPPM *sppm, ArrayFixed2D *pixel_datas);
 
-void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup);
+void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup, ArrayFixed2D *pixel_datas);
 
-void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup);
+void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, ArrayFixed2D *pixel_datas);
 
 void sppm_consolidate(SPPM *sppm, ArrayFixed2D *pixel_datas);
 

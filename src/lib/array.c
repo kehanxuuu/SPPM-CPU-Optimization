@@ -1,10 +1,5 @@
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
 #include "array.h"
 
-// general type
 void arr_add(Array *arr, void *item) {
     if (arr->size == arr->capacity) {
         arr->capacity = _ARRAY_INCRE_MULT * arr->capacity;

@@ -1,6 +1,10 @@
 #ifndef _ARRAY_H
 #define _ARRAY_H
 
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 #include <stddef.h>
 
 #ifndef _ARRAY_INCRE_MULT

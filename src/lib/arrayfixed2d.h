@@ -13,6 +13,8 @@ typedef struct{
 
 void* arrfixed2d_get(ArrayFixed2D *arr, size_t y, size_t x);
 
+void *arrfixed2d_get_1D(ArrayFixed2D *arr, size_t index);
+
 void arrfixed2d_set(ArrayFixed2D *arr, size_t y, size_t x, void *item);
 
 void arrfixed2d_init(ArrayFixed2D *arr, size_t height, size_t width, size_t item_size);

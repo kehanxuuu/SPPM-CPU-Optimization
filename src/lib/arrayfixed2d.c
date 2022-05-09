@@ -7,6 +7,11 @@ void *arrfixed2d_get(ArrayFixed2D *arr, size_t y, size_t x) {
     return arr_get(&arr->arr, arrfixed2d_translate(arr, y, x));
 }
 
+void *arrfixed2d_get_1D(ArrayFixed2D *arr, size_t index) {
+    assert(index < arr->width * arr->height);
+    return arr_get(&arr->arr, index);
+}
+
 void arrfixed2d_set(ArrayFixed2D *arr, size_t y, size_t x, void *item) {
     assert(x < arr->width && y < arr->height);
     Array *internal_arr = &arr->arr;
@@ -24,7 +29,7 @@ void arrfixed2d_free(ArrayFixed2D *arr) {
     arr_free(&arr->arr);
 }
 
-size_t arrfixed2d_translate(ArrayFixed2D *arr, size_t y, size_t x) {
+inline size_t arrfixed2d_translate(ArrayFixed2D *arr, size_t y, size_t x) {
     return y * arr->width + x;
 }
 

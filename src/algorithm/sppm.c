@@ -15,10 +15,9 @@ void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num
 
 void sppm_pixel_data_lookup_init(PixelDataLookup *lookup, size_t init_size) {
     lookup->fixed_size = init_size;
-    lookup->hash_table = malloc(sizeof(PointerArray) * init_size);
-    for(int i = 0; i < init_size; i++){
-        // arr_init(&lookup->hash_table[i], 20, 0, sizeof(PixelData*));
-        arr_init_pointer(&lookup->hash_table[i], 20, 0);
+    lookup->hash_table = malloc(sizeof(IntArray) * init_size);
+    for(int i = 0; i < init_size; i++) {
+        arr_init_int(&lookup->hash_table[i], 20, 0);
     }
 }
 
@@ -36,7 +35,7 @@ void sppm_pixel_data_lookup_clear(PixelDataLookup *lookup) {
 
 void sppm_pixel_data_lookup_free(PixelDataLookup *lookup) {
     for (int i = 0; i < lookup->fixed_size; i++) {
-        arr_free_pointer(&lookup->hash_table[i]);
+        arr_free_int(&lookup->hash_table[i]);
     }
     free(lookup->hash_table);
 }
@@ -54,9 +53,9 @@ Vector3u sppm_pixel_data_lookup_to_grid(PixelDataLookup *lookup, Vector *loc) {
     return (Vector3u) {loc_x, loc_y, loc_z};
 }
 
-void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, Vector3u *loc_3d, PixelData *pd) {
+void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, Vector3u *loc_3d, int pd_index) {
     size_t ht_loc = sppm_pixel_data_lookup_hash(lookup, loc_3d);
-    arr_add_pointer(&lookup->hash_table[ht_loc], &pd);
+    arr_add_int(&lookup->hash_table[ht_loc], &pd_index);
 }
 
 void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_datas) {
@@ -68,8 +67,10 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_d
 #elif _SPPM_RADIUS_TYPE == 1
     float avg_radius = 0;
 #endif
-    for (int i = 0; i < pixel_datas->height; i++) {
-        for (int j = 0; j < pixel_datas->width; j++) {
+    int H = pixel_datas->height;
+    int W = pixel_datas->width;
+    for (int i = 0; i < H; i++) {
+        for (int j = 0; j < W; j++) {
             PixelData *pd = (PixelData *) arrfixed2d_get(pixel_datas, i, j);
             if (vv_equal(&pd->cur_vp.attenuation, &ZERO_VEC)) {
                 continue;
@@ -93,13 +94,13 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_d
     sppm_pixel_data_lookup_assign(lookup, _SPPM_RADIUS_MULT * max_radius, grid_min, grid_max);
 #elif _SPPM_RADIUS_TYPE == 1
     avg_radius /= (float) (pixel_datas->height * pixel_datas->width);
-    sppm_pixel_data_lookup_assign(lookup, _SPPM_RADIUS_MULT * avg_radius, grid_min, grid_max);
+	sppm_pixel_data_lookup_assign(lookup, _SPPM_RADIUS_MULT * avg_radius, grid_min, grid_max);
 #endif
 
 
 //    build grid
-    for (int i = 0; i < pixel_datas->height; i++) {
-        for (int j = 0; j < pixel_datas->width; j++) {
+    for (int i = 0; i < H; i++) {
+        for (int j = 0; j < W; j++) {
             PixelData *pd = (PixelData *) arrfixed2d_get(pixel_datas, i, j);
             if (vv_equal(&pd->cur_vp.attenuation, &ZERO_VEC)) {
                 continue;
@@ -115,7 +116,8 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, ArrayFixed2D *pixel_d
                 for (size_t y = from_loc_3d.y; y <= to_loc_3d.y; y++) {
                     for (size_t z = from_loc_3d.z; z <= to_loc_3d.z; z++) {
                         Vector3u cur_loc = (Vector3u) {x, y, z};
-                        sppm_pixel_data_lookup_store(lookup, &cur_loc, pd);
+                        int pd_index = i * W + j;
+                        sppm_pixel_data_lookup_store(lookup, &cur_loc, pd_index);
                     }
                 }
             }
@@ -156,7 +158,7 @@ void sppm_camera_pass_pixel(SPPM *sppm, int x, int y, PixelData *pd) {
                 cur_attenuation = bsdf_sample_dielectic(&isect, randf());
                 break;
             default:
-                UNIMPLEMENTED;
+            UNIMPLEMENTED;
         }
 
         if (vv_equal(&cur_attenuation, &ZERO_VEC)) {
@@ -188,7 +190,7 @@ void sppm_camera_pass(SPPM *sppm, ArrayFixed2D *pixel_datas) {
     }
 }
 
-void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup) {
+void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup, ArrayFixed2D *pixel_datas) {
     Ray ray;
     float pdf_emitter, pdf_pos, pdf_dir;
     Mesh *emitter = sample_emitter(sppm->scene, randf(), &pdf_emitter);
@@ -198,7 +200,7 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup) {
                                                &pdf_pos, &pdf_dir);
             break;
         default:
-            UNIMPLEMENTED;
+        UNIMPLEMENTED;
     }
 
     Vector light_radiance = vs_div(&emitter->emission, pdf_emitter * pdf_pos * pdf_dir);
@@ -214,7 +216,8 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup) {
             Vector3u loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &isect.p);
             size_t ht_loc = sppm_pixel_data_lookup_hash(lookup, &loc_3d);
             for(int cur_arr_ind = 0; cur_arr_ind < lookup->hash_table[ht_loc].size; cur_arr_ind++) {
-                PixelData *pd = (PixelData *)arr_get_pointer(&lookup->hash_table[ht_loc], cur_arr_ind);
+                int pd_index = arr_get_int(&lookup->hash_table[ht_loc], cur_arr_ind);
+                PixelData *pd = (PixelData *)arrfixed2d_get_1D(pixel_datas, pd_index);
                 Vector dist_between = vv_sub(&pd->cur_vp.intersection.p, &isect.p);
                 if (v_norm_sqr(&dist_between) < pd->radius * pd->radius) {
                     pd->cur_vp.intersection.wo = wo;
@@ -246,9 +249,9 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup) {
     }
 }
 
-void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup) {
+void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, ArrayFixed2D *pixel_datas) {
     for (int i = 0; i < sppm->num_photons; i++) {
-        sppm_photon_pass_photon(sppm, lookup);
+        sppm_photon_pass_photon(sppm, lookup, pixel_datas);
     }
 }
 
@@ -326,7 +329,7 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
         tic, sppm_build_pixel_data_lookup(&lookup, &pixel_datas), toc;
 
         fprintf(stderr, "\tPhoton pass ");
-        tic, sppm_photon_pass(sppm, &lookup), toc;
+        tic, sppm_photon_pass(sppm, &lookup, &pixel_datas), toc;
 
         fprintf(stderr, "\tConsolida1te ");
         tic, sppm_consolidate(sppm, &pixel_datas), toc;
