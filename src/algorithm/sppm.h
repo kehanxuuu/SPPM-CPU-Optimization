@@ -7,6 +7,10 @@
 #include "intersection.h"
 #include "mesh.h"
 #include "array.h"
+#include "arrayfloat.h"
+#include "arrayint.h"
+#include "arraypointer.h"
+#include "arrayvector.h"
 #include "arrayfixed2d.h"
 #include "bitmap.h"
 

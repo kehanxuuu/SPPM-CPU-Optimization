@@ -2,7 +2,6 @@
 #define TEAM32_COMMON_H
 
 // Includes:
-
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -12,10 +11,8 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <float.h>
-#include "array.h"
 
 // Forwarding definitions:
-
 struct Mesh;
 typedef struct Mesh Mesh;
 struct Geometry;

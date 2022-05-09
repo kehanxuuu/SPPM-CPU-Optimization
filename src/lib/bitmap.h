@@ -2,6 +2,7 @@
 #define TEAM32_BITMAP_H
 
 #include "vector.h"
+#include "array.h"
 
 // Struct for storing image
 struct Bitmap {
