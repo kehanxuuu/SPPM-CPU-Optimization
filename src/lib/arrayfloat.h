@@ -11,6 +11,10 @@ void arr_add_float(FloatArray *arr, void *item);
 
 float arr_get_float(const FloatArray *arr, size_t index);
 
+void arr_set_float(FloatArray *arr, size_t index, float value);
+
+void arr_set_add_float(FloatArray *arr, size_t index, float value);
+
 size_t arr_size_float(const FloatArray *arr);
 
 void arr_init_float(FloatArray *arr, size_t capacity, size_t initial_size);

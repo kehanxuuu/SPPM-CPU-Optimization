@@ -13,6 +13,10 @@ void arr_add_vector(VectorArray *arr, void *item);
 
 Vector arr_get_vector(const VectorArray *arr, size_t index);
 
+void arr_set_vector(VectorArray *arr, size_t index, Vector value);
+
+void arr_set_add_vector(VectorArray *arr, size_t index, Vector value);
+
 size_t arr_size_vector(const VectorArray *arr);
 
 void arr_init_vector(VectorArray *arr, size_t capacity, size_t initial_size);

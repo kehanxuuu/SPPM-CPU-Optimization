@@ -12,9 +12,19 @@ void arr_add_int(IntArray *arr, void *item) {
     arr->size++;
 }
 
-int arr_get_int(const IntArray *arr, size_t index) {
+inline int arr_get_int(const IntArray *arr, size_t index) {
     assert(index < arr->size);
     return (int) arr->data[index];
+}
+
+inline void arr_set_int(IntArray *arr, size_t index, int value) {
+    assert(index < arr->size);
+    arr->data[index] = value;
+}
+
+inline void arr_set_add_int(IntArray *arr, size_t index, int value) {
+    assert(index < arr->size);
+    arr->data[index] += value;
 }
 
 size_t arr_size_int(const IntArray *arr) {

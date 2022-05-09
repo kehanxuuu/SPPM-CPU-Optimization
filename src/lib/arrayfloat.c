@@ -12,9 +12,19 @@ void arr_add_float(FloatArray *arr, void *item) {
     arr->size++;
 }
 
-float arr_get_float(const FloatArray *arr, size_t index) {
+inline float arr_get_float(const FloatArray *arr, size_t index) {
     assert(index < arr->size);
     return (float) arr->data[index];
+}
+
+inline void arr_set_float(FloatArray *arr, size_t index, float value) {
+    assert(index < arr->size);
+    arr->data[index] = value;
+}
+
+inline void arr_set_add_float(FloatArray *arr, size_t index, float value) {
+    assert(index < arr->size);
+    arr->data[index] += value;
 }
 
 size_t arr_size_float(const FloatArray *arr) {

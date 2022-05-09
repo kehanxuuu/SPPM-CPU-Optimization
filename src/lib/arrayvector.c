@@ -12,9 +12,19 @@ void arr_add_vector(VectorArray *arr, void *item) {
     arr->size++;
 }
 
-Vector arr_get_vector(const VectorArray *arr, size_t index) {
+inline Vector arr_get_vector(const VectorArray *arr, size_t index) {
     assert(index < arr->size);
     return arr->data[index];
+}
+
+inline void arr_set_vector(VectorArray *arr, size_t index, Vector value) {
+    assert(index < arr->size);
+    arr->data[index] = value;
+}
+
+inline void arr_set_add_vector(VectorArray *arr, size_t index, Vector value) {
+    assert(index < arr->size);
+    vv_addeq(&arr->data[index], &value);
 }
 
 size_t arr_size_vector(const VectorArray *arr) {

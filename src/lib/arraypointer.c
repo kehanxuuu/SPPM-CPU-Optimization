@@ -12,9 +12,14 @@ void arr_add_pointer(PointerArray *arr, void *item) {
     arr->size++;
 }
 
-char *arr_get_pointer(const PointerArray *arr, size_t index) {
+inline char *arr_get_pointer(const PointerArray *arr, size_t index) {
     assert(index < arr->size);
     return arr->data[index];
+}
+
+inline void arr_set_pointer(PointerArray *arr, size_t index, char * value) {
+    assert(index < arr->size);
+    arr->data[index] = value;
 }
 
 size_t arr_size_pointer(const PointerArray *arr) {

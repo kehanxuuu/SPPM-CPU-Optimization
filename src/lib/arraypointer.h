@@ -11,6 +11,8 @@ void arr_add_pointer(PointerArray *arr, void *item);
 
 char *arr_get_pointer(const PointerArray *arr, size_t index);
 
+void arr_set_pointer(PointerArray *arr, size_t index, char * value);
+
 size_t arr_size_pointer(const PointerArray *arr);
 
 void arr_init_pointer(PointerArray *arr, size_t capacity, size_t initial_size);
