@@ -146,65 +146,69 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
 
 
 //    build grid
-    size_t size = H*W; 
-    k = 0;
-    for (int idx = 0; idx < size; idx++) {
-        if (idx == branch_cache[k]) {
-            k++;
-            continue;
-        }
+    // size_t size = H*W; 
+    // k = 0;
+    // for (int idx = 0; idx < size; idx++) {
+    //     if (idx == branch_cache[k]) {
+    //         k++;
+    //         continue;
+    //     }
         
-        float radius_f = arr_get_float(&radii, idx);
-        // Vector attenuation = arr_get_vector(&attenuation_array, idx);
+    //     float radius_f = arr_get_float(&radii, idx);
+    //     // Vector attenuation = arr_get_vector(&attenuation_array, idx);
 
-        Intersection *isect = arr_get(&cur_vp_intersection, idx);
-        Vector pos = isect->p;
+    //     Intersection *isect = arr_get(&cur_vp_intersection, idx);
+    //     Vector pos = isect->p;
 
-        Vector radius = (Vector) {radius_f, radius_f, radius_f};
-        Vector pos_min = vv_sub(&pos, &radius);
-        Vector pos_max = vv_add(&pos, &radius);
-        Vector3u from_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_min);
-        Vector3u to_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_max);
-        for (size_t x = from_loc_3d.x; x <= to_loc_3d.x; x++) {
-            for (size_t y = from_loc_3d.y; y <= to_loc_3d.y; y++) {
-                for (size_t z = from_loc_3d.z; z <= to_loc_3d.z; z++) {
-                    Vector3u cur_loc = (Vector3u) {x, y, z};
-                    sppm_pixel_data_lookup_store(lookup, &cur_loc, idx);
-                }
-            }
-        }
-    }
-    // for (int i = 0; i < H; i++) {
-    //     for (int j = 0; j < W; j++) {
-    //         int idx = i * W + j;
-    //         float radius_f = arr_get_float(&radii, idx);
-    //         // float radius_f = radius_cache[idx];
-    //         Vector attenuation = arr_get_vector(&attenuation_array, idx);
-    //         // Vector attenuation = attenuation_cache[idx];
-
-    //         if (vv_equal(&attenuation, &ZERO_VEC)) {
-    //             continue;
-    //         }
-
-    //         Intersection *isect = arr_get(&cur_vp_intersection, idx);
-    //         Vector pos = isect->p;
-    //         // Vector pos = position_cache[idx];
-
-    //         Vector radius = (Vector) {radius_f, radius_f, radius_f};
-    //         Vector pos_min = vv_sub(&pos, &radius);
-    //         Vector pos_max = vv_add(&pos, &radius);
-    //         Vector3u from_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_min);
-    //         Vector3u to_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_max);
-    //         for (size_t x = from_loc_3d.x; x <= to_loc_3d.x; x++) {
-    //             for (size_t y = from_loc_3d.y; y <= to_loc_3d.y; y++) {
-    //                 for (size_t z = from_loc_3d.z; z <= to_loc_3d.z; z++) {
-    //                     Vector3u cur_loc = (Vector3u) {x, y, z};
-    //                     sppm_pixel_data_lookup_store(lookup, &cur_loc, idx);
-    //                 }
+    //     Vector radius = (Vector) {radius_f, radius_f, radius_f};
+    //     Vector pos_min = vv_sub(&pos, &radius);
+    //     Vector pos_max = vv_add(&pos, &radius);
+    //     Vector3u from_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_min);
+    //     Vector3u to_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_max);
+    //     for (size_t x = from_loc_3d.x; x <= to_loc_3d.x; x++) {
+    //         for (size_t y = from_loc_3d.y; y <= to_loc_3d.y; y++) {
+    //             for (size_t z = from_loc_3d.z; z <= to_loc_3d.z; z++) {
+    //                 Vector3u cur_loc = (Vector3u) {x, y, z};
+    //                 sppm_pixel_data_lookup_store(lookup, &cur_loc, idx);
     //             }
     //         }
     //     }
     // }
+    for (int i = 0; i < H; i++) {
+        for (int j = 0; j < W; j++) {
+            int idx = i * W + j;
+            // float radius_f = radius_cache[idx];
+            // Vector attenuation = arr_get_vector(&attenuation_array, idx);
+            // Vector attenuation = attenuation_cache[idx];
+            if (idx == branch_cache[k]) {
+                k++;
+                continue;
+            }
+
+            // if (vv_equal(&attenuation, &ZERO_VEC)) {
+            //     continue;
+            // }
+
+            float radius_f = arr_get_float(&radii, idx);
+            Intersection *isect = arr_get(&cur_vp_intersection, idx);
+            Vector pos = isect->p;
+            // Vector pos = position_cache[idx];
+
+            Vector radius = (Vector) {radius_f, radius_f, radius_f};
+            Vector pos_min = vv_sub(&pos, &radius);
+            Vector pos_max = vv_add(&pos, &radius);
+            Vector3u from_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_min);
+            Vector3u to_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_max);
+            for (size_t x = from_loc_3d.x; x <= to_loc_3d.x; x++) {
+                for (size_t y = from_loc_3d.y; y <= to_loc_3d.y; y++) {
+                    for (size_t z = from_loc_3d.z; z <= to_loc_3d.z; z++) {
+                        Vector3u cur_loc = (Vector3u) {x, y, z};
+                        sppm_pixel_data_lookup_store(lookup, &cur_loc, idx);
+                    }
+                }
+            }
+        }
+    }
     // printf("Size: %ld, Used: %ld\n", H*W, counter);
     // free(radius_cache);
     // free(attenuation_cache);
