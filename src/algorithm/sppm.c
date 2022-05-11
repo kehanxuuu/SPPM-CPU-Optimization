@@ -80,7 +80,7 @@ void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, Vector3u *loc_3d, int
     arr_add_int(&lookup->hash_table[ht_loc], &pd_index);
 }
 
-void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_datas, float* radius_cache, Vector* position_cache, size_t H, size_t W) {
+void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_datas, size_t H, size_t W) {
 //    grid data computation
     Vector grid_min = (Vector) {FLT_MAX, FLT_MAX, FLT_MAX};
     Vector grid_max = (Vector) {-FLT_MAX, -FLT_MAX, -FLT_MAX};
@@ -122,8 +122,6 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
 #elif _SPPM_RADIUS_TYPE == 1
             avg_radius += pd->radius;
 #endif
-            radius_cache[idx] = radius_f;
-            position_cache[idx] = pos;
         }
     }
     sppm_pixel_data_lookup_clear(lookup);
@@ -144,8 +142,9 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
                 continue;
             }
 
-            float radius_f = radius_cache[idx];
-            Vector pos = position_cache[idx];
+            float radius_f = arr_get_float(&radii, idx);
+            Intersection *isect = arr_get(&cur_vp_intersection, idx);
+            Vector pos = isect->p;
 
             Vector radius = (Vector) {radius_f, radius_f, radius_f};
             Vector pos_min = vv_sub(&pos, &radius);
@@ -387,8 +386,6 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
         }
     }
 //    Loop
-    float* radius_cache = malloc(H*W*sizeof(float));
-    Vector* position_cache = malloc(H*W*sizeof(Vector));
     struct PixelDataLookup lookup;
     sppm_pixel_data_lookup_init(&lookup, H * W);
     for (int i = 0; i < num_iterations; i++) {
@@ -402,7 +399,7 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
         tic, sppm_camera_pass(sppm, &pixel_datas), toc;
 
         fprintf(stderr, "\tBuild lookup");
-        tic, sppm_build_pixel_data_lookup(&lookup, &pixel_datas, radius_cache, position_cache, H, W), toc;
+        tic, sppm_build_pixel_data_lookup(&lookup, &pixel_datas, H, W), toc;
 
         fprintf(stderr, "\tPhoton pass ");
         tic, sppm_photon_pass(sppm, &lookup, &pixel_datas), toc;
@@ -417,7 +414,4 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
 
     sppm_pixel_data_lookup_free(&lookup);
     sppm_pixel_data_free(&pixel_datas);
-
-    free(radius_cache);
-    free(position_cache);
 }
