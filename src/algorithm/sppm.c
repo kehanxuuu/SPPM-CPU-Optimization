@@ -103,8 +103,7 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
             Vector attenuation = arr_get_vector(&attenuation_array, idx);
 
             if (vv_equal(&attenuation, &ZERO_VEC)) {
-                branch_cache[k] = idx;
-                k++;
+                branch_cache[k++] = idx;
                 continue;
             }
 
@@ -131,7 +130,7 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
     avg_radius /= (float) (pixel_datas->height * pixel_datas->width);
 	sppm_pixel_data_lookup_assign(lookup, _SPPM_RADIUS_MULT * avg_radius, grid_min, grid_max);
 #endif
-
+    k = 0;
 
 //    build grid
     for (int i = 0; i < H; i++) {
