@@ -80,7 +80,7 @@ void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, Vector3u *loc_3d, int
     arr_add_int(&lookup->hash_table[ht_loc], &pd_index);
 }
 
-void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_datas, int* idx_cache, size_t H, size_t W) {
+void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_datas, size_t H, size_t W) {
 //    grid data computation
     Vector grid_min = (Vector) {FLT_MAX, FLT_MAX, FLT_MAX};
     Vector grid_max = (Vector) {-FLT_MAX, -FLT_MAX, -FLT_MAX};
@@ -103,7 +103,8 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
     // arr_init_vector(&position_cache, W, W);
     // int* idx_cache = malloc(H*W*sizeof(int));
 
-    size_t counter = 0;
+    int branch_cache[W];
+    int k = 0;
     for (int i = 0; i < H; i++) {
         for (int j = 0; j < W; j++) {
             int idx = i * W + j;
@@ -111,11 +112,11 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
             Vector attenuation = arr_get_vector(&attenuation_array, idx);
 
             if (vv_equal(&attenuation, &ZERO_VEC)) {
+                branch_cache[k] = idx;
+                k++;
                 continue;
             }
 
-            idx_cache[counter] = idx;
-            counter++;
 
             Intersection *isect = arr_get(&cur_vp_intersection, idx);
             Vector pos = isect->p;
@@ -145,8 +146,14 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
 
 
 //    build grid
-    for (int i = 0; i < counter; i++) {
-        int idx = idx_cache[i];
+    size_t size = H*W; 
+    k = 0;
+    for (int idx = 0; idx < size; idx++) {
+        if (idx == branch_cache[k]) {
+            k++;
+            continue;
+        }
+        
         float radius_f = arr_get_float(&radii, idx);
         // Vector attenuation = arr_get_vector(&attenuation_array, idx);
 
@@ -428,7 +435,6 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
     }
 //    Loop
     struct PixelDataLookup lookup;
-    int* idx_cache = malloc(H*W*sizeof(int));
     sppm_pixel_data_lookup_init(&lookup, H * W);
     for (int i = 0; i < num_iterations; i++) {
         clock_t start;
@@ -441,7 +447,7 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
         tic, sppm_camera_pass(sppm, &pixel_datas), toc;
 
         fprintf(stderr, "\tBuild lookup");
-        tic, sppm_build_pixel_data_lookup(&lookup, &pixel_datas, idx_cache, H, W), toc;
+        tic, sppm_build_pixel_data_lookup(&lookup, &pixel_datas, H, W), toc;
 
         fprintf(stderr, "\tPhoton pass ");
         tic, sppm_photon_pass(sppm, &lookup, &pixel_datas), toc;
@@ -456,5 +462,4 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
 
     sppm_pixel_data_lookup_free(&lookup);
     sppm_pixel_data_free(&pixel_datas);
-    free(idx_cache);
 }
