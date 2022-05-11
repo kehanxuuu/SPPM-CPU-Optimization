@@ -80,7 +80,7 @@ void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, Vector3u *loc_3d, int
     arr_add_int(&lookup->hash_table[ht_loc], &pd_index);
 }
 
-void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_datas, size_t H, size_t W) {
+void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_datas, int* idx_cache, size_t H, size_t W) {
 //    grid data computation
     Vector grid_min = (Vector) {FLT_MAX, FLT_MAX, FLT_MAX};
     Vector grid_max = (Vector) {-FLT_MAX, -FLT_MAX, -FLT_MAX};
@@ -93,6 +93,17 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
     FloatArray radii = pixel_datas->radius;
     VectorArray attenuation_array = pixel_datas->cur_vp_attenuation;
     Array cur_vp_intersection = pixel_datas->cur_vp_intersection;
+
+    // FloatArray radius_cache;
+    // VectorArray attenuation_cache;
+    // VectorArray position_cache; 
+
+    // arr_init_float(&radius_cache, W, W);
+    // arr_init_vector(&attenuation_cache, W, W);
+    // arr_init_vector(&position_cache, W, W);
+    // int* idx_cache = malloc(H*W*sizeof(int));
+
+    size_t counter = 0;
     for (int i = 0; i < H; i++) {
         for (int j = 0; j < W; j++) {
             int idx = i * W + j;
@@ -102,6 +113,9 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
             if (vv_equal(&attenuation, &ZERO_VEC)) {
                 continue;
             }
+
+            idx_cache[counter] = idx;
+            counter++;
 
             Intersection *isect = arr_get(&cur_vp_intersection, idx);
             Vector pos = isect->p;
@@ -116,6 +130,9 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
 #elif _SPPM_RADIUS_TYPE == 1
             avg_radius += pd->radius;
 #endif
+            // radius_cache[idx] = radius_f;
+            // attenuation_cache[idx] = attenuation;
+            // position_cache[idx] = pos;
         }
     }
     sppm_pixel_data_lookup_clear(lookup);
@@ -128,34 +145,63 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
 
 
 //    build grid
-    for (int i = 0; i < H; i++) {
-        for (int j = 0; j < W; j++) {
-            int idx = i * W + j;
-            float radius_f = arr_get_float(&radii, idx);
-            Vector attenuation = arr_get_vector(&attenuation_array, idx);
+    for (int i = 0; i < counter; i++) {
+        int idx = idx_cache[i];
+        float radius_f = arr_get_float(&radii, idx);
+        // Vector attenuation = arr_get_vector(&attenuation_array, idx);
 
-            if (vv_equal(&attenuation, &ZERO_VEC)) {
-                continue;
-            }
+        Intersection *isect = arr_get(&cur_vp_intersection, idx);
+        Vector pos = isect->p;
 
-            Intersection *isect = arr_get(&cur_vp_intersection, idx);
-            Vector pos = isect->p;
-
-            Vector radius = (Vector) {radius_f, radius_f, radius_f};
-            Vector pos_min = vv_sub(&pos, &radius);
-            Vector pos_max = vv_add(&pos, &radius);
-            Vector3u from_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_min);
-            Vector3u to_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_max);
-            for (size_t x = from_loc_3d.x; x <= to_loc_3d.x; x++) {
-                for (size_t y = from_loc_3d.y; y <= to_loc_3d.y; y++) {
-                    for (size_t z = from_loc_3d.z; z <= to_loc_3d.z; z++) {
-                        Vector3u cur_loc = (Vector3u) {x, y, z};
-                        sppm_pixel_data_lookup_store(lookup, &cur_loc, idx);
-                    }
+        Vector radius = (Vector) {radius_f, radius_f, radius_f};
+        Vector pos_min = vv_sub(&pos, &radius);
+        Vector pos_max = vv_add(&pos, &radius);
+        Vector3u from_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_min);
+        Vector3u to_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_max);
+        for (size_t x = from_loc_3d.x; x <= to_loc_3d.x; x++) {
+            for (size_t y = from_loc_3d.y; y <= to_loc_3d.y; y++) {
+                for (size_t z = from_loc_3d.z; z <= to_loc_3d.z; z++) {
+                    Vector3u cur_loc = (Vector3u) {x, y, z};
+                    sppm_pixel_data_lookup_store(lookup, &cur_loc, idx);
                 }
             }
         }
     }
+    // for (int i = 0; i < H; i++) {
+    //     for (int j = 0; j < W; j++) {
+    //         int idx = i * W + j;
+    //         float radius_f = arr_get_float(&radii, idx);
+    //         // float radius_f = radius_cache[idx];
+    //         Vector attenuation = arr_get_vector(&attenuation_array, idx);
+    //         // Vector attenuation = attenuation_cache[idx];
+
+    //         if (vv_equal(&attenuation, &ZERO_VEC)) {
+    //             continue;
+    //         }
+
+    //         Intersection *isect = arr_get(&cur_vp_intersection, idx);
+    //         Vector pos = isect->p;
+    //         // Vector pos = position_cache[idx];
+
+    //         Vector radius = (Vector) {radius_f, radius_f, radius_f};
+    //         Vector pos_min = vv_sub(&pos, &radius);
+    //         Vector pos_max = vv_add(&pos, &radius);
+    //         Vector3u from_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_min);
+    //         Vector3u to_loc_3d = sppm_pixel_data_lookup_to_grid(lookup, &pos_max);
+    //         for (size_t x = from_loc_3d.x; x <= to_loc_3d.x; x++) {
+    //             for (size_t y = from_loc_3d.y; y <= to_loc_3d.y; y++) {
+    //                 for (size_t z = from_loc_3d.z; z <= to_loc_3d.z; z++) {
+    //                     Vector3u cur_loc = (Vector3u) {x, y, z};
+    //                     sppm_pixel_data_lookup_store(lookup, &cur_loc, idx);
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+    // printf("Size: %ld, Used: %ld\n", H*W, counter);
+    // free(radius_cache);
+    // free(attenuation_cache);
+    // free(position_cache);
 }
 
 void sppm_camera_pass_pixel(SPPM *sppm, int x, int y, Vector* direct_radiance, Vector* vp_attenuation, Intersection* vp_intersection) {
@@ -382,6 +428,7 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
     }
 //    Loop
     struct PixelDataLookup lookup;
+    int* idx_cache = malloc(H*W*sizeof(int));
     sppm_pixel_data_lookup_init(&lookup, H * W);
     for (int i = 0; i < num_iterations; i++) {
         clock_t start;
@@ -394,7 +441,7 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
         tic, sppm_camera_pass(sppm, &pixel_datas), toc;
 
         fprintf(stderr, "\tBuild lookup");
-        tic, sppm_build_pixel_data_lookup(&lookup, &pixel_datas, H, W), toc;
+        tic, sppm_build_pixel_data_lookup(&lookup, &pixel_datas, idx_cache, H, W), toc;
 
         fprintf(stderr, "\tPhoton pass ");
         tic, sppm_photon_pass(sppm, &lookup, &pixel_datas), toc;
@@ -409,4 +456,5 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
 
     sppm_pixel_data_lookup_free(&lookup);
     sppm_pixel_data_free(&pixel_datas);
+    free(idx_cache);
 }
