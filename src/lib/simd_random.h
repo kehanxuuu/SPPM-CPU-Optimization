@@ -96,9 +96,10 @@ static inline uint32_t simd_rand(){
 }
 
 static inline void simd_seed(int seed){
+    srand(seed);
     simd_random_state.cur_state = 64;
     for(int i = 0; i < 64; i++){
-        simd_random_state.states[i] = seed + i;
+        simd_random_state.states[i] = rand();
     }
 }
 #endif //TEAM32_SIMD_RANDOM_C_H
