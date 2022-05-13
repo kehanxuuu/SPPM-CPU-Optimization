@@ -101,7 +101,7 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
     VectorArray attenuation_array = pixel_datas->cur_vp_attenuation;
     Array cur_vp_intersection = pixel_datas->cur_vp_intersection;
 
-    int branch_cache[W];
+    int branch_cache[H * W];
     int k = 0;
     for (int i = 0; i < H; i++) {
         for (int j = 0; j < W; j++) {
