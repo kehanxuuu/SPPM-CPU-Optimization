@@ -2,6 +2,7 @@
 #define TEAM32_VECTOR_H
 
 #include "common.h"
+#include "simd_random.h"
 
 // Basic 3 dimensional vector library
 typedef struct {
@@ -199,7 +200,8 @@ static inline Vector vv_min(const Vector *a, const Vector *b) {
 }
 
 static inline float randf() {
-    return (float) rand() / (float) RAND_MAX;
+    float res = (float) simd_rand() / (float) SIMD_RAND_MAX;
+    return res;
 }
 
 
