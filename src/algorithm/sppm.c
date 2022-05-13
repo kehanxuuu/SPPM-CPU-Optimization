@@ -59,6 +59,13 @@ void sppm_pixel_data_lookup_free(PixelDataLookup *lookup) {
 }
 
 void sppm_pixel_data_free(PixelData *pixel_datas) {
+    arr_free_float(&pixel_datas->radius);
+    arr_free_int(&pixel_datas->num_photons);
+    arr_free_vector(&pixel_datas->tau);
+    arr_free_vector(&pixel_datas->direct_radiance);
+    arr_free_int(&pixel_datas->cur_photons);
+    arr_free_vector(&pixel_datas->cur_flux);
+    arr_free_vector(&pixel_datas->cur_vp_attenuation);
     arr_free(&pixel_datas->cur_vp_intersection);
 }
 
