@@ -22,4 +22,5 @@ bin/
 main
 /build
 ext/
+experiments/
 CMakeLists.txt

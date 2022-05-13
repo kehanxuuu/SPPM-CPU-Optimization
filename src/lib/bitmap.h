@@ -2,6 +2,7 @@
 #define TEAM32_BITMAP_H
 
 #include "vector.h"
+#include "array.h"
 
 // Struct for storing image
 struct Bitmap {
@@ -24,6 +25,8 @@ Vector *bitmap_get(struct Bitmap *bitmap, size_t px, size_t py);
 void bitmap_free(struct Bitmap *bitmap);
 
 void bitmap_save_exr(struct Bitmap *bitmap, char *filename);
+
+double bitmap_checksum(struct Bitmap *bitmap);
 
 #endif
 
