@@ -2,6 +2,7 @@
 .DS_STORE
 /cmake-build-debug/
 /cmake-build-release/
+/cmake-build-*/
 *.exr
 CMakeLists.txt.user
 CMakeCache.txt
