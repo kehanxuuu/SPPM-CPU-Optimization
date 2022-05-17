@@ -2,19 +2,19 @@
 #include "warping.h"
 
 void scene_init(struct Scene *scene) {
-    arr_init(&scene->meshes, 10, 0, sizeof(struct Mesh *));
+    arr_init_pointer(&scene->meshes, 10, 0);
     scene->n_meshes = scene->n_emitters = 0;
     scene->emitters = NULL;
     scene->accum_probabilities = NULL;
 }
 
 void scene_add(struct Scene *scene, struct Mesh *mesh) {
-    arr_add(&scene->meshes, &mesh);
+    arr_add_pointer(&scene->meshes, &mesh);
     scene->n_meshes++;
 }
 
 struct Mesh *scene_get(const struct Scene *scene, size_t index) {
-    struct Mesh *mesh = *(struct Mesh **) arr_get(&scene->meshes, index);
+    struct Mesh *mesh = (struct Mesh *) arr_get_pointer(&scene->meshes, index);
     return mesh;
 }
 
@@ -24,7 +24,7 @@ void scene_free(struct Scene *scene) {
         mesh_free(mesh);
         free(mesh);
     }
-    arr_free(&scene->meshes);
+    arr_free_pointer(&scene->meshes);
     free(scene->emitters);
     free(scene->accum_probabilities);
 }
