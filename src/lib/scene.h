@@ -3,11 +3,12 @@
 
 #include "vector.h"
 #include "array.h"
+#include "arraypointer.h"
 #include "mesh.h"
 #include "intersection.h"
 
 struct Scene {
-    Array meshes; // store pointers to meshes
+    PointerArray meshes; // store pointers to meshes
     size_t n_meshes;
     size_t n_emitters;
     Mesh **emitters;

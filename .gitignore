@@ -1,6 +1,7 @@
 .idea
 .DS_STORE
 /cmake-build-debug/
+/cmake-build-profile/
 /cmake-build-release/
 /cmake-build-*/
 *.exr
