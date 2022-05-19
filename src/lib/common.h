@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <float.h>
+#include "simd_random.h"
 
 // Forwarding definitions:
 struct Mesh;

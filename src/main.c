@@ -119,7 +119,7 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
 
 int main(int argc, char *argv[]) {
     clock_t tic = clock();
-    srand(0);
+    simd_seed(1);
     Params params = {512, 384, 6, 5, 200000, 2.0f, "sppm", "out.exr"};
     parse_args(argc, argv, &params);
 
