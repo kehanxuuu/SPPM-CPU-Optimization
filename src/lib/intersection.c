@@ -50,6 +50,9 @@ float bsdf_pdf_diffuse(struct Intersection *isect) {
 }
 
 Vector bsdf_sample_specular(struct Intersection *isect) {
+    if (vv_dot(&isect->wi, &isect->n) >= 0) {
+        return ZERO_VEC;
+    }
     float cos_wi_N = -vv_dot(&isect->wi, &isect->n);
     Vector scaled_N = vs_mul(&isect->n, cos_wi_N);
     Vector scaled_N_2 = vs_mul(&scaled_N, 2);
@@ -66,6 +69,9 @@ float bsdf_pdf_specular(struct Intersection *isect) {
 }
 
 Vector bsdf_sample_dielectic(struct Intersection *isect, float sample) {
+    if (vv_dot(&isect->wi, &isect->n) >= 0) {
+        return ZERO_VEC;
+    }
     float costheta1 = -vv_dot(&isect->wi, &isect->n);
     float n1 = isect->interior ? isect->hit->ir : 1;
     float n2 = isect->interior ? 1 : isect->hit->ir;
