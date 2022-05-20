@@ -216,7 +216,7 @@ void sppm_camera_pass_pixel(SPPM *sppm, int x, int y, Vector* direct_radiance, V
         float continue_prob = v_cwise_max(&attenuation);
         // Russian Roulette
         if (continue_prob < 0.25) {
-            if (randf() > continue_prob)
+            if (randf() >= continue_prob)
                 return;
             vs_diveq(&attenuation, continue_prob);
         }
@@ -305,7 +305,7 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup, PixelData *pix
         float continue_prob = v_cwise_max(&light_radiance);
         // Russian Roulette
         if (continue_prob < 0.25) {
-            if (randf() > continue_prob) {
+            if (randf() >= continue_prob) {
                 break;
             }
             vs_diveq(&light_radiance, continue_prob);
