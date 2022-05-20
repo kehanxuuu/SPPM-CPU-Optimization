@@ -11,7 +11,6 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <float.h>
-#include "simd_random.h"
 
 // Forwarding definitions:
 struct Mesh;
@@ -38,7 +37,12 @@ typedef struct Sphere Sphere;
 // a few useful constants
 #undef M_PI
 #define M_PI         3.14159265358979323846f
+#define M_2PI        6.28318530717958647692f
 #define INV_PI       0.31830988618379067154f
 #define EPSILON      1e-2f
+
+#define ALIGN 64
+
+#define NUM_FLOAT_SIMD 8
 
 #endif //TEAM32_COMMON_H
