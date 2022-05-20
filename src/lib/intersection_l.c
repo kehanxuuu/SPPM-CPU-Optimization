@@ -1,9 +1,33 @@
 #include "intersection_l.h"
 
+void intersection_l_init(IntersectionL *isects, size_t size){
+    floatl_init(&isects->mesh_material, size);
+    vector3fl_init(&isects->mesh_albedo, size);
+    vector3fl_init(&isects->mesh_emission, size);
+    floatl_init(&isects->mesh_ir, size);
+    vector3fl_init(&isects->p, size);
+    vector3fl_init(&isects->n, size);
+    vector3fl_init(&isects->wi, size);
+    vector3fl_init(&isects->wo, size);
+    floatl_init(&isects->interior, size);
+}
+
+void intersection_l_free(IntersectionL *isects){
+    floatl_free(&isects->mesh_material);
+    vector3fl_free(&isects->mesh_albedo);
+    vector3fl_free(&isects->mesh_emission);
+    floatl_free(&isects->mesh_ir);
+    vector3fl_free(&isects->p);
+    vector3fl_free(&isects->n);
+    vector3fl_free(&isects->wi);
+    vector3fl_free(&isects->wo);
+    floatl_free(&isects->interior);
+}
+
 //    TODO: maybe add additional check before blending to see if there exists values with this type
 //          for all blends (if statements)
 
-void bsdf_sample_l(struct IntersectionL* isects, size_t ind, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_sample_l(IntersectionL* isects, size_t ind, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 mesh_material = _mm256_load_ps(&isects->mesh_material.data[ind]);
     __m256 is_diffuse = _mm256_cmp_ps(_mm256_set1_ps(DIFFUSE), mesh_material, _CMP_EQ_OQ);
     __m256 is_specular = _mm256_cmp_ps(_mm256_set1_ps(SPECULAR), mesh_material, _CMP_EQ_OQ);
@@ -31,7 +55,7 @@ void bsdf_sample_l(struct IntersectionL* isects, size_t ind, __m256* res_x, __m2
     *res_z = _mm256_blendv_ps(t2, dielectric_res_z, is_dielectric);
 }
 
-void bsdf_eval_l(struct IntersectionL* isects, size_t ind, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_eval_l(IntersectionL* isects, size_t ind, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 mesh_material = _mm256_load_ps(&isects->mesh_material.data[ind]);
     __m256 is_diffuse = _mm256_cmp_ps(_mm256_set1_ps(DIFFUSE), mesh_material, _CMP_EQ_OQ);
     __m256 is_specular = _mm256_cmp_ps(_mm256_set1_ps(SPECULAR), mesh_material, _CMP_EQ_OQ);
@@ -56,7 +80,7 @@ void bsdf_eval_l(struct IntersectionL* isects, size_t ind, __m256* res_x, __m256
     *res_z = _mm256_blendv_ps(t2, dielectric_res_z, is_dielectric);
 }
 
-void bsdf_sample_diffuse_l(struct IntersectionL* isects, size_t ind, __m256 sample0, __m256 sample1, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_sample_diffuse_l(IntersectionL* isects, size_t ind, __m256 sample0, __m256 sample1, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 wi_x = _mm256_load_ps(&isects->wi.x[ind]);
     __m256 wi_y = _mm256_load_ps(&isects->wi.y[ind]);
     __m256 wi_z = _mm256_load_ps(&isects->wi.z[ind]);
@@ -82,7 +106,7 @@ void bsdf_sample_diffuse_l(struct IntersectionL* isects, size_t ind, __m256 samp
     *res_z = _mm256_blendv_ps(albedo_z, _mm256_set1_ps(0.0f), cmp0);
 }
 
-void bsdf_eval_diffuse_l(struct IntersectionL* isects, size_t ind, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_eval_diffuse_l(IntersectionL* isects, size_t ind, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 wi_x = _mm256_load_ps(&isects->wi.x[ind]);
     __m256 wi_y = _mm256_load_ps(&isects->wi.y[ind]);
     __m256 wi_z = _mm256_load_ps(&isects->wi.z[ind]);
@@ -108,7 +132,7 @@ void bsdf_eval_diffuse_l(struct IntersectionL* isects, size_t ind, __m256* res_x
     *res_z = _mm256_blendv_ps(p_albedo_z, _mm256_set1_ps(0.0f), cmp0);
 }
 
-void bsdf_sample_specular_l(struct IntersectionL* isects, size_t ind, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_sample_specular_l(IntersectionL* isects, size_t ind, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 wi_x = _mm256_load_ps(&isects->wi.x[ind]);
     __m256 wi_y = _mm256_load_ps(&isects->wi.y[ind]);
     __m256 wi_z = _mm256_load_ps(&isects->wi.z[ind]);
@@ -131,14 +155,14 @@ void bsdf_sample_specular_l(struct IntersectionL* isects, size_t ind, __m256* re
     *res_z = _mm256_load_ps(&isects->mesh_albedo.z[ind]);
 }
 
-void bsdf_eval_specular_l(struct IntersectionL* isects, size_t ind, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_eval_specular_l(IntersectionL* isects, size_t ind, __m256* res_x, __m256* res_y, __m256* res_z){
     *res_x = _mm256_set1_ps(0.0f);
     *res_y = _mm256_set1_ps(0.0f);
     *res_z = _mm256_set1_ps(0.0f);
 }
 
 // TODO: redundant code cleanup and calculate chained if states bottom up
-void bsdf_sample_dielectric_l(struct IntersectionL* isects, size_t ind, __m256 sample0, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_sample_dielectric_l(IntersectionL* isects, size_t ind, __m256 sample0, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 wi_x = _mm256_load_ps(&isects->wi.x[ind]);
     __m256 wi_y = _mm256_load_ps(&isects->wi.y[ind]);
     __m256 wi_z = _mm256_load_ps(&isects->wi.z[ind]);
@@ -197,7 +221,7 @@ void bsdf_sample_dielectric_l(struct IntersectionL* isects, size_t ind, __m256 s
     *res_z = _mm256_load_ps(&isects->mesh_albedo.z[ind]);
 }
 
-void bsdf_eval_dielectric_l(struct IntersectionL* isects, size_t ind, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_eval_dielectric_l(IntersectionL* isects, size_t ind, __m256* res_x, __m256* res_y, __m256* res_z){
     *res_x = _mm256_set1_ps(0.0f);
     *res_y = _mm256_set1_ps(0.0f);
     *res_z = _mm256_set1_ps(0.0f);
