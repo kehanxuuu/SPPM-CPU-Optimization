@@ -293,7 +293,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
     int width_tracker;
     IntersectionM temp_isect;
     IntersectionM to_store_isect;
-    for(i = 0, width_tracker = 8; i < pixel_datas->size_float_simd; i++, width_tracker += NUM_FLOAT_SIMD) {
+    for(i = 0, width_tracker = 8; i < pixel_datas->size_float_simd; i += NUM_FLOAT_SIMD, width_tracker += NUM_FLOAT_SIMD) {
         __m256 ray_o_x, ray_o_y, ray_o_z, ray_d_x, ray_d_y, ray_d_z, ray_t_max;
         __m256 samples0 = randf_full();
         __m256 samples1 = randf_full();

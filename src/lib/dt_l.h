@@ -10,37 +10,39 @@ typedef struct {
     float* x;
     float* y;
     float* z;
-} Vector3fL;
+} __attribute__((__aligned__(64))) Vector3fL;
 
 typedef struct {
     __m256 x;
     __m256 y;
     __m256 z;
-} Vector3fM;
+} __attribute__((__aligned__(64))) Vector3fM;
 
 typedef struct {
     float* data;
-} FloatL;
+} __attribute__((__aligned__(64))) FloatL;
 
 typedef struct {
     __m256 data;
-} FloatM;
+} __attribute__((__aligned__(64))) FloatM;
 
 typedef struct {
     int* data;
-} IntL;
+} __attribute__((__aligned__(64))) IntL;
 
 typedef struct {
     void** data;
-} PtrL;
+} __attribute__((__aligned__(64))) PtrL;
 
 typedef Vector3fL VectorL;
 typedef Vector3fM VectorM;
 
 static inline void* malloc_align(size_t bytes){
-//    bytes + alignment padding + end padding
-    void* cur_res = malloc(bytes + ALIGN + ALIGN - bytes % ALIGN);
-    return cur_res + ALIGN - (uint64_t)cur_res % ALIGN;
+    return _mm_malloc(bytes, ALIGN);
+}
+
+static inline void free_align(void* mem_addr){
+    _mm_free(mem_addr);
 }
 
 static inline void vector3fl_init(Vector3fL* vecl, size_t size){
@@ -76,21 +78,21 @@ static inline void intl_clear(IntL* il, size_t size){
 }
 
 static inline void vector3fl_free(Vector3fL* vecl){
-    free(vecl->x);
-    free(vecl->y);
-    free(vecl->z);
+    free_align(vecl->x);
+    free_align(vecl->y);
+    free_align(vecl->z);
 }
 
 static inline void intl_free(IntL* il){
-    free(il->data);
+    free_align(il->data);
 }
 
 static inline void floatl_free(FloatL* fl){
-    free(fl->data);
+    free_align(fl->data);
 }
 
 static inline void ptrl_free(PtrL* ptrl){
-    free(ptrl->data);
+    free_align(ptrl->data);
 }
 
 static inline __m256 randf_full() {
