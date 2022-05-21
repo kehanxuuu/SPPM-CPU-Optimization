@@ -128,6 +128,15 @@ static inline __m256 vector3fl_rnorm(__m256 x, __m256 y, __m256 z){
     return _mm256_rsqrt_ps(norm2);
 }
 
+static inline __m256 vector3fl_norm(__m256 x, __m256 y, __m256 z){
+    __m256 norm2 = _mm256_add_ps(_mm256_mul_ps(x, x), _mm256_add_ps(_mm256_mul_ps(y, y), _mm256_mul_ps(z, z)));
+    return _mm256_sqrt_ps(norm2);
+}
+
+static inline __m256 vector3fl_sqrnorm(__m256 x, __m256 y, __m256 z){
+    return _mm256_add_ps(_mm256_mul_ps(x, x), _mm256_add_ps(_mm256_mul_ps(y, y), _mm256_mul_ps(z, z)));
+}
+
 static inline void vector3fl_cross(__m256 ax, __m256 ay, __m256 az, __m256 bx, __m256 by, __m256 bz, __m256* res_x, __m256* res_y, __m256* res_z) {
     *res_x = _mm256_sub_ps(_mm256_mul_ps(ay, bz), _mm256_mul_ps(az, by));
     *res_y = _mm256_sub_ps(_mm256_mul_ps(az, bx), _mm256_mul_ps(ax, bz));
@@ -140,6 +149,10 @@ static inline __m256 vector3fl_dot(__m256 ax, __m256 ay, __m256 az, __m256 bx, _
     p1 = _mm256_mul_ps(ay, by);
     p2 = _mm256_mul_ps(az, bz);
     return _mm256_add_ps(_mm256_add_ps(p0, p1), p2);
+}
+
+static inline __m256 vector3fl_cwise_max(__m256 x, __m256 y, __m256 z) {
+    return _mm256_max_ps(_mm256_max_ps(x, y), z);
 }
 
 #endif //TEAM32_DT_L_H
