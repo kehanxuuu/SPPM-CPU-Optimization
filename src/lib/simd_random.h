@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include "common.h"
 
+#define SIMD_RAND_MAX 0xffffffff
+
 typedef struct{
     uint32_t states[64] __attribute__((aligned(64)));
     int cur_state;
@@ -97,7 +99,8 @@ static inline uint32_t simd_rand(){
 
 static inline __m256i simd_rand_full(){
     if(simd_random_state_get_full.cur_state < 8){
-        return _mm256_load_si256((__m256i*)&simd_random_state_get_full.states[simd_random_state_get_full.cur_state++]);
+        int prev_state = simd_random_state_get_full.cur_state++;
+        return _mm256_load_si256((__m256i*)&simd_random_state_get_full.states[8*prev_state]);
     }else{
         __m256i cur_state0, t00, t10, t20, t30, t40, t50;
         __m256i cur_state1, t01, t11, t21, t31, t41, t51;

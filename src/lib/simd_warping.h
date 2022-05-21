@@ -7,8 +7,6 @@
 #include "dt_l.h"
 #include <immintrin.h>
 
-#include "simd_warping.h"
-
 void vector3fl_to_world(__m256 l_x, __m256 l_y, __m256 l_z, __m256 normal_x, __m256 normal_y, __m256 normal_z, __m256* res_x, __m256* res_y, __m256* res_z);
 
 void vector3fl_square_to_cosine_hemisphere(__m256 sample0, __m256 sample1, __m256 normal_x, __m256 normal_y, __m256 normal_z, __m256* res_x, __m256* res_y, __m256* res_z);
