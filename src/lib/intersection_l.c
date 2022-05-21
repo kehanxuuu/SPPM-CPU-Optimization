@@ -55,7 +55,7 @@ void bsdf_sample_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* 
     *res_z = _mm256_blendv_ps(t2, dielectric_res_z, is_dielectric);
 }
 
-void bsdf_eval_l(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_eval_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 mesh_material = isects->mesh_material.data;
     // __m256 is_diffuse = _mm256_cmp_ps(_mm256_set1_ps(DIFFUSE), mesh_material, _CMP_EQ_OQ);
     __m256 is_specular = _mm256_cmp_ps(_mm256_set1_ps(SPECULAR), mesh_material, _CMP_EQ_OQ);
@@ -80,7 +80,7 @@ void bsdf_eval_l(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* re
     *res_z = _mm256_blendv_ps(t2, dielectric_res_z, is_dielectric);
 }
 
-void bsdf_sample_diffuse_l(IntersectionM* isects, __m256 sample0, __m256 sample1, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_sample_diffuse_m(IntersectionM* isects, __m256 sample0, __m256 sample1, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 wi_x = isects->wi.x;
     __m256 wi_y = isects->wi.y;
     __m256 wi_z = isects->wi.z;
@@ -107,7 +107,7 @@ void bsdf_sample_diffuse_l(IntersectionM* isects, __m256 sample0, __m256 sample1
     *res_z = _mm256_blendv_ps(albedo_z, Zero, cmp0);
 }
 
-void bsdf_eval_diffuse_l(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_eval_diffuse_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 wi_x = isects->wi.x;
     __m256 wi_y = isects->wi.y;
     __m256 wi_z = isects->wi.z;
@@ -135,7 +135,7 @@ void bsdf_eval_diffuse_l(IntersectionM* isects, __m256* res_x, __m256* res_y, __
     *res_z = _mm256_blendv_ps(p_albedo_z, Zero, cmp0);
 }
 
-void bsdf_sample_specular_l(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_sample_specular_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 wi_x = isects->wi.x;
     __m256 wi_y = isects->wi.y;
     __m256 wi_z = isects->wi.z;
@@ -158,7 +158,7 @@ void bsdf_sample_specular_l(IntersectionM* isects, __m256* res_x, __m256* res_y,
     *res_z = isects->mesh_albedo.z;
 }
 
-void bsdf_eval_specular_l(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_eval_specular_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 Zero = _mm256_set1_ps(0.0f);
     *res_x = Zero;
     *res_y = Zero;
@@ -166,7 +166,7 @@ void bsdf_eval_specular_l(IntersectionM* isects, __m256* res_x, __m256* res_y, _
 }
 
 // TODO: redundant code cleanup and calculate chained if states bottom up
-void bsdf_sample_dielectric_l(IntersectionM* isects, __m256 sample0, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_sample_dielectric_m(IntersectionM* isects, __m256 sample0, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 wi_x = isects->wi.x;
     __m256 wi_y = isects->wi.y;
     __m256 wi_z = isects->wi.z;
@@ -226,14 +226,14 @@ void bsdf_sample_dielectric_l(IntersectionM* isects, __m256 sample0, __m256* res
     *res_z = isects->mesh_albedo.z;
 }
 
-void bsdf_eval_dielectric_l(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
+void bsdf_eval_dielectric_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 Zero = _mm256_set1_ps(0.0f);
     *res_x = Zero;
     *res_y = Zero;
     *res_z = Zero;
 }
 
-__m256 scene_intersect_l(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256* ray_t_max, IntersectionM* isect){
+__m256 scene_intersect_m(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256* ray_t_max, IntersectionM* isect){
     __m256 do_intersect = _mm256_set1_ps(0.0f);
     for (int mesh_idx = 0; mesh_idx < scene->n_meshes; ++mesh_idx) {
         struct Mesh *mesh = scene_get(scene, mesh_idx);
@@ -305,7 +305,7 @@ __m256 scene_intersect_l(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __
     return do_intersect;
 }
 
-__m256 scene_do_intersect_l(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256 ray_t_max){
+__m256 scene_do_intersect_m(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256 ray_t_max){
     __m256 do_intersect = _mm256_set1_ps(0.0f);
     for (int mesh_idx = 0; mesh_idx < scene->n_meshes; ++mesh_idx) {
         struct Mesh *mesh = scene_get(scene, mesh_idx);
@@ -333,7 +333,7 @@ __m256 scene_do_intersect_l(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y,
         __m256 is_interior = _mm256_cmp_ps(root_small, _mm256_set1_ps(0.0f), _CMP_LT_OQ);
         __m256 root = _mm256_blendv_ps(root_big, root_small, is_interior);
 
-        cur_do_intersect = _mm256_and_ps(cur_do_intersect, _mm256_cmp_ps(root, *ray_t_max, _CMP_LE_OQ));
+        cur_do_intersect = _mm256_and_ps(cur_do_intersect, _mm256_cmp_ps(root, ray_t_max, _CMP_LE_OQ));
         cur_do_intersect = _mm256_and_ps(cur_do_intersect, _mm256_cmp_ps(root, _mm256_set1_ps(0.0f), _CMP_GT_OQ));
 
         do_intersect = _mm256_andnot_ps(do_intersect, cur_do_intersect);
@@ -341,7 +341,7 @@ __m256 scene_do_intersect_l(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y,
     return do_intersect;
 }
 
-void estimate_direct_lighting_l(struct Scene *scene, IntersectionM* isect, __m256* res_x, __m256* res_y, __m256* res_z) {
+void estimate_direct_lighting_m(struct Scene *scene, IntersectionM* isect, __m256* res_x, __m256* res_y, __m256* res_z) {
     __m256 pdf = _mm256_set1_ps(scene->accum_probabilities[0]);
     __m256i emitter_id = _mm256_set1_epi32(0);
     __m256 sample = randf_full();
@@ -412,14 +412,14 @@ void estimate_direct_lighting_l(struct Scene *scene, IntersectionM* isect, __m25
     shadow_ray_o_z = _mm256_fmadd_ps(shadow_ray_d_z, epsilon, shadow_ray_o_z);
     shadow_ray_t_max = _mm256_sub_ps(shadow_ray_t_max, _mm256_set1_ps(4 * EPSILON));
 
-    __m256 do_intersect = scene_do_intersect_l(scene, shadow_ray_o_x, shadow_ray_o_y, shadow_ray_o_z, shadow_ray_d_x,
+    __m256 do_intersect = scene_do_intersect_m(scene, shadow_ray_o_x, shadow_ray_o_y, shadow_ray_o_z, shadow_ray_d_x,
                                                shadow_ray_d_y, shadow_ray_d_z, shadow_ray_t_max);
     __m256 cmp0 = _mm256_cmp_ps(G, _mm256_set1_ps(0.0f), _CMP_LE_OQ);
     __m256 cmp1 = _mm256_or_ps(do_intersect, cmp0);
 
-    isect->wo.x = shadow_ray_d_x;
-    isect->wo.y = shadow_ray_d_y;
-    isect->wo.z = shadow_ray_d_z;
+    isect->wo.x = _mm256_blendv_ps(isect->wo.x, shadow_ray_d_x, do_intersect);
+    isect->wo.y = _mm256_blendv_ps(isect->wo.y, shadow_ray_d_y, do_intersect);
+    isect->wo.z = _mm256_blendv_ps(isect->wo.z, shadow_ray_d_z, do_intersect);
 
     __m256 Ld_x = _mm256_setr_ps(scene->emitters[emitter_id_impl[0]]->emission.x,
                                  scene->emitters[emitter_id_impl[1]]->emission.x,
@@ -446,14 +446,14 @@ void estimate_direct_lighting_l(struct Scene *scene, IntersectionM* isect, __m25
                                  scene->emitters[emitter_id_impl[6]]->emission.z,
                                  scene->emitters[emitter_id_impl[7]]->emission.z);
     __m256 bsdf_x, bsdf_y, bsdf_z;
-    bsdf_eval_l(isect, &bsdf_x, &bsdf_y, &bsdf_z);
+    bsdf_eval_m(isect, &bsdf_x, &bsdf_y, &bsdf_z);
 
     __m256 t3 = _mm256_div_ps(G, pdf);
     Ld_x = _mm256_mul_ps(_mm256_mul_ps(Ld_x, bsdf_x), t3);
     Ld_y = _mm256_mul_ps(_mm256_mul_ps(Ld_y, bsdf_y), t3);
     Ld_z = _mm256_mul_ps(_mm256_mul_ps(Ld_z, bsdf_z), t3);
 
-    *res_x = Ld_x;
-    *res_y = Ld_y;
-    *res_z = Ld_z;
+    *res_x = _mm256_blendv_ps(Ld_x, _mm256_set1_ps(0.0f), cmp1);
+    *res_y = _mm256_blendv_ps(Ld_y, _mm256_set1_ps(0.0f), cmp1);
+    *res_z = _mm256_blendv_ps(Ld_z, _mm256_set1_ps(0.0f), cmp1);
 }
