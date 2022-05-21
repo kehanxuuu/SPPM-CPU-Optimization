@@ -355,7 +355,7 @@ void estimate_direct_lighting_m(struct Scene *scene, IntersectionM* isect, __m25
     }
 //  only spheres
     int emitter_id_impl[NUM_FLOAT_SIMD];
-    _mm256_store_epi32(emitter_id_impl, emitter_id);
+    _mm256_store_si256((__m256i *) emitter_id_impl, emitter_id);
     Sphere *spheres[NUM_FLOAT_SIMD];
     for (int i = 0; i < NUM_FLOAT_SIMD; i++) {
         spheres[i] = scene->emitters[emitter_id_impl[i]]->geometry->data;
