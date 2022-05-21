@@ -32,6 +32,10 @@ static inline __m256 _mm256_powf_ps(__m256 x, __m256 y){
     return _ZGVdN8vv_powf(x, y);
 }
 
+static inline __m256 _mm256_tanf_ps(__m256 x){
+    return _mm256_div_ps(_mm256_sinf_ps(x), _mm256_cosf_ps(x));
+}
+
 static inline __m256 _mm256_absf_ps(__m256 x){
     return _mm256_andnot_ps(_mm256_set1_ps(-0.0f), x);
 }

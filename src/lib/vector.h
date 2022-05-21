@@ -204,5 +204,9 @@ static inline float randf() {
     return res;
 }
 
+static inline __m256 randf_full() {
+    return _mm256_div_ps(simd_rand_full(), _mm256_set1_ps(SIMD_RAND_MAX));
+}
+
 
 #endif //TEAM32_VECTOR_H

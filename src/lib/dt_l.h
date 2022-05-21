@@ -13,8 +13,18 @@ typedef struct {
 } Vector3fL;
 
 typedef struct {
+    __m256 x;
+    __m256 y;
+    __m256 z;
+} Vector3fM;
+
+typedef struct {
     float* data;
 } FloatL;
+
+typedef struct {
+    __m256 data;
+} FloatM;
 
 typedef struct {
     int* data;
@@ -25,6 +35,7 @@ typedef struct {
 } PtrL;
 
 typedef Vector3fL VectorL;
+typedef Vector3fM VectorM;
 
 static inline void* malloc_align(size_t bytes){
 //    bytes + alignment padding + end padding
@@ -110,6 +121,11 @@ static inline void vector3fl_normalize(__m256 x, __m256 y, __m256 z, __m256* res
     *res_x = _mm256_mul_ps(x, inv_norm);
     *res_y = _mm256_mul_ps(y, inv_norm);
     *res_z = _mm256_mul_ps(y, inv_norm);
+}
+
+static inline __m256 vector3fl_rnorm(__m256 x, __m256 y, __m256 z){
+    __m256 norm2 = _mm256_add_ps(_mm256_mul_ps(x, x), _mm256_add_ps(_mm256_mul_ps(y, y), _mm256_mul_ps(z, z)));
+    return _mm256_rsqrt_ps(norm2);
 }
 
 static inline void vector3fl_cross(__m256 ax, __m256 ay, __m256 az, __m256 bx, __m256 by, __m256 bz, __m256* res_x, __m256* res_y, __m256* res_z) {
