@@ -93,6 +93,10 @@ static inline void ptrl_free(PtrL* ptrl){
     free(ptrl->data);
 }
 
+static inline __m256 randf_full() {
+    return _mm256_div_ps(simd_rand_full(), _mm256_set1_ps((float)SIMD_RAND_MAX));
+}
+
 static inline __m256 vector3fl_not_is_zero(__m256 x, __m256 y, __m256 z){
     __m256 zero = _mm256_set1_ps(0.0f);
     __m256 cmp_x = _mm256_cmp_ps(x, zero, _CMP_NEQ_OQ);
