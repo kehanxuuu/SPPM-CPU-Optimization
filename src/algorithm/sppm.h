@@ -92,11 +92,7 @@ void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, int loc_x, int loc_y,
 
 void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_datas);
 
-void sppm_camera_pass_pixel(SPPM *sppm, int x, int y, Vector* direct_radiance, Vector* vp_attenuation, Intersection* vp_intersection);
-
 void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas);
-
-void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_datas);
 
 void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_datas);
 
