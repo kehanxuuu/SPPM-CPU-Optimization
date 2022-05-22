@@ -347,7 +347,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             direct_radiance_y = _mm256_blendv_ps(direct_radiance_y, no_isect_direct_radiance_y, cur_selected);
             direct_radiance_z = _mm256_blendv_ps(direct_radiance_z, no_isect_direct_radiance_z, cur_selected);
 
-            not_completion_vector = _mm256_blendv_ps( not_completion_vector, _mm256_setzero_ps(),cur_selected);
+            not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(), cur_selected);
 
             __m256 emission_direct_radiance_x = _mm256_fmadd_ps(attenuation_x, temp_isect.mesh_emission.x,
                                                                 direct_radiance_x);
@@ -378,7 +378,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             direct_radiance_y = _mm256_blendv_ps(direct_radiance_y, dl_direct_radiance_y, cur_selected);
             direct_radiance_z = _mm256_blendv_ps(direct_radiance_z, dl_direct_radiance_z, cur_selected);
 
-            not_completion_vector = _mm256_blendv_ps( not_completion_vector, _mm256_setzero_ps(),cur_selected);
+            not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(), cur_selected);
 
             __m256 cur_attenuation_x, cur_attenuation_y, cur_attenuation_z;
             bsdf_sample_m(&temp_isect, &cur_attenuation_x, &cur_attenuation_y, &cur_attenuation_z);
@@ -394,7 +394,8 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             __m256 try_roulette = _mm256_cmp_ps(continue_prob, _mm256_set1_ps(0.25f), _CMP_LT_OQ);
             __m256 dead_roulette = _mm256_cmp_ps(randf_full(), continue_prob, _CMP_GE_OQ);
             cur_selected = _mm256_and_ps(_mm256_andnot_ps(dead_roulette, try_roulette), not_completion_vector);
-            not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(), cur_selected);
+            __m256 end_selected = _mm256_and_ps(_mm256_and_ps(dead_roulette, try_roulette), not_completion_vector);
+            not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(), end_selected);
 
             __m256 updated_attenuation_x = _mm256_div_ps(attenuation_x, continue_prob);
             __m256 updated_attenuation_y = _mm256_div_ps(attenuation_y, continue_prob);
