@@ -7,15 +7,17 @@ static inline void generate_ray8(const struct Camera *camera, __m256 px, __m256 
     __m256 fov = _mm256_set1_ps(camera->fov);
     __m256 tg = _mm256_tanf_ps(_mm256_mul_ps(fov, _mm256_set1_ps(0.5f)));
 
-    __m256 t0 = _mm256_mul_ps(_mm256_set1_ps(2.0f), _mm256_add_ps(px, sample0));
-    __m256 t1 = _mm256_sub_ps(_mm256_div_ps(t0, _mm256_set1_ps(camera->W)), _mm256_set1_ps(1.0f));
+    __m256 One = _mm256_set1_ps(1.0f);
+    __m256 Two = _mm256_set1_ps(2.0f);
+    __m256 t0 = _mm256_mul_ps(Two, _mm256_add_ps(px, sample0));
+    __m256 t1 = _mm256_sub_ps(_mm256_div_ps(t0, _mm256_set1_ps(camera->W)), One);
     __m256 dc_x = _mm256_mul_ps(_mm256_mul_ps(_mm256_set1_ps(camera->aspect), tg), t1);
 
-    __m256 t2 = _mm256_mul_ps(_mm256_set1_ps(2.0f), _mm256_add_ps(py, sample1));
-    __m256 t3 = _mm256_sub_ps(_mm256_div_ps(t2, _mm256_set1_ps(camera->H)), _mm256_set1_ps(1.0f));
+    __m256 t2 = _mm256_mul_ps(Two, _mm256_add_ps(py, sample1));
+    __m256 t3 = _mm256_sub_ps(_mm256_div_ps(t2, _mm256_set1_ps(camera->H)), One);
     __m256 dc_y = _mm256_mul_ps(tg, t3);
 
-    __m256 dc_z = _mm256_set1_ps(1.0f);
+    __m256 dc_z = One;
 
     __m256 cur_d_x = _mm256_mul_ps(_mm256_set1_ps(camera->ex.x), dc_x);
     __m256 cur_d_y = _mm256_mul_ps(_mm256_set1_ps(camera->ex.y), dc_x);

@@ -6,8 +6,8 @@ void vector3fl_to_world(__m256 l_x, __m256 l_y, __m256 l_z, __m256 normal_x, __m
     // ex = (a, b, c), UNIT_Y = (0, 1, 0), UNIT_Z = (0, 0, 1)
     // cross(ex, UNIT_Y) = (-c, 0, a), cross(ex, UNIT_Z) = (b, -a, 0)
     __m256 p_cmp_x = _mm256_blendv_ps(normal_y, _mm256_neg_ps(normal_z), cmp0);
-    __m256 p_cmp_y = _mm256_blendv_ps(_mm256_neg_ps(normal_x), _mm256_set1_ps(0.0f), cmp0);
-    __m256 p_cmp_z = _mm256_blendv_ps(_mm256_set1_ps(0.0f), normal_x, cmp0);
+    __m256 p_cmp_y = _mm256_blendv_ps(_mm256_neg_ps(normal_x), _mm256_setzero_ps(), cmp0);
+    __m256 p_cmp_z = _mm256_blendv_ps(_mm256_setzero_ps(), normal_x, cmp0);
 
     __m256 n_x, n_y, n_z; // ex
     vector3fl_normalize(p_cmp_x, p_cmp_y, p_cmp_z, &n_x, &n_y, &n_z);
@@ -37,7 +37,7 @@ void vector3fl_square_to_cosine_hemisphere(__m256 sample0, __m256 sample1, __m25
     l_y = _mm256_mul_ps(r, _mm256_sinf_ps(phi));
     // __m256 t0 = _mm256_sub_ps(_mm256_sub_ps(_mm256_set1_ps(1.0f), _mm256_mul_ps(l_x, l_x)), _mm256_mul_ps(l_y, l_y));
     __m256 t0 = _mm256_sub_ps(_mm256_set1_ps(1.0f), _mm256_mul_ps(r, r));
-    l_z = _mm256_sqrt_ps(_mm256_max_ps(_mm256_set1_ps(0.0f), t0));
+    l_z = _mm256_sqrt_ps(_mm256_max_ps(_mm256_setzero_ps(), t0));
 
     vector3fl_to_world(l_x, l_y, l_z, normal_x, normal_y, normal_z, res_x, res_y, res_z);
 }
@@ -45,7 +45,7 @@ void vector3fl_square_to_cosine_hemisphere(__m256 sample0, __m256 sample1, __m25
 void vector3fl_square_to_uniform_hemisphere(__m256 sample0, __m256 sample1, __m256 normal_x, __m256 normal_y, __m256 normal_z, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 phi = _mm256_mul_ps(_mm256_set1_ps(M_2PI), sample0);
     __m256 t0 = _mm256_sub_ps(_mm256_set1_ps(1.0f), _mm256_mul_ps(sample1, sample1));
-    __m256 r = _mm256_sqrt_ps(_mm256_max_ps(_mm256_set1_ps(0.0f), t0));
+    __m256 r = _mm256_sqrt_ps(_mm256_max_ps(_mm256_setzero_ps(), t0));
 
     __m256 d_x = _mm256_mul_ps(r, _mm256_cosf_ps(phi));
     __m256 d_y = _mm256_mul_ps(r, _mm256_sinf_ps(phi));
@@ -67,7 +67,7 @@ void vector3fl_square_to_uniform_sphere(__m256 sample0, __m256 sample1, __m256* 
 void vector3fl_square_to_uniform_cone(__m256 sample0, __m256 sample1, __m256 cos_theta_max, __m256 normal_x, __m256 normal_y, __m256 normal_z, __m256* res_x, __m256* res_y, __m256* res_z) {
     __m256 cos_theta = _mm256_fmadd_ps(sample0, cos_theta_max, _mm256_sub_ps(_mm256_set1_ps(1.0f), sample0));
     __m256 t0 = _mm256_sub_ps(_mm256_set1_ps(1.0f), _mm256_mul_ps(cos_theta, cos_theta));
-    __m256 sin_theta = _mm256_sqrt_ps(_mm256_max_ps(_mm256_set1_ps(0.0f), t0));
+    __m256 sin_theta = _mm256_sqrt_ps(_mm256_max_ps(_mm256_setzero_ps(), t0));
     __m256 phi = _mm256_mul_ps(_mm256_set1_ps(M_2PI), sample1);
 
     __m256 d_x = _mm256_mul_ps(sin_theta, _mm256_cosf_ps(phi));
@@ -76,7 +76,7 @@ void vector3fl_square_to_uniform_cone(__m256 sample0, __m256 sample1, __m256 cos
 }
 
 __m256 vector3fl_fresnel(__m256 costheta1, __m256 n1, __m256 n2){
-    __m256 Zero = _mm256_set1_ps(0.0f);
+    __m256 Zero = _mm256_setzero_ps();
     __m256 One = _mm256_set1_ps(1.0f);
     __m256 cmp0 = _mm256_cmp_ps(n1, n2, _CMP_EQ_OQ);
     __m256 eta = _mm256_div_ps(n1, n2);

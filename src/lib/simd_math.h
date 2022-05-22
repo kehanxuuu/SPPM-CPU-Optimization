@@ -41,7 +41,7 @@ static inline __m256 _mm256_absf_ps(__m256 x){
 }
 
 static inline __m256 _mm256_neg_ps(__m256 x){
-    return _mm256_sub_ps(_mm256_set1_ps(0.0f), x);
+    return _mm256_sub_ps(_mm256_setzero_ps(), x);
 }
 
 static inline void _mm256_add_scatter_1_ps(__m256 x, float* base_addr, __m256i vindex){

@@ -100,7 +100,7 @@ static inline __m256 randf_full() {
 }
 
 static inline __m256 vector3fl_not_is_zero(__m256 x, __m256 y, __m256 z){
-    __m256 zero = _mm256_set1_ps(0.0f);
+    __m256 zero = _mm256_setzero_ps();
     __m256 cmp_x = _mm256_cmp_ps(x, zero, _CMP_NEQ_OQ);
     __m256 cmp_y = _mm256_cmp_ps(y, zero, _CMP_NEQ_OQ);
     __m256 cmp_z = _mm256_cmp_ps(z, zero, _CMP_NEQ_OQ);
@@ -111,7 +111,7 @@ static inline __m256 vector3fl_not_is_zero(__m256 x, __m256 y, __m256 z){
 }
 
 static inline __m256 vector3fl_is_zero(__m256 x, __m256 y, __m256 z){
-    __m256 zero = _mm256_set1_ps(0.0f);
+    __m256 zero = _mm256_setzero_ps();
     __m256 cmp_x = _mm256_cmp_ps(x, zero, _CMP_EQ_OQ);
     __m256 cmp_y = _mm256_cmp_ps(y, zero, _CMP_EQ_OQ);
     __m256 cmp_z = _mm256_cmp_ps(z, zero, _CMP_EQ_OQ);

@@ -70,9 +70,9 @@ bool mesh_intersect(struct Mesh *mesh, struct Ray *ray, struct Intersection *ise
                 float sqrt_d = sqrtf(discriminant);
                 float root = (-half_b - sqrt_d) / a;
                 if (root > ray->t_max) return false;
-                if (root < 0) {
+                if (root <= 0) {
                     root = (-half_b + sqrt_d) / a;
-                    if (root < 0 || root > ray->t_max) {
+                    if (root <= 0 || root > ray->t_max) {
                         return false;
                     }
                     // Intersect at interior
@@ -119,9 +119,9 @@ bool mesh_do_intersect(const struct Mesh *mesh, const Ray *ray) {
                 float sqrt_d = sqrtf(discriminant);
                 float root = (-half_b - sqrt_d) / a;
                 if (root > ray->t_max) return false;
-                if (root < 0) {
+                if (root <= 0) {
                     root = (-half_b + sqrt_d) / a;
-                    if (root < 0 || root > ray->t_max) {
+                    if (root <= 0 || root > ray->t_max) {
                         return false;
                     }
                 }

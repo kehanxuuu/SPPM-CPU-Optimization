@@ -97,7 +97,7 @@ void bsdf_sample_diffuse_m(IntersectionM* isects, __m256 sample0, __m256 sample1
     isects->wo.y = wo_y;
     isects->wo.z = wo_z;
 
-    __m256 Zero = _mm256_set1_ps(0.0f);
+    __m256 Zero = _mm256_setzero_ps();
     __m256 cmp0 = _mm256_cmp_ps(dot_res, Zero, _CMP_GE_OQ);
     __m256 albedo_x = isects->mesh_albedo.x;
     __m256 albedo_y = isects->mesh_albedo.y;
@@ -121,7 +121,7 @@ void bsdf_eval_diffuse_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __
     __m256 wo_z = isects->wo.z;
     __m256 wo_dot_res = vector3fl_dot(wo_x, wo_y, wo_z, n_x, n_y, n_z);
 
-    __m256 Zero = _mm256_set1_ps(0.0f);
+    __m256 Zero = _mm256_setzero_ps();
     __m256 Inv_Pi = _mm256_set1_ps(INV_PI);
     __m256 cmp0 = _mm256_or_ps(_mm256_cmp_ps(wi_dot_res, Zero, _CMP_GE_OQ),
                                _mm256_cmp_ps(wo_dot_res, Zero, _CMP_LE_OQ));
@@ -159,7 +159,7 @@ void bsdf_sample_specular_m(IntersectionM* isects, __m256* res_x, __m256* res_y,
 }
 
 void bsdf_eval_specular_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
-    __m256 Zero = _mm256_set1_ps(0.0f);
+    __m256 Zero = _mm256_setzero_ps();
     *res_x = Zero;
     *res_y = Zero;
     *res_z = Zero;
@@ -227,14 +227,14 @@ void bsdf_sample_dielectric_m(IntersectionM* isects, __m256 sample0, __m256* res
 }
 
 void bsdf_eval_dielectric_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
-    __m256 Zero = _mm256_set1_ps(0.0f);
+    __m256 Zero = _mm256_setzero_ps();
     *res_x = Zero;
     *res_y = Zero;
     *res_z = Zero;
 }
 
 __m256 scene_intersect_m(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256* ray_t_max, IntersectionM* isect){
-    __m256 do_intersect = _mm256_set1_ps(0.0f);
+    __m256 do_intersect = _mm256_setzero_ps();
     for (int mesh_idx = 0; mesh_idx < scene->n_meshes; ++mesh_idx) {
         struct Mesh *mesh = scene_get(scene, mesh_idx);
         struct Geometry *geometry = mesh->geometry;
@@ -254,35 +254,36 @@ __m256 scene_intersect_m(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __
         __m256 c = _mm256_sub_ps(vector3fl_dot(oc_x, oc_y, oc_z, oc_x, oc_y, oc_z), sphere_r2);
         __m256 discriminant = _mm256_sub_ps(_mm256_mul_ps(half_b, half_b), _mm256_mul_ps(a, c));
 
-        __m256 cur_do_intersect = _mm256_cmp_ps(discriminant, _mm256_set1_ps(0.0f), _CMP_GE_OQ);
+        __m256 cur_do_intersect = _mm256_cmp_ps(discriminant, _mm256_setzero_ps(), _CMP_GE_OQ);
         __m256 sqrt_d = _mm256_sqrt_ps(discriminant);
         __m256 root_small = _mm256_div_ps(_mm256_sub_ps(_mm256_neg_ps(half_b), sqrt_d), a);
         __m256 root_big = _mm256_div_ps(_mm256_add_ps(_mm256_neg_ps(half_b), sqrt_d), a);
-        __m256 is_interior = _mm256_cmp_ps(root_small, _mm256_set1_ps(0.0f), _CMP_LT_OQ);
-        __m256 root = _mm256_blendv_ps(root_big, root_small, is_interior);
+        __m256 is_interior = _mm256_cmp_ps(root_small, _mm256_setzero_ps(), _CMP_LT_OQ);
+        __m256 root = _mm256_blendv_ps(root_small, root_big, is_interior);
 
         cur_do_intersect = _mm256_and_ps(cur_do_intersect, _mm256_cmp_ps(root, *ray_t_max, _CMP_LE_OQ));
-        cur_do_intersect = _mm256_and_ps(cur_do_intersect, _mm256_cmp_ps(root, _mm256_set1_ps(0.0f), _CMP_GT_OQ));
+        cur_do_intersect = _mm256_and_ps(cur_do_intersect, _mm256_cmp_ps(root, _mm256_setzero_ps(), _CMP_GT_OQ));
 
-        do_intersect = _mm256_andnot_ps(do_intersect, cur_do_intersect);
+        do_intersect = _mm256_or_ps(do_intersect, cur_do_intersect);
 
-        *ray_t_max = _mm256_blendv_ps(root, *ray_t_max, do_intersect);
-        isect->mesh_material.data = _mm256_blendv_ps(_mm256_set1_ps(mesh->material), isect->mesh_material.data,
-                                                     do_intersect);
-        isect->mesh_albedo.x = _mm256_blendv_ps(_mm256_set1_ps(mesh->albedo.x), isect->mesh_albedo.x, do_intersect);
-        isect->mesh_albedo.y = _mm256_blendv_ps(_mm256_set1_ps(mesh->albedo.y), isect->mesh_albedo.y, do_intersect);
-        isect->mesh_albedo.z = _mm256_blendv_ps(_mm256_set1_ps(mesh->albedo.z), isect->mesh_albedo.z, do_intersect);
-        isect->mesh_emission.x = _mm256_blendv_ps(_mm256_set1_ps(mesh->emission.x), isect->mesh_emission.x,
-                                                  do_intersect);
-        isect->mesh_emission.y = _mm256_blendv_ps(_mm256_set1_ps(mesh->emission.y), isect->mesh_emission.y,
-                                                  do_intersect);
-        isect->mesh_emission.z = _mm256_blendv_ps(_mm256_set1_ps(mesh->emission.z), isect->mesh_emission.z,
-                                                  do_intersect);
-        isect->mesh_ir.data = _mm256_blendv_ps(_mm256_set1_ps(mesh->ir), isect->mesh_ir.data, do_intersect);
+        *ray_t_max = _mm256_blendv_ps(*ray_t_max, root, cur_do_intersect);
+        isect->mesh_material.data = _mm256_blendv_ps(isect->mesh_material.data, _mm256_set1_ps(mesh->material),
+                                                     cur_do_intersect);
+        isect->mesh_albedo.x = _mm256_blendv_ps(isect->mesh_albedo.x, _mm256_set1_ps(mesh->albedo.x), cur_do_intersect);
+        isect->mesh_albedo.y = _mm256_blendv_ps(isect->mesh_albedo.y, _mm256_set1_ps(mesh->albedo.y), cur_do_intersect);
+        isect->mesh_albedo.z = _mm256_blendv_ps(isect->mesh_albedo.z, _mm256_set1_ps(mesh->albedo.z), cur_do_intersect);
+        isect->mesh_emission.x = _mm256_blendv_ps(isect->mesh_emission.x, _mm256_set1_ps(mesh->emission.x),
+                                                  cur_do_intersect);
+        isect->mesh_emission.y = _mm256_blendv_ps(isect->mesh_emission.y, _mm256_set1_ps(mesh->emission.y),
+                                                  cur_do_intersect);
+        isect->mesh_emission.z = _mm256_blendv_ps(isect->mesh_emission.z, _mm256_set1_ps(mesh->emission.z),
+                                                  cur_do_intersect);
+        isect->mesh_ir.data = _mm256_blendv_ps(isect->mesh_ir.data, _mm256_set1_ps(mesh->ir), cur_do_intersect);
 
-        isect->p.x = _mm256_blendv_ps(_mm256_fmadd_ps(root, ray_d_x, ray_o_x), isect->p.x, do_intersect);
-        isect->p.y = _mm256_blendv_ps(_mm256_fmadd_ps(root, ray_d_y, ray_o_z), isect->p.y, do_intersect);
-        isect->p.z = _mm256_blendv_ps(_mm256_fmadd_ps(root, ray_d_y, ray_o_z), isect->p.z, do_intersect);
+        isect->p.x = _mm256_blendv_ps(isect->p.x, _mm256_fmadd_ps(root, ray_d_x, ray_o_x), cur_do_intersect);
+        isect->p.y = _mm256_blendv_ps(isect->p.y, _mm256_fmadd_ps(root, ray_d_y, ray_o_z), cur_do_intersect);
+        isect->p.z = _mm256_blendv_ps(isect->p.z, _mm256_fmadd_ps(root, ray_d_y, ray_o_z), cur_do_intersect);
+
         __m256 un_isect_n_x = _mm256_sub_ps(isect->p.x, sphere_c_x);
         __m256 un_isect_n_y = _mm256_sub_ps(isect->p.y, sphere_c_y);
         __m256 un_isect_n_z = _mm256_sub_ps(isect->p.z, sphere_c_z);
@@ -291,22 +292,22 @@ __m256 scene_intersect_m(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __
         isect_n_x = _mm256_blendv_ps(isect_n_x, _mm256_neg_ps(isect_n_x), is_interior);
         isect_n_y = _mm256_blendv_ps(isect_n_y, _mm256_neg_ps(isect_n_y), is_interior);
         isect_n_z = _mm256_blendv_ps(isect_n_z, _mm256_neg_ps(isect_n_z), is_interior);
-        isect->n.x = _mm256_blendv_ps(isect_n_x, isect->n.x, do_intersect);
-        isect->n.y = _mm256_blendv_ps(isect_n_y, isect->n.y, do_intersect);
-        isect->n.z = _mm256_blendv_ps(isect_n_z, isect->n.z, do_intersect);
+        isect->n.x = _mm256_blendv_ps(isect->n.x, isect_n_x, cur_do_intersect);
+        isect->n.y = _mm256_blendv_ps(isect->n.y, isect_n_y, cur_do_intersect);
+        isect->n.z = _mm256_blendv_ps(isect->n.z, isect_n_z, cur_do_intersect);
 
         __m256 n_wi_x, n_wi_y, n_wi_z;
         vector3fl_normalize(ray_d_x, ray_d_y, ray_d_z, &n_wi_x, &n_wi_y, &n_wi_z);
 
-        isect->wi.x = _mm256_blendv_ps(n_wi_x, isect->wi.x, do_intersect);
-        isect->wi.y = _mm256_blendv_ps(n_wi_y, isect->wi.y, do_intersect);
-        isect->wi.z = _mm256_blendv_ps(n_wi_z, isect->wi.z, do_intersect);
+        isect->wi.x = _mm256_blendv_ps(isect->wi.x, n_wi_x, cur_do_intersect);
+        isect->wi.y = _mm256_blendv_ps(isect->wi.y, n_wi_y, cur_do_intersect);
+        isect->wi.z = _mm256_blendv_ps(isect->wi.z, n_wi_z, cur_do_intersect);
     }
     return do_intersect;
 }
 
 __m256 scene_do_intersect_m(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256 ray_t_max){
-    __m256 do_intersect = _mm256_set1_ps(0.0f);
+    __m256 do_intersect = _mm256_setzero_ps();
     for (int mesh_idx = 0; mesh_idx < scene->n_meshes; ++mesh_idx) {
         struct Mesh *mesh = scene_get(scene, mesh_idx);
         struct Geometry *geometry = mesh->geometry;
@@ -326,24 +327,24 @@ __m256 scene_do_intersect_m(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y,
         __m256 c = _mm256_sub_ps(vector3fl_dot(oc_x, oc_y, oc_z, oc_x, oc_y, oc_z), sphere_r2);
         __m256 discriminant = _mm256_sub_ps(_mm256_mul_ps(half_b, half_b), _mm256_mul_ps(a, c));
 
-        __m256 cur_do_intersect = _mm256_cmp_ps(discriminant, _mm256_set1_ps(0.0f), _CMP_GE_OQ);
+        __m256 cur_do_intersect = _mm256_cmp_ps(discriminant, _mm256_setzero_ps(), _CMP_GE_OQ);
         __m256 sqrt_d = _mm256_sqrt_ps(discriminant);
         __m256 root_small = _mm256_div_ps(_mm256_sub_ps(_mm256_neg_ps(half_b), sqrt_d), a);
         __m256 root_big = _mm256_div_ps(_mm256_add_ps(_mm256_neg_ps(half_b), sqrt_d), a);
-        __m256 is_interior = _mm256_cmp_ps(root_small, _mm256_set1_ps(0.0f), _CMP_LT_OQ);
-        __m256 root = _mm256_blendv_ps(root_big, root_small, is_interior);
+        __m256 is_interior = _mm256_cmp_ps(root_small, _mm256_setzero_ps(), _CMP_LT_OQ);
+        __m256 root = _mm256_blendv_ps(root_small, root_big, is_interior);
 
         cur_do_intersect = _mm256_and_ps(cur_do_intersect, _mm256_cmp_ps(root, ray_t_max, _CMP_LE_OQ));
-        cur_do_intersect = _mm256_and_ps(cur_do_intersect, _mm256_cmp_ps(root, _mm256_set1_ps(0.0f), _CMP_GT_OQ));
+        cur_do_intersect = _mm256_and_ps(cur_do_intersect, _mm256_cmp_ps(root, _mm256_setzero_ps(), _CMP_GT_OQ));
 
-        do_intersect = _mm256_andnot_ps(do_intersect, cur_do_intersect);
+        do_intersect = _mm256_or_ps(do_intersect, cur_do_intersect);
     }
     return do_intersect;
 }
 
 void estimate_direct_lighting_m(struct Scene *scene, IntersectionM* isect, __m256* res_x, __m256* res_y, __m256* res_z) {
-    __m256 pdf = _mm256_set1_ps(scene->accum_probabilities[0]);
-    __m256i emitter_id = _mm256_set1_epi32(0);
+    __m256 pdf = _mm256_set1_ps(scene->accum_probabilities[1]);
+    __m256i emitter_id = _mm256_setzero_si256();
     __m256 sample = randf_full();
     for (int i = 0; i < scene->n_emitters; ++i) {
         __m256 ac_prob_i = _mm256_set1_ps(scene->accum_probabilities[i]);
@@ -380,9 +381,11 @@ void estimate_direct_lighting_m(struct Scene *scene, IntersectionM* isect, __m25
 
     __m256 sphere_r = _mm256_setr_ps(spheres[0]->r, spheres[1]->r, spheres[2]->r, spheres[3]->r,
                                      spheres[4]->r, spheres[5]->r, spheres[6]->r, spheres[7]->r);
+
+    __m256 One = _mm256_set1_ps(1.0f);
     __m256 sin_theta_max = _mm256_mul_ps(sphere_r, rdist);
-    __m256 cos_theta_max = _mm256_sqrt_ps(_mm256_max_ps(_mm256_set1_ps(0.0f),
-                                                        _mm256_sub_ps(_mm256_set1_ps(1.0f),
+    __m256 cos_theta_max = _mm256_sqrt_ps(_mm256_max_ps(_mm256_setzero_ps(),
+                                                        _mm256_sub_ps(One,
                                                                       _mm256_mul_ps(sin_theta_max, sin_theta_max))));
 
     __m256 dir_x, dir_y, dir_z;
@@ -396,15 +399,15 @@ void estimate_direct_lighting_m(struct Scene *scene, IntersectionM* isect, __m25
     __m256 shadow_ray_d_x = dir_x;
     __m256 shadow_ray_d_y = dir_y;
     __m256 shadow_ray_d_z = dir_z;
-    __m256 dist = _mm256_div_ps(_mm256_set1_ps(1.0f), rdist);
+    __m256 dist = _mm256_div_ps(One, rdist);
     __m256 t0 = _mm256_mul_ps(dist, cos_theta);
-    __m256 t1 = _mm256_sub_ps(_mm256_set1_ps(1.0f), _mm256_mul_ps(cos_theta, cos_theta));
+    __m256 t1 = _mm256_sub_ps(One, _mm256_mul_ps(cos_theta, cos_theta));
     __m256 t2 = _mm256_sqrt_ps(
             _mm256_sub_ps(_mm256_mul_ps(sphere_r, sphere_r), _mm256_mul_ps(_mm256_mul_ps(dist, dist), t1)));
     __m256 shadow_ray_t_max = _mm256_sub_ps(t0, t2);
 
     __m256 G = vector3fl_dot(isect->n.x, isect->n.y, isect->n.z, shadow_ray_d_x, shadow_ray_d_y, shadow_ray_d_z);
-    pdf = _mm256_div_ps(pdf, _mm256_mul_ps(_mm256_set1_ps(M_2PI), _mm256_sub_ps(_mm256_set1_ps(1.0f), cos_theta_max)));
+    pdf = _mm256_div_ps(pdf, _mm256_mul_ps(_mm256_set1_ps(M_2PI), _mm256_sub_ps(One, cos_theta_max)));
 
     __m256 epsilon = _mm256_set1_ps(EPSILON);
     shadow_ray_o_x = _mm256_fmadd_ps(shadow_ray_d_x, epsilon, shadow_ray_o_x);
@@ -414,12 +417,12 @@ void estimate_direct_lighting_m(struct Scene *scene, IntersectionM* isect, __m25
 
     __m256 do_intersect = scene_do_intersect_m(scene, shadow_ray_o_x, shadow_ray_o_y, shadow_ray_o_z, shadow_ray_d_x,
                                                shadow_ray_d_y, shadow_ray_d_z, shadow_ray_t_max);
-    __m256 cmp0 = _mm256_cmp_ps(G, _mm256_set1_ps(0.0f), _CMP_LE_OQ);
+    __m256 cmp0 = _mm256_cmp_ps(G, _mm256_setzero_ps(), _CMP_LE_OQ);
     __m256 cmp1 = _mm256_or_ps(do_intersect, cmp0);
 
-    isect->wo.x = _mm256_blendv_ps(isect->wo.x, shadow_ray_d_x, do_intersect);
-    isect->wo.y = _mm256_blendv_ps(isect->wo.y, shadow_ray_d_y, do_intersect);
-    isect->wo.z = _mm256_blendv_ps(isect->wo.z, shadow_ray_d_z, do_intersect);
+    isect->wo.x = _mm256_blendv_ps(shadow_ray_d_x, isect->wo.x, cmp1);
+    isect->wo.y = _mm256_blendv_ps(shadow_ray_d_y, isect->wo.y, cmp1);
+    isect->wo.z = _mm256_blendv_ps(shadow_ray_d_z, isect->wo.z, cmp1);
 
     __m256 Ld_x = _mm256_setr_ps(scene->emitters[emitter_id_impl[0]]->emission.x,
                                  scene->emitters[emitter_id_impl[1]]->emission.x,
@@ -453,7 +456,7 @@ void estimate_direct_lighting_m(struct Scene *scene, IntersectionM* isect, __m25
     Ld_y = _mm256_mul_ps(_mm256_mul_ps(Ld_y, bsdf_y), t3);
     Ld_z = _mm256_mul_ps(_mm256_mul_ps(Ld_z, bsdf_z), t3);
 
-    *res_x = _mm256_blendv_ps(Ld_x, _mm256_set1_ps(0.0f), cmp1);
-    *res_y = _mm256_blendv_ps(Ld_y, _mm256_set1_ps(0.0f), cmp1);
-    *res_z = _mm256_blendv_ps(Ld_z, _mm256_set1_ps(0.0f), cmp1);
+    *res_x = _mm256_blendv_ps(Ld_x, _mm256_setzero_ps(), cmp1);
+    *res_y = _mm256_blendv_ps(Ld_y, _mm256_setzero_ps(), cmp1);
+    *res_z = _mm256_blendv_ps(Ld_z, _mm256_setzero_ps(), cmp1);
 }
