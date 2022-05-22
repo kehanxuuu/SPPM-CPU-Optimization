@@ -131,26 +131,26 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
 
         __m256 isect_p_x = _mm256_load_ps(&pixel_datas->cur_vp_intersection.p.x[i]);
         __m256 t0 = _mm256_sub_ps(isect_p_x, radius);
-        __m256 t1 = _mm256_blendv_ps(grid_min_x, t0, attenuation_is_zero);
+        __m256 t1 = _mm256_blendv_ps(t0, grid_min_x, attenuation_is_zero);
         grid_min_x = _mm256_min_ps(grid_min_x, t1);
         __m256 t2 = _mm256_add_ps(isect_p_x, radius);
-        __m256 t3 = _mm256_blendv_ps(grid_max_x, t2, attenuation_is_zero);
+        __m256 t3 = _mm256_blendv_ps(t2, grid_max_x, attenuation_is_zero);
         grid_max_x = _mm256_max_ps(grid_max_x, t3);
 
         __m256 isect_p_y = _mm256_load_ps(&pixel_datas->cur_vp_intersection.p.y[i]);
         __m256 t4 = _mm256_sub_ps(isect_p_y, radius);
-        __m256 t5 = _mm256_blendv_ps(grid_min_y, t4, attenuation_is_zero);
+        __m256 t5 = _mm256_blendv_ps(t4, grid_min_y, attenuation_is_zero);
         grid_min_y = _mm256_min_ps(grid_min_y, t5);
         __m256 t6 = _mm256_add_ps(isect_p_y, radius);
-        __m256 t7 = _mm256_blendv_ps(grid_max_y, t6, attenuation_is_zero);
+        __m256 t7 = _mm256_blendv_ps(t6, grid_max_y, attenuation_is_zero);
         grid_max_y = _mm256_max_ps(grid_max_y, t7);
 
         __m256 isect_p_z = _mm256_load_ps(&pixel_datas->cur_vp_intersection.p.z[i]);
         __m256 t8 = _mm256_sub_ps(isect_p_z, radius);
-        __m256 t9 = _mm256_blendv_ps(grid_min_z, t8, attenuation_is_zero);
+        __m256 t9 = _mm256_blendv_ps(t8, grid_min_z, attenuation_is_zero);
         grid_min_z = _mm256_min_ps(grid_min_z, t9);
         __m256 t10 = _mm256_add_ps(isect_p_z, radius);
-        __m256 t11 = _mm256_blendv_ps(grid_max_z, t10, attenuation_is_zero);
+        __m256 t11 = _mm256_blendv_ps(t10, grid_max_z, attenuation_is_zero);
         grid_max_z = _mm256_max_ps(grid_max_z, t11);
     }
 
@@ -232,6 +232,15 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
         sppm_pixel_data_lookup_to_grid_l(lookup, cur_grid_min_x, cur_grid_min_y, cur_grid_min_z, &start_x, &start_y, &start_z);
         sppm_pixel_data_lookup_to_grid_l(lookup, cur_grid_max_x, cur_grid_max_y, cur_grid_max_z, &end_x, &end_y, &end_z);
 
+        __m256 impossible_value = _mm256_set1_ps(-1.0f);
+        __m256 branch_cache_result = _mm256_load_ps(&branch_cache[i]);
+        start_x = _mm256_blendv_ps(start_x, impossible_value, branch_cache_result);
+        start_y = _mm256_blendv_ps(start_y, impossible_value, branch_cache_result);
+        start_z = _mm256_blendv_ps(start_z, impossible_value, branch_cache_result);
+        end_x = _mm256_blendv_ps(end_x, impossible_value, branch_cache_result);
+        end_y = _mm256_blendv_ps(end_y, impossible_value, branch_cache_result);
+        end_z = _mm256_blendv_ps(end_z, impossible_value, branch_cache_result);
+
         int start_x_impl[8];
         int start_y_impl[8];
         int start_z_impl[8];
@@ -247,10 +256,11 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
         _mm256_store_si256((__m256i *)end_z_impl, _mm256_cvtps_epi32(end_z));
 
 //      the lengths are (likely) too different, so it's inefficient to batch process
+//      won't execute if branch_cache = 1
         for(int j = 0; j < NUM_FLOAT_SIMD; j++) {
-            for (int x = start_x_impl[j]; x <= end_x_impl[j]; x++) {
-                for (int y = start_y_impl[j]; y <= end_y_impl[j]; y++) {
-                    for (int z = start_z_impl[j]; z <= end_z_impl[j]; z++) {
+            for (int x = start_x_impl[j] > 0 ? start_x_impl[j]: 0; x <= end_x_impl[j]; x++) {
+                for (int y = start_y_impl[j] > 0 ? start_y_impl[j]: 0; y <= end_y_impl[j]; y++) {
+                    for (int z = start_z_impl[j] > 0 ? start_z_impl[j]: 0; z <= end_z_impl[j]; z++) {
                         sppm_pixel_data_lookup_store(lookup, x, y, z, i);
                     }
                 }
@@ -334,6 +344,14 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             to_store_isect.p.x = _mm256_blendv_ps(to_store_isect.p.x, temp_isect.p.x, not_completion_vector);
             to_store_isect.p.y = _mm256_blendv_ps(to_store_isect.p.y, temp_isect.p.y, not_completion_vector);
             to_store_isect.p.z = _mm256_blendv_ps(to_store_isect.p.z, temp_isect.p.z, not_completion_vector);
+            to_store_isect.n.x = _mm256_blendv_ps(to_store_isect.n.x, temp_isect.n.x, not_completion_vector);
+            to_store_isect.n.y = _mm256_blendv_ps(to_store_isect.n.y, temp_isect.n.y, not_completion_vector);
+            to_store_isect.n.z = _mm256_blendv_ps(to_store_isect.n.z, temp_isect.n.z, not_completion_vector);
+            to_store_isect.wi.x = _mm256_blendv_ps(to_store_isect.wi.x, temp_isect.wi.x, not_completion_vector);
+            to_store_isect.wi.y = _mm256_blendv_ps(to_store_isect.wi.y, temp_isect.wi.y, not_completion_vector);
+            to_store_isect.wi.z = _mm256_blendv_ps(to_store_isect.wi.z, temp_isect.wi.z, not_completion_vector);
+            to_store_isect.interior.data = _mm256_blendv_ps(to_store_isect.interior.data, temp_isect.interior.data,
+                                                           not_completion_vector);
 
             __m256 no_isect_direct_radiance_x = _mm256_fmadd_ps(attenuation_x, _mm256_set1_ps(sppm->background.x),
                                                                 direct_radiance_x);
@@ -370,7 +388,6 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             vp_attenuation_y = _mm256_blendv_ps(vp_attenuation_y, attenuation_y, cur_selected);
             vp_attenuation_z = _mm256_blendv_ps(vp_attenuation_z, attenuation_z, cur_selected);
 
-
             __m256 dl_direct_radiance_x = _mm256_fmadd_ps(attenuation_x, Ld_x, direct_radiance_x);
             __m256 dl_direct_radiance_y = _mm256_fmadd_ps(attenuation_y, Ld_y, direct_radiance_y);
             __m256 dl_direct_radiance_z = _mm256_fmadd_ps(attenuation_z, Ld_z, direct_radiance_z);
@@ -381,10 +398,25 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(), cur_selected);
 
             __m256 cur_attenuation_x, cur_attenuation_y, cur_attenuation_z;
-            bsdf_sample_m(&temp_isect, &cur_attenuation_x, &cur_attenuation_y, &cur_attenuation_z);
+            __m256 mesh_material = temp_isect.mesh_material.data;
+            __m256 is_dielectric = _mm256_cmp_ps(_mm256_set1_ps(DIELECTRIC), mesh_material, _CMP_EQ_OQ);
+
+            __m256 samples0 = randf_full();
+
+            __m256 specular_res_x, specular_res_y, specular_res_z;
+            __m256 dielectric_res_x, dielectric_res_y, dielectric_res_z;
+            bsdf_sample_specular_m(&temp_isect, &specular_res_x, &specular_res_y, &specular_res_z);
+            bsdf_sample_dielectric_m(&temp_isect, samples0, &dielectric_res_x, &dielectric_res_y, &dielectric_res_z);
+            cur_attenuation_x = _mm256_blendv_ps(specular_res_x, dielectric_res_x, is_dielectric);
+            cur_attenuation_y = _mm256_blendv_ps(specular_res_y, dielectric_res_y, is_dielectric);
+            cur_attenuation_z = _mm256_blendv_ps(specular_res_z, dielectric_res_z, is_dielectric);
+
             to_store_isect.wo.x = _mm256_blendv_ps(to_store_isect.wo.x, temp_isect.wo.x, not_completion_vector);
             to_store_isect.wo.y = _mm256_blendv_ps(to_store_isect.wo.y, temp_isect.wo.y, not_completion_vector);
             to_store_isect.wo.z = _mm256_blendv_ps(to_store_isect.wo.z, temp_isect.wo.z, not_completion_vector);
+
+            __m256 cur_attenuation_is_zero = vector3fl_is_zero(cur_attenuation_x, cur_attenuation_y, cur_attenuation_z);
+            not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(), cur_attenuation_is_zero);
 
             attenuation_x = _mm256_mul_ps(attenuation_x, cur_attenuation_x);
             attenuation_y = _mm256_mul_ps(attenuation_y, cur_attenuation_y);
@@ -517,7 +549,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
     _mm256_store_si256((__m256i *)x_impl, _mm256_cvtps_epi32(x));
     _mm256_store_si256((__m256i *)y_impl, _mm256_cvtps_epi32(y));
     for(int k = 0; i < pixel_datas->size; i++, k++){
-        Ray ray = generate_ray(sppm->camera, x_impl[k], x_impl[k], (Vector2f) {randf(), randf()});
+        Ray ray = generate_ray(sppm->camera, x_impl[k], y_impl[k], (Vector2f) {randf(), randf()});
         Vector attenuation = {1.0f, 1.0f, 1.0f};
         Vector vp_attenuation = ZERO_VEC;
         Vector direct_radiance = ZERO_VEC;
@@ -543,7 +575,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
                     cur_attenuation = bsdf_sample_dielectic(&isect, randf());
                     break;
                 default:
-                UNIMPLEMENTED;
+                    UNIMPLEMENTED;
             }
             if (vv_equal(&cur_attenuation, &ZERO_VEC)) {
                 break;
