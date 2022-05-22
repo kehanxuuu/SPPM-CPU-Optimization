@@ -262,6 +262,7 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup, PixelData *pix
     Vector light_radiance = vs_div(&emitter->emission, pdf_emitter * pdf_pos * pdf_dir);
 
     Array cur_vp_intersection_array = pixel_datas->cur_vp_intersection;
+    VectorArray attenuation_array = pixel_datas->cur_vp_attenuation;
     FloatArray radii = pixel_datas->radius;
     VectorArray cur_flux_array = pixel_datas->cur_flux;
     IntArray cur_photons_array = pixel_datas->cur_photons;
@@ -277,6 +278,9 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup, PixelData *pix
             size_t ht_loc = sppm_pixel_data_lookup_hash(lookup, &loc_3d);
             for(int cur_arr_ind = 0; cur_arr_ind < lookup->hash_table[ht_loc].size; cur_arr_ind++) {
                 int pd_index = arr_get_int(&lookup->hash_table[ht_loc], cur_arr_ind);
+                Vector attenuation = arr_get_vector(&attenuation_array, pd_index);
+                if (vv_equal(&attenuation, &ZERO_VEC)) // cur_vp_intersection not set in camera pass
+                    continue;
                 Intersection *cur_vp_intersection = arr_get(&cur_vp_intersection_array, pd_index);
                 float radius = arr_get_float(&radii, pd_index);
                 Vector dist_between = vv_sub(&cur_vp_intersection->p, &isect.p);
