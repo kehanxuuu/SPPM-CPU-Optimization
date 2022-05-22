@@ -1,10 +1,15 @@
 #ifndef TEAM32_SIMD_RANDOM_C_H
 #define TEAM32_SIMD_RANDOM_C_H
 
-#include <immintrin.h>
 #include <stdint.h>
+#include <stdlib.h>
 
+#if __arm64__
+#define SIMD_RAND_MAX RAND_MAX
+#else
+#include <immintrin.h>
 #define SIMD_RAND_MAX 0xffffffff
+#endif
 
 typedef struct{
     uint32_t states[64] __attribute__((aligned(64)));
@@ -14,6 +19,9 @@ typedef struct{
 extern SimdRandomState simd_random_state;
 
 static inline uint32_t simd_rand(){
+#if __arm64__
+    return rand();
+#else
     if(simd_random_state.cur_state < 64){
         return simd_random_state.states[simd_random_state.cur_state++];
     }else{
@@ -93,6 +101,7 @@ static inline uint32_t simd_rand(){
         simd_random_state.cur_state = 1;
         return simd_random_state.states[0];
     }
+#endif
 }
 
 static inline void simd_seed(int seed){
