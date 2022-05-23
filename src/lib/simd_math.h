@@ -2,6 +2,7 @@
 #define TEAM32_SIMD_MATH_H
 
 #include <immintrin.h>
+#include "avx_mathfun.h"
 
 // intel fuckery
 // https://stackoverflow.com/questions/40475140/mathematical-functions-for-simd-registers
@@ -13,23 +14,43 @@ __m256 _ZGVdN8v_sinf(__m256 x);               /* _mm256_sin_ps(x)               
 __m256 _ZGVdN8vv_powf(__m256 x, __m256 y);    /* _mm256_pow_ps(x, y)                      */
 
 static inline __m256 _mm256_cosf_ps(__m256 x){
+#if !defined(__APPLE__)
     return _ZGVdN8v_cosf(x);
+#else
+    return cos256_ps(x);
+#endif
 }
 
 static inline __m256 _mm256_expf_ps(__m256 x){
+#if !defined(__APPLE__)
     return _ZGVdN8v_expf(x);
+#else
+    return exp256_ps(x);
+#endif
 }
 
 static inline __m256 _mm256_logf_ps(__m256 x){
+#if !defined(__APPLE__)
     return _ZGVdN8v_logf(x);
+#else
+    return log256_ps(x);
+#endif
 }
 
 static inline __m256 _mm256_sinf_ps(__m256 x){
+#if !defined(__APPLE__)
     return _ZGVdN8v_sinf(x);
+#else
+    return sin256_ps(x);
+#endif
 }
 
 static inline __m256 _mm256_powf_ps(__m256 x, __m256 y){
+#if !defined(__APPLE__)
     return _ZGVdN8vv_powf(x, y);
+#else
+    return _mm256_setzero_si256(); // powf never called in sppm
+#endif
 }
 
 static inline __m256 _mm256_tanf_ps(__m256 x){

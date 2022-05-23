@@ -96,7 +96,7 @@ static inline void ptrl_free(PtrL* ptrl){
 }
 
 static inline __m256 randf_full() {
-    return _mm256_div_ps(simd_rand_full(), _mm256_set1_ps((float)SIMD_RAND_MAX));
+    return _mm256_div_ps(_mm256_cvtepi32_ps(simd_rand_full()), _mm256_set1_ps((float)SIMD_RAND_MAX));
 }
 
 static inline __m256 vector3fl_not_is_zero(__m256 x, __m256 y, __m256 z){
