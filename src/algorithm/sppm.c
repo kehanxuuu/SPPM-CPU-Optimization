@@ -156,7 +156,7 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
 
     Vector grid_min, grid_max;
     float max_radius;
-    float store_impl[NUM_FLOAT_SIMD];
+    float store_impl[NUM_FLOAT_SIMD] __attribute__((__aligned__(64)));
     _mm256_store_ps(store_impl, grid_min_x);
     grid_min.x = fminf(fminf(fminf(store_impl[0], store_impl[1]), fminf(store_impl[2], store_impl[3])),
                        fminf(fminf(store_impl[4], store_impl[5]), fminf(store_impl[6], store_impl[7])));
@@ -239,12 +239,12 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
         end_y = _mm256_blendv_ps(end_y, impossible_value, branch_cache_result);
         end_z = _mm256_blendv_ps(end_z, impossible_value, branch_cache_result);
 
-        int start_x_impl[8];
-        int start_y_impl[8];
-        int start_z_impl[8];
-        int end_x_impl[8];
-        int end_y_impl[8];
-        int end_z_impl[8];
+        int start_x_impl[8] __attribute__((__aligned__(64)));
+        int start_y_impl[8] __attribute__((__aligned__(64)));
+        int start_z_impl[8] __attribute__((__aligned__(64)));
+        int end_x_impl[8] __attribute__((__aligned__(64)));
+        int end_y_impl[8] __attribute__((__aligned__(64)));
+        int end_z_impl[8] __attribute__((__aligned__(64)));
 
         _mm256_store_si256((__m256i *)start_x_impl, _mm256_cvtps_epi32(start_x));
         _mm256_store_si256((__m256i *)start_y_impl, _mm256_cvtps_epi32(start_y));
@@ -259,7 +259,7 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
             for (int x = start_x_impl[j] > 0 ? start_x_impl[j]: 0; x <= end_x_impl[j]; x++) {
                 for (int y = start_y_impl[j] > 0 ? start_y_impl[j]: 0; y <= end_y_impl[j]; y++) {
                     for (int z = start_z_impl[j] > 0 ? start_z_impl[j]: 0; z <= end_z_impl[j]; z++) {
-                        sppm_pixel_data_lookup_store(lookup, x, y, z, i);
+                        sppm_pixel_data_lookup_store(lookup, x, y, z, i+j);
                     }
                 }
             }
@@ -319,8 +319,10 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
         __m256 direct_radiance_y = _mm256_setzero_ps();
         __m256 direct_radiance_z = _mm256_setzero_ps();
 
-        __m256 not_completion_vector = _mm256_set1_ps(1.0f);
-        for (int c_depth = 0; c_depth < sppm->ray_max_depth; c_depth++) {
+        __m256 not_completion_vector = _mm256_castsi256_ps(_mm256_set1_epi32(-1)); // highest bit must be 1 -> for _mm256_movemask_ps to work
+
+        int c_depth;
+        for (c_depth = 0; c_depth < sppm->ray_max_depth; c_depth++) {
             __m256 do_intersect = scene_intersect_m(sppm->scene, ray_o_x, ray_o_y, ray_o_z, ray_d_x, ray_d_y, ray_d_z,
                                                     &ray_t_max, &temp_isect);
             to_store_isect.mesh_material.data = _mm256_blendv_ps(to_store_isect.mesh_material.data,
@@ -542,8 +544,8 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
         }
     }
 
-    int x_impl[8];
-    int y_impl[8];
+    int x_impl[8] __attribute__((__aligned__(64)));
+    int y_impl[8] __attribute__((__aligned__(64)));
     _mm256_store_si256((__m256i *)x_impl, _mm256_cvtps_epi32(x));
     _mm256_store_si256((__m256i *)y_impl, _mm256_cvtps_epi32(y));
     for(int k = 0; i < pixel_datas->size; i++, k++){
@@ -624,7 +626,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
 void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_datas) {
     int i;
     for (i = 0; i < (sppm->num_photons / NUM_FLOAT_SIMD) * NUM_FLOAT_SIMD; i += NUM_FLOAT_SIMD) {
-        __m256 not_completion_vector = _mm256_set1_ps(1.0f);
+        __m256 not_completion_vector = _mm256_castsi256_ps(_mm256_set1_epi32(-1));
 
         __m256 pdf_emitter = _mm256_set1_ps(sppm->scene->accum_probabilities[1]);
         __m256i emitter_id = _mm256_setzero_si256();
@@ -638,9 +640,9 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
             emitter_id = _mm256_blendv_epi8(emitter_id, _mm256_set1_epi32(j), cmp0);
         }
 //      only spheres
-        int emitter_id_impl[NUM_FLOAT_SIMD];
+        int emitter_id_impl[NUM_FLOAT_SIMD] __attribute__((__aligned__(64)));
         _mm256_store_si256((__m256i *)emitter_id_impl, emitter_id);
-        Sphere *spheres[NUM_FLOAT_SIMD];
+        Sphere *spheres[NUM_FLOAT_SIMD] __attribute__((__aligned__(64)));
         for (int j = 0; j < NUM_FLOAT_SIMD; j++) {
             spheres[j] = sppm->scene->emitters[emitter_id_impl[j]]->geometry->data;
         }
@@ -712,11 +714,11 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                                                  &loc_z);
                 __m256i ht_loc = sppm_pixel_data_lookup_hash_l(lookup, _mm256_cvtps_epi32(loc_x),
                                                                _mm256_cvtps_epi32(loc_y), _mm256_cvtps_epi32(loc_z));
-                int ht_loc_impl[8];
+                int ht_loc_impl[8] __attribute__((__aligned__(64)));
                 _mm256_store_si256((__m256i *)ht_loc_impl, ht_loc);
-                float isect_p_x_impl[8];
-                float isect_p_y_impl[8];
-                float isect_p_z_impl[8];
+                float isect_p_x_impl[8] __attribute__((__aligned__(64)));
+                float isect_p_y_impl[8] __attribute__((__aligned__(64)));
+                float isect_p_z_impl[8] __attribute__((__aligned__(64)));
                 _mm256_store_ps(isect_p_x_impl, temp_isect.p.x);
                 _mm256_store_ps(isect_p_y_impl, temp_isect.p.y);
                 _mm256_store_ps(isect_p_z_impl, temp_isect.p.z);
@@ -745,18 +747,23 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                     int cur_arr_ind;
                     for (cur_arr_ind = 0; cur_arr_ind < (lookup->hash_table[ht_loc_impl[j]].size / NUM_FLOAT_SIMD) *
                                                             NUM_FLOAT_SIMD; cur_arr_ind += NUM_FLOAT_SIMD) {
-                        __m256i pd_index = _mm256_load_si256((__m256i *)&lookup->hash_table[ht_loc_impl[j]]);
-                        __m256 cur_vp_attenuation_x = _mm256_i32gather_ps(&pixel_datas->cur_vp_attenuation.x, pd_index, sizeof(float));
-                        __m256 cur_vp_attenuation_y = _mm256_i32gather_ps(&pixel_datas->cur_vp_attenuation.y, pd_index, sizeof(float));
-                        __m256 cur_vp_attenuation_z = _mm256_i32gather_ps(&pixel_datas->cur_vp_attenuation.z, pd_index, sizeof(float));
+                        __m256i pd_index = _mm256_load_si256((__m256i *)lookup->hash_table[ht_loc_impl[j]].data);
+
+                        int debug[8] __attribute__((__aligned__(64)));
+                        _mm256_store_si256((__m256i *)debug, pd_index);
+                        // fprintf(stderr, "debug: %d, %d, %d, %d, %d, %d, %d, %d\n", debug[0], debug[1], debug[2], debug[3], debug[4], debug[5], debug[6], debug[7]);
+
+                        __m256 cur_vp_attenuation_x = _mm256_i32gather_ps(pixel_datas->cur_vp_attenuation.x, pd_index, sizeof(float));
+                        __m256 cur_vp_attenuation_y = _mm256_i32gather_ps(pixel_datas->cur_vp_attenuation.y, pd_index, sizeof(float));
+                        __m256 cur_vp_attenuation_z = _mm256_i32gather_ps(pixel_datas->cur_vp_attenuation.z, pd_index, sizeof(float));
                         __m256 cur_vp_attenuation_is_zero = vector3fl_is_zero(cur_vp_attenuation_x, cur_vp_attenuation_y, cur_vp_attenuation_z);
 
-                        __m256 radius = _mm256_i32gather_ps(&pixel_datas->radius.data, pd_index, sizeof(float));
-                        __m256 cur_vp_intersection_x = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.p.x,
+                        __m256 radius = _mm256_i32gather_ps(pixel_datas->radius.data, pd_index, sizeof(float));
+                        __m256 cur_vp_intersection_x = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.p.x,
                                                                            pd_index, sizeof(float));
-                        __m256 cur_vp_intersection_y = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.p.y,
+                        __m256 cur_vp_intersection_y = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.p.y,
                                                                            pd_index, sizeof(float));
-                        __m256 cur_vp_intersection_z = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.p.z,
+                        __m256 cur_vp_intersection_z = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.p.z,
                                                                            pd_index, sizeof(float));
 
                         __m256 dist_between_x = _mm256_sub_ps(cur_vp_intersection_x, isect_p_x);
@@ -769,18 +776,18 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
 
 //                      conscious choice to not store cur_vp_intersection->wo, since it is not needed
 
-                        __m256 cur_vp_intersection_n_x = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.n.x,
+                        __m256 cur_vp_intersection_n_x = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.n.x,
                                                                              pd_index, sizeof(float));
-                        __m256 cur_vp_intersection_n_y = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.n.y,
+                        __m256 cur_vp_intersection_n_y = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.n.y,
                                                                              pd_index, sizeof(float));
-                        __m256 cur_vp_intersection_n_z = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.n.z,
+                        __m256 cur_vp_intersection_n_z = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.n.z,
                                                                              pd_index, sizeof(float));
 
-                        __m256 cur_vp_intersection_wi_x = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.wi.x,
+                        __m256 cur_vp_intersection_wi_x = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.wi.x,
                                                                               pd_index, sizeof(float));
-                        __m256 cur_vp_intersection_wi_y = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.wi.y,
+                        __m256 cur_vp_intersection_wi_y = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.wi.y,
                                                                               pd_index, sizeof(float));
-                        __m256 cur_vp_intersection_wi_z = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.wi.z,
+                        __m256 cur_vp_intersection_wi_z = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.wi.z,
                                                                               pd_index, sizeof(float));
 
                         __m256 t1 = vector3fl_dot(cur_vp_intersection_n_x, cur_vp_intersection_n_y,
@@ -793,11 +800,11 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                                                     _mm256_cmp_ps(t2, _mm256_setzero_ps(), _CMP_GT_OQ));
 
                         __m256 cur_vp_intersection_mesh_albedo_x = _mm256_i32gather_ps(
-                                &pixel_datas->cur_vp_intersection.mesh_albedo.x, pd_index, sizeof(float));
+                                pixel_datas->cur_vp_intersection.mesh_albedo.x, pd_index, sizeof(float));
                         __m256 cur_vp_intersection_mesh_albedo_y = _mm256_i32gather_ps(
-                                &pixel_datas->cur_vp_intersection.mesh_albedo.y, pd_index, sizeof(float));
+                                pixel_datas->cur_vp_intersection.mesh_albedo.y, pd_index, sizeof(float));
                         __m256 cur_vp_intersection_mesh_albedo_z = _mm256_i32gather_ps(
-                                &pixel_datas->cur_vp_intersection.mesh_albedo.z, pd_index, sizeof(float));
+                                pixel_datas->cur_vp_intersection.mesh_albedo.z, pd_index, sizeof(float));
 
                         __m256 inv_pi = _mm256_set1_ps(INV_PI);
                         __m256 bsdf_x = _mm256_blendv_ps(_mm256_setzero_ps(),
@@ -926,22 +933,22 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                 int cur_arr_ind;
                 for (cur_arr_ind = 0; cur_arr_ind < (lookup->hash_table[ht_loc].size / NUM_FLOAT_SIMD) *
                                                     NUM_FLOAT_SIMD; cur_arr_ind += NUM_FLOAT_SIMD) {
-                    __m256i pd_index = _mm256_load_si256((__m256i *) &lookup->hash_table[ht_loc]);
-                    __m256 cur_vp_attenuation_x = _mm256_i32gather_ps(&pixel_datas->cur_vp_attenuation.x, pd_index,
+                    __m256i pd_index = _mm256_load_si256((__m256i *) lookup->hash_table[ht_loc].data);
+                    __m256 cur_vp_attenuation_x = _mm256_i32gather_ps(pixel_datas->cur_vp_attenuation.x, pd_index,
                                                                       sizeof(float));
-                    __m256 cur_vp_attenuation_y = _mm256_i32gather_ps(&pixel_datas->cur_vp_attenuation.y, pd_index,
+                    __m256 cur_vp_attenuation_y = _mm256_i32gather_ps(pixel_datas->cur_vp_attenuation.y, pd_index,
                                                                       sizeof(float));
-                    __m256 cur_vp_attenuation_z = _mm256_i32gather_ps(&pixel_datas->cur_vp_attenuation.z, pd_index,
+                    __m256 cur_vp_attenuation_z = _mm256_i32gather_ps(pixel_datas->cur_vp_attenuation.z, pd_index,
                                                                       sizeof(float));
                     __m256 cur_vp_attenuation_is_zero = vector3fl_is_zero(cur_vp_attenuation_x, cur_vp_attenuation_y,
                                                                           cur_vp_attenuation_z);
 
-                    __m256 radius = _mm256_i32gather_ps(&pixel_datas->radius.data, pd_index, sizeof(float));
-                    __m256 cur_vp_intersection_x = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.p.x, pd_index,
+                    __m256 radius = _mm256_i32gather_ps(pixel_datas->radius.data, pd_index, sizeof(float));
+                    __m256 cur_vp_intersection_x = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.p.x, pd_index,
                                                                        sizeof(float));
-                    __m256 cur_vp_intersection_y = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.p.y, pd_index,
+                    __m256 cur_vp_intersection_y = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.p.y, pd_index,
                                                                        sizeof(float));
-                    __m256 cur_vp_intersection_z = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.p.z, pd_index,
+                    __m256 cur_vp_intersection_z = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.p.z, pd_index,
                                                                        sizeof(float));
 
                     __m256 dist_between_x = _mm256_sub_ps(cur_vp_intersection_x, isect_p_x);
@@ -952,18 +959,18 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                     __m256 cmp0 = _mm256_cmp_ps(sqr_dist_between, _mm256_mul_ps(radius, radius), _CMP_LT_OQ);
                     cmp0 = _mm256_andnot_ps(cur_vp_attenuation_is_zero, cmp0);
 
-                    __m256 cur_vp_intersection_n_x = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.n.x,
+                    __m256 cur_vp_intersection_n_x = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.n.x,
                                                                          pd_index, sizeof(float));
-                    __m256 cur_vp_intersection_n_y = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.n.y,
+                    __m256 cur_vp_intersection_n_y = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.n.y,
                                                                          pd_index, sizeof(float));
-                    __m256 cur_vp_intersection_n_z = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.n.z,
+                    __m256 cur_vp_intersection_n_z = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.n.z,
                                                                          pd_index, sizeof(float));
 
-                    __m256 cur_vp_intersection_wi_x = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.wi.x,
+                    __m256 cur_vp_intersection_wi_x = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.wi.x,
                                                                           pd_index, sizeof(float));
-                    __m256 cur_vp_intersection_wi_y = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.wi.y,
+                    __m256 cur_vp_intersection_wi_y = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.wi.y,
                                                                           pd_index, sizeof(float));
-                    __m256 cur_vp_intersection_wi_z = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.wi.z,
+                    __m256 cur_vp_intersection_wi_z = _mm256_i32gather_ps(pixel_datas->cur_vp_intersection.wi.z,
                                                                           pd_index, sizeof(float));
 
                     __m256 t1 = vector3fl_dot(cur_vp_intersection_n_x, cur_vp_intersection_n_y,
@@ -976,11 +983,11 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                                                 _mm256_cmp_ps(t2, _mm256_setzero_ps(), _CMP_GT_OQ));
 
                     __m256 cur_vp_intersection_mesh_albedo_x = _mm256_i32gather_ps(
-                            &pixel_datas->cur_vp_intersection.mesh_albedo.x, pd_index, sizeof(float));
+                            pixel_datas->cur_vp_intersection.mesh_albedo.x, pd_index, sizeof(float));
                     __m256 cur_vp_intersection_mesh_albedo_y = _mm256_i32gather_ps(
-                            &pixel_datas->cur_vp_intersection.mesh_albedo.y, pd_index, sizeof(float));
+                            pixel_datas->cur_vp_intersection.mesh_albedo.y, pd_index, sizeof(float));
                     __m256 cur_vp_intersection_mesh_albedo_z = _mm256_i32gather_ps(
-                            &pixel_datas->cur_vp_intersection.mesh_albedo.z, pd_index, sizeof(float));
+                            pixel_datas->cur_vp_intersection.mesh_albedo.z, pd_index, sizeof(float));
 
                     __m256 inv_pi = _mm256_set1_ps(INV_PI);
                     __m256 bsdf_x = _mm256_blendv_ps(_mm256_setzero_ps(),

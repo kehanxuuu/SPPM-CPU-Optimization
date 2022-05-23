@@ -96,6 +96,11 @@ static inline void _mm256_add_scatter_1_epi32(__m256i x, int* base_addr, __m256i
 }
 
 static inline __m256i _mm256_mod_epi32(__m256i x, __m256i y){
-    return _mm256_set1_epi32(0.0f);
+    __m256 x_f = _mm256_cvtepi32_ps(x);
+    __m256 y_f = _mm256_cvtepi32_ps(y);
+    __m256 quotient = _mm256_div_ps(x_f, y_f);
+    quotient = _mm256_floor_ps(quotient);
+    __m256 remainder = _mm256_sub_ps(x_f, _mm256_mul_ps(quotient, y_f));
+    return _mm256_cvtps_epi32(remainder);
 }
 #endif //TEAM32_SIMD_MATH_H

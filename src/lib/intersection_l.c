@@ -355,7 +355,7 @@ void estimate_direct_lighting_m(struct Scene *scene, IntersectionM* isect, __m25
         emitter_id = _mm256_blendv_epi8(emitter_id, _mm256_set1_epi32(i), _mm256_cvtps_epi32(cmp0));
     }
 //  only spheres
-    int emitter_id_impl[NUM_FLOAT_SIMD];
+    int emitter_id_impl[NUM_FLOAT_SIMD] __attribute__((__aligned__(64)));
     _mm256_store_si256((__m256i *) emitter_id_impl, emitter_id);
     Sphere *spheres[NUM_FLOAT_SIMD];
     for (int i = 0; i < NUM_FLOAT_SIMD; i++) {
