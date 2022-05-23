@@ -210,8 +210,6 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
     sppm_pixel_data_lookup_clear(lookup);
     sppm_pixel_data_lookup_assign(lookup, _SPPM_RADIUS_MULT * max_radius, &grid_min);
 
-//    TODO: collect and condense the branch_cache to skip operations
-
     for(i = 0; i < pixel_datas->size_float_simd; i += NUM_FLOAT_SIMD) {
         __m256 radius_f = _mm256_load_ps(&pixel_datas->radius.data[i]);
 
@@ -628,8 +626,8 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
     for (i = 0; i < (sppm->num_photons / NUM_FLOAT_SIMD) * NUM_FLOAT_SIMD; i += NUM_FLOAT_SIMD) {
         __m256 not_completion_vector = _mm256_set1_ps(1.0f);
 
-        __m256 pdf_emitter = _mm256_set1_ps(sppm->scene->accum_probabilities[0]);
-        __m256i emitter_id = _mm256_set1_epi32(0);
+        __m256 pdf_emitter = _mm256_set1_ps(sppm->scene->accum_probabilities[1]);
+        __m256i emitter_id = _mm256_setzero_si256();
         __m256 sample = randf_full();
         for (int j = 0; j < sppm->scene->n_emitters; ++j) {
             __m256 ac_prob_i = _mm256_set1_ps(sppm->scene->accum_probabilities[j]);
@@ -662,7 +660,8 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
         __m256 ray_o_y = _mm256_fmadd_ps(normal_y, mult_s, sphere_c_y);
         __m256 ray_o_z = _mm256_fmadd_ps(normal_z, mult_s, sphere_c_z);
 
-        __m256 pdf_pos = _mm256_div_ps(_mm256_set1_ps(1.0f),
+        __m256 One = _mm256_set1_ps(1.0f);
+        __m256 pdf_pos = _mm256_div_ps(One,
                                        _mm256_mul_ps(_mm256_set1_ps(M_2PI), _mm256_mul_ps(sphere_r, sphere_r)));
         __m256 ray_d_x, ray_d_y, ray_d_z;
         vector3fl_square_to_uniform_hemisphere(randf_full(), randf_full(), normal_x, normal_y, normal_z, &ray_d_x,
@@ -695,16 +694,16 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                                            sppm->scene->emitters[emitter_id_impl[6]]->emission.z,
                                            sppm->scene->emitters[emitter_id_impl[7]]->emission.z);
 
-        __m256 t0 = _mm256_mul_ps(pdf_emitter, _mm256_mul_ps(pdf_pos, pdf_dir));
-        __m256 light_radiance_x = _mm256_div_ps(emission_x, t0);
-        __m256 light_radiance_y = _mm256_div_ps(emission_y, t0);
-        __m256 light_radiance_z = _mm256_div_ps(emission_z, t0);
+        __m256 t0 = _mm256_div_ps(One, _mm256_mul_ps(pdf_emitter, _mm256_mul_ps(pdf_pos, pdf_dir)));
+        __m256 light_radiance_x = _mm256_mul_ps(emission_x, t0);
+        __m256 light_radiance_y = _mm256_mul_ps(emission_y, t0);
+        __m256 light_radiance_z = _mm256_mul_ps(emission_z, t0);
 
         IntersectionM temp_isect;
         for (int c_depth = 0; c_depth < sppm->ray_max_depth; c_depth++) {
             __m256 do_intersect = scene_intersect_m(sppm->scene, ray_o_x, ray_o_y, ray_o_z, ray_d_x, ray_d_y, ray_d_z,
                                                     &ray_t_max, &temp_isect);
-            not_completion_vector = _mm256_blendv_ps(_mm256_setzero_ps(), not_completion_vector,
+            not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(),
                                                      _mm256_andnot_ps(do_intersect, not_completion_vector));
 
             if (c_depth > 0) {
@@ -723,6 +722,8 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                 _mm256_store_ps(isect_p_z_impl, temp_isect.p.z);
                 int not_complete = _mm256_movemask_ps(not_completion_vector);
 
+                // lookup table has varying length
+                // instead of using SIMD to visit 8 tables simultaneously, visit each table sequentially with 8 indices at a time
                 __m256i shufmask = _mm256_setzero_si256();
                 for (int j = 0; j < NUM_FLOAT_SIMD; j++) {
                     if ((not_complete & 0b1) == 0) {
@@ -740,9 +741,16 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                     __m256 cur_neg_ray_d_z = _mm256_neg_ps(_mm256_permutevar8x32_ps(ray_d_z, shufmask));
 
                     shufmask = _mm256_add_epi32(shufmask, _mm256_set1_epi32(1));
-                    for (int cur_arr_ind = 0; cur_arr_ind < (lookup->hash_table[ht_loc_impl[j]].size / NUM_FLOAT_SIMD) *
+
+                    int cur_arr_ind;
+                    for (cur_arr_ind = 0; cur_arr_ind < (lookup->hash_table[ht_loc_impl[j]].size / NUM_FLOAT_SIMD) *
                                                             NUM_FLOAT_SIMD; cur_arr_ind += NUM_FLOAT_SIMD) {
                         __m256i pd_index = _mm256_load_si256((__m256i *)&lookup->hash_table[ht_loc_impl[j]]);
+                        __m256 cur_vp_attenuation_x = _mm256_i32gather_ps(&pixel_datas->cur_vp_attenuation.x, pd_index, sizeof(float));
+                        __m256 cur_vp_attenuation_y = _mm256_i32gather_ps(&pixel_datas->cur_vp_attenuation.y, pd_index, sizeof(float));
+                        __m256 cur_vp_attenuation_z = _mm256_i32gather_ps(&pixel_datas->cur_vp_attenuation.z, pd_index, sizeof(float));
+                        __m256 cur_vp_attenuation_is_zero = vector3fl_is_zero(cur_vp_attenuation_x, cur_vp_attenuation_y, cur_vp_attenuation_z);
+
                         __m256 radius = _mm256_i32gather_ps(&pixel_datas->radius.data, pd_index, sizeof(float));
                         __m256 cur_vp_intersection_x = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.p.x,
                                                                            pd_index, sizeof(float));
@@ -757,6 +765,7 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
 
                         __m256 sqr_dist_between = vector3fl_sqrnorm(dist_between_x, dist_between_y, dist_between_z);
                         __m256 cmp0 = _mm256_cmp_ps(sqr_dist_between, _mm256_mul_ps(radius, radius), _CMP_LT_OQ);
+                        cmp0 = _mm256_andnot_ps(cur_vp_attenuation_is_zero, cmp0);
 
 //                      conscious choice to not store cur_vp_intersection->wo, since it is not needed
 
@@ -810,6 +819,44 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                         _mm256_add_scatter_1_ps(_mm256_mul_ps(bsdf_z, cmp0), pixel_datas->cur_flux.z, pd_index);
                         _mm256_add_scatter_1_epi32(_mm256_mul_ps(_mm256_set1_epi32(1),  cmp0), pixel_datas->cur_photons.data, pd_index);
                     }
+
+                    for (; cur_arr_ind < lookup->hash_table[ht_loc_impl[j]].size; cur_arr_ind++) {
+                        int pd_index = arr_get_int(&lookup->hash_table[ht_loc], cur_arr_ind);
+                        Vector cur_vp_attenuation = { pixel_datas->cur_vp_attenuation.x[pd_index],
+                                               pixel_datas->cur_vp_attenuation.y[pd_index],
+                                               pixel_datas->cur_vp_attenuation.z[pd_index] };
+                        if (vv_equal(&cur_vp_attenuation, &ZERO_VEC))
+                            continue;
+
+                        Vector cur_vp_intersection_pos = { pixel_datas->cur_vp_intersection.p.x[pd_index],
+                                                           pixel_datas->cur_vp_intersection.p.y[pd_index],
+                                                           pixel_datas->cur_vp_intersection.p.z[pd_index] };
+                        float radius = pixel_datas->radius.data[pd_index];
+                        Vector isect_p = {isect_p_x_impl[j], isect_p_y_impl[j], isect_p_z_impl[j]};
+                        Vector dist_between = vv_sub(&cur_vp_intersection_pos, &isect_p);
+                        if (v_norm_sqr(&dist_between) < radius * radius) {
+                            Vector cur_vp_intersection_wi = { pixel_datas->cur_vp_intersection.wi.x[pd_index],
+                                                              pixel_datas->cur_vp_intersection.wi.y[pd_index],
+                                                              pixel_datas->cur_vp_intersection.wi.z[pd_index] };
+                            Vector cur_vp_intersection_n = { pixel_datas->cur_vp_intersection.n.x[pd_index],
+                                                             pixel_datas->cur_vp_intersection.n.y[pd_index],
+                                                             pixel_datas->cur_vp_intersection.n.z[pd_index] };
+                            Vector cur_neg_ray_d = { -ray_d_x[j], -ray_d_y[j], -ray_d_z[j] };
+                            Vector bsdf = ZERO_VEC;
+                            if (vv_dot(&cur_vp_intersection_wi, &cur_vp_intersection_n) < 0 && vv_dot(&cur_neg_ray_d, &cur_vp_intersection_n) > 0) {
+                                Vector cur_vp_intersection_albedo = { pixel_datas->cur_vp_intersection.mesh_albedo.x[pd_index],
+                                                                      pixel_datas->cur_vp_intersection.mesh_albedo.y[pd_index],
+                                                                      pixel_datas->cur_vp_intersection.mesh_albedo.z[pd_index] };
+                                bsdf = vs_mul(&cur_vp_intersection_albedo, INV_PI);
+                            }
+                            Vector light_radiance = { light_radiance_x[j], light_radiance_y[j], light_radiance_z[j] };
+                            vv_muleq(&bsdf, &light_radiance);
+                            pixel_datas->cur_flux.x[pd_index] += bsdf.x;
+                            pixel_datas->cur_flux.y[pd_index] += bsdf.y;
+                            pixel_datas->cur_flux.z[pd_index] += bsdf.z;
+                            pixel_datas->cur_photons.data[pd_index] += 1;
+                        }
+                    }
                 }
                 __m256 cur_attenuation_x, cur_attenuation_y, cur_attenuation_z;
                 bsdf_sample_m(&temp_isect, &cur_attenuation_x, &cur_attenuation_y, &cur_attenuation_z);
@@ -823,7 +870,8 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                 __m256 dead_roulette = _mm256_cmp_ps(randf_full(), continue_prob, _CMP_GE_OQ);
                 __m256 cur_selected = _mm256_and_ps(_mm256_andnot_ps(dead_roulette, try_roulette),
                                                     not_completion_vector);
-                not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(), cur_selected);
+                __m256 end_selected = _mm256_and_ps(_mm256_and_ps(dead_roulette, try_roulette), not_completion_vector);
+                not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(), end_selected);
 
                 __m256 updated_attenuation_x = _mm256_div_ps(light_radiance_x, continue_prob);
                 __m256 updated_attenuation_y = _mm256_div_ps(light_radiance_y, continue_prob);
@@ -875,8 +923,14 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                 __m256 cur_neg_ray_d_y = _mm256_neg_ps(_mm256_set1_ps(ray.d.y));
                 __m256 cur_neg_ray_d_z = _mm256_neg_ps(_mm256_set1_ps(ray.d.z));
                 int ht_loc = sppm_pixel_data_lookup_hash(lookup, loc_x, loc_y, loc_z);
-                for (int cur_arr_ind = 0; cur_arr_ind < (lookup->hash_table[ht_loc].size / NUM_FLOAT_SIMD) * NUM_FLOAT_SIMD; cur_arr_ind += NUM_FLOAT_SIMD) {
+                int cur_arr_ind;
+                for (cur_arr_ind = 0; cur_arr_ind < (lookup->hash_table[ht_loc].size / NUM_FLOAT_SIMD) * NUM_FLOAT_SIMD; cur_arr_ind += NUM_FLOAT_SIMD) {
                     __m256i pd_index = _mm256_load_si256((__m256i *)&lookup->hash_table[ht_loc]);
+                    __m256 cur_vp_attenuation_x = _mm256_i32gather_ps(&pixel_datas->cur_vp_attenuation.x, pd_index, sizeof(float));
+                    __m256 cur_vp_attenuation_y = _mm256_i32gather_ps(&pixel_datas->cur_vp_attenuation.y, pd_index, sizeof(float));
+                    __m256 cur_vp_attenuation_z = _mm256_i32gather_ps(&pixel_datas->cur_vp_attenuation.z, pd_index, sizeof(float));
+                    __m256 cur_vp_attenuation_is_zero = vector3fl_is_zero(cur_vp_attenuation_x, cur_vp_attenuation_y, cur_vp_attenuation_z);
+
                     __m256 radius = _mm256_i32gather_ps(&pixel_datas->radius.data, pd_index, sizeof(float));
                     __m256 cur_vp_intersection_x = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.p.x, pd_index, sizeof(float));
                     __m256 cur_vp_intersection_y = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.p.y, pd_index, sizeof(float));
@@ -888,6 +942,7 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
 
                     __m256 sqr_dist_between = vector3fl_sqrnorm(dist_between_x, dist_between_y, dist_between_z);
                     __m256 cmp0 = _mm256_cmp_ps(sqr_dist_between, _mm256_mul_ps(radius, radius), _CMP_LT_OQ);
+                    cmp0 = _mm256_andnot_ps(cur_vp_attenuation_is_zero, cmp0);
 
                     __m256 cur_vp_intersection_n_x = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.n.x, pd_index, sizeof(float));
                     __m256 cur_vp_intersection_n_y = _mm256_i32gather_ps(&pixel_datas->cur_vp_intersection.n.y, pd_index, sizeof(float));
@@ -932,6 +987,43 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                     _mm256_add_scatter_1_ps(_mm256_mul_ps(bsdf_y, cmp0), pixel_datas->cur_flux.y, pd_index);
                     _mm256_add_scatter_1_ps(_mm256_mul_ps(bsdf_z, cmp0), pixel_datas->cur_flux.z, pd_index);
                     _mm256_add_scatter_1_epi32(_mm256_mul_ps(_mm256_set1_epi32(1),  cmp0), pixel_datas->cur_photons.data, pd_index);
+                }
+
+                Vector isect_p = {isect.p.x, isect.p.y, isect.p.z};
+                Vector light_radiance = { light_radiance.x, light_radiance.y, light_radiance.z };
+                for(; cur_arr_ind < lookup->hash_table[ht_loc].size; cur_arr_ind++) {
+                    int pd_index = arr_get_int(&lookup->hash_table[ht_loc], cur_arr_ind);
+                    Vector cur_vp_attenuation = { pixel_datas->cur_vp_attenuation.x[pd_index],
+                                                  pixel_datas->cur_vp_attenuation.y[pd_index],
+                                                  pixel_datas->cur_vp_attenuation.z[pd_index] };
+                    if (vv_equal(&cur_vp_attenuation, &ZERO_VEC))
+                        continue;
+
+                    Vector cur_vp_intersection_pos = { pixel_datas->cur_vp_intersection.p.x[pd_index],
+                                                       pixel_datas->cur_vp_intersection.p.y[pd_index],
+                                                       pixel_datas->cur_vp_intersection.p.z[pd_index] };
+                    float radius = pixel_datas->radius.data[pd_index];
+                    Vector dist_between = vv_sub(&cur_vp_intersection_pos, &isect_p);
+                    if (v_norm_sqr(&dist_between) < radius * radius) {
+                        Vector cur_vp_intersection_wi = { pixel_datas->cur_vp_intersection.wi.x[pd_index],
+                                                          pixel_datas->cur_vp_intersection.wi.y[pd_index],
+                                                          pixel_datas->cur_vp_intersection.wi.z[pd_index] };
+                        Vector cur_vp_intersection_n = { pixel_datas->cur_vp_intersection.n.x[pd_index],
+                                                         pixel_datas->cur_vp_intersection.n.y[pd_index],
+                                                         pixel_datas->cur_vp_intersection.n.z[pd_index] };
+                        Vector cur_neg_ray_d = { ray.d.x, ray.d.y, ray.d.z };
+                        Vector bsdf = ZERO_VEC;
+                        if (vv_dot(&cur_vp_intersection_wi, &cur_vp_intersection_n) < 0 && vv_dot(&cur_neg_ray_d, &cur_vp_intersection_n) > 0) {
+                            Vector cur_vp_intersection_albedo = { pixel_datas->cur_vp_intersection.mesh_albedo.x[pd_index],
+                                                                  pixel_datas->cur_vp_intersection.mesh_albedo.y[pd_index],
+                                                                  pixel_datas->cur_vp_intersection.mesh_albedo.z[pd_index] };
+                            bsdf = vs_mul(&cur_vp_intersection_albedo, INV_PI);
+                        }
+                        vv_muleq(&bsdf, &light_radiance);
+                        pixel_datas->cur_flux.x[pd_index] += bsdf.x;
+                        pixel_datas->cur_flux.y[pd_index] += bsdf.y;
+                        pixel_datas->cur_flux.z[pd_index] += bsdf.z;
+                        pixel_datas->cur_photons.data[pd_index] += 1;
                 }
             }
 
