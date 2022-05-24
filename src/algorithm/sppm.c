@@ -305,7 +305,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
         __m256 ray_o_x, ray_o_y, ray_o_z, ray_d_x, ray_d_y, ray_d_z, ray_t_max;
         __m256 samples0 = randf_full();
         __m256 samples1 = randf_full();
-        generate_ray8(sppm->camera, x, y, samples0, samples1, &ray_o_x, &ray_o_y, &ray_o_z, &ray_d_x, &ray_d_y, &ray_d_z, &ray_t_max);
+        generate_ray8(sppm->camera, y, x, samples0, samples1, &ray_o_x, &ray_o_y, &ray_o_z, &ray_d_x, &ray_d_y, &ray_d_z, &ray_t_max);
 
         __m256 attenuation_x = _mm256_set1_ps(1.0f);
         __m256 attenuation_y = _mm256_set1_ps(1.0f);
@@ -482,9 +482,9 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
         _mm256_store_ps(&pixel_datas->cur_vp_intersection.interior.data[i], to_store_isect.interior.data);
 
         y = _mm256_add_ps(y, incr_amount);
-        width_tracker += 8;
+        width_tracker += NUM_FLOAT_SIMD;
         if(width_tracker > W) {
-            switch (i % W) {
+            switch ((i+NUM_FLOAT_SIMD) % W) {
                 case 1: {
                     __m256 t0 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
                     x = _mm256_add_ps(x, t0);

@@ -4,8 +4,8 @@
 #include <immintrin.h>
 
 static inline void generate_ray8(const struct Camera *camera, __m256 px, __m256 py, __m256 sample0, __m256 sample1, __m256* o_x, __m256* o_y, __m256* o_z, __m256* d_x, __m256* d_y, __m256* d_z, __m256* t_max) {
-    __m256 fov = _mm256_set1_ps(camera->fov);
-    __m256 tg = _mm256_tanf_ps(_mm256_mul_ps(fov, _mm256_set1_ps(0.5f)));
+    __m256 fov = _mm256_set1_ps(camera->fov * 0.5f);
+    __m256 tg = _mm256_tanf_ps(fov);
 
     __m256 One = _mm256_set1_ps(1.0f);
     __m256 Two = _mm256_set1_ps(2.0f);

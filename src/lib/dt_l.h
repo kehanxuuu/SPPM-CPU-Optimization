@@ -126,7 +126,7 @@ static inline void vector3fl_normalize(__m256 x, __m256 y, __m256 z, __m256* res
     __m256 inv_norm = _mm256_rsqrt_ps(norm2);
     *res_x = _mm256_mul_ps(x, inv_norm);
     *res_y = _mm256_mul_ps(y, inv_norm);
-    *res_z = _mm256_mul_ps(y, inv_norm);
+    *res_z = _mm256_mul_ps(z, inv_norm);
 }
 
 static inline __m256 vector3fl_rnorm(__m256 x, __m256 y, __m256 z){
