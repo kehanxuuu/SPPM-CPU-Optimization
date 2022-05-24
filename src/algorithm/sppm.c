@@ -295,6 +295,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
     H = sppm->camera->H;
 
     __m256 incr_amount = _mm256_set1_ps(NUM_FLOAT_SIMD);
+
     __m256 x = _mm256_setzero_ps();
     __m256 y = _mm256_setr_ps(0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f);
     int i;
@@ -406,7 +407,15 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             __m256 specular_res_x, specular_res_y, specular_res_z;
             __m256 dielectric_res_x, dielectric_res_y, dielectric_res_z;
             bsdf_sample_specular_m(&temp_isect, &specular_res_x, &specular_res_y, &specular_res_z);
+            __m256 spec_wo_x, spec_wo_y, spec_wo_z;
+            spec_wo_x = temp_isect.wo.x;
+            spec_wo_y = temp_isect.wo.y;
+            spec_wo_z = temp_isect.wo.z;
             bsdf_sample_dielectric_m(&temp_isect, samples0, &dielectric_res_x, &dielectric_res_y, &dielectric_res_z);
+            temp_isect.wo.x = _mm256_blendv_ps(spec_wo_x, temp_isect.wo.x, is_dielectric);
+            temp_isect.wo.y = _mm256_blendv_ps(spec_wo_y, temp_isect.wo.y, is_dielectric);
+            temp_isect.wo.z = _mm256_blendv_ps(spec_wo_z, temp_isect.wo.z, is_dielectric);
+
             cur_attenuation_x = _mm256_blendv_ps(specular_res_x, dielectric_res_x, is_dielectric);
             cur_attenuation_y = _mm256_blendv_ps(specular_res_y, dielectric_res_y, is_dielectric);
             cur_attenuation_z = _mm256_blendv_ps(specular_res_z, dielectric_res_z, is_dielectric);
@@ -637,7 +646,8 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
             __m256 cmp0 = _mm256_and_ps(_mm256_cmp_ps(ac_prob_i, sample, _CMP_LE_OQ),
                                         _mm256_cmp_ps(sample, ac_prob_i1, _CMP_LT_OQ));
             pdf_emitter = _mm256_blendv_ps(pdf_emitter, _mm256_sub_ps(ac_prob_i1, ac_prob_i), cmp0);
-            emitter_id = _mm256_blendv_epi8(emitter_id, _mm256_set1_epi32(j), cmp0);
+            __m256i mask_i = cmp0;
+            emitter_id = _mm256_blendv_epi8(emitter_id, _mm256_set1_epi32(j), mask_i);
         }
 //      only spheres
         int emitter_id_impl[NUM_FLOAT_SIMD] __attribute__((__aligned__(64)));
@@ -1098,6 +1108,7 @@ void sppm_consolidate(PixelData *pixel_datas, float alpha) {
         _mm256_store_ps(&pixel_datas->tau.x[i], _mm256_blendv_ps(tau_x, t0_x, mask));
         _mm256_store_ps(&pixel_datas->tau.y[i], _mm256_blendv_ps(tau_y, t0_y, mask));
         _mm256_store_ps(&pixel_datas->tau.z[i], _mm256_blendv_ps(tau_z, t0_z, mask));
+        // Todo:  check whether imask is valid convert from 32 to 8 bit
         _mm256_store_si256((__m256i *)&pixel_datas->num_photons.data[i], _mm256_blendv_epi8(num_photons, new_num_photons, imask));
         _mm256_store_ps(&pixel_datas->radius.data[i], _mm256_blendv_ps(radius, new_radius, mask));
 
@@ -1188,6 +1199,7 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
 //    Loop
     struct PixelDataLookup lookup;
     sppm_pixel_data_lookup_init(&lookup, H * W);
+
     for (int i = 0; i < num_iterations; i++) {
         clock_t start;
         float elapse;

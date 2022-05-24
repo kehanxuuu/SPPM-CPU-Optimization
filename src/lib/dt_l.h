@@ -96,7 +96,10 @@ static inline void ptrl_free(PtrL* ptrl){
 }
 
 static inline __m256 randf_full() {
-    return _mm256_div_ps(_mm256_cvtepi32_ps(simd_rand_full()), _mm256_set1_ps((float)SIMD_RAND_MAX));
+    __m256i signed_rand = simd_rand_full();
+    __m256i set_highest_bit_zero = _mm256_set1_epi32(INT32_MAX);
+    __m256i unsigned_rand = _mm256_and_si256(signed_rand, set_highest_bit_zero);
+    return _mm256_div_ps(_mm256_cvtepi32_ps(unsigned_rand), _mm256_set1_ps((float)SIMD_RAND_MAX));
 }
 
 static inline __m256 vector3fl_not_is_zero(__m256 x, __m256 y, __m256 z){
