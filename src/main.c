@@ -95,7 +95,8 @@ int main(int argc, char *argv[]) {
 
     Scene scene;
     Camera camera;
-    init_sky(&scene, &camera);
+    init_cornell_box(&scene, &camera);
+    // init_sky(&scene, &camera);
     cam_set_resolution(&camera, params.width, params.height);
 
     Bitmap film;

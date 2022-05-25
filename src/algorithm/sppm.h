@@ -24,12 +24,12 @@
 
 struct PixelData {
     FloatArray radius;
-    IntArray num_photons;
+    FloatArray num_photons;
     VectorArray tau;
     VectorArray direct_radiance;
 
     // refreshed every iteration
-    IntArray cur_photons;
+    FloatArray cur_photons;
     VectorArray cur_flux;
 
     // struct visible point

@@ -15,19 +15,19 @@ void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num
 
 void sppm_pixel_data_init(PixelData *pixel_datas, size_t size) {
     arr_init_float(&pixel_datas->radius, size, size);
-    arr_init_int(&pixel_datas->num_photons, size, size);
+    arr_init_float(&pixel_datas->num_photons, size, size);
     arr_init_vector(&pixel_datas->tau, size, size);
     arr_init_vector(&pixel_datas->direct_radiance, size, size);
-    arr_init_int(&pixel_datas->cur_photons, size, size);
+    arr_init_float(&pixel_datas->cur_photons, size, size);
     arr_init_vector(&pixel_datas->cur_flux, size, size);
     arr_init_vector(&pixel_datas->cur_vp_attenuation, size, size);
     arr_init(&pixel_datas->cur_vp_intersection, size, size, sizeof(Intersection));
 
     // initialize with zero
-    memset(pixel_datas->num_photons.data, 0, size * sizeof(int));
+    memset(pixel_datas->num_photons.data, 0, size * sizeof(float));
     memset(pixel_datas->tau.data, 0, size * sizeof(Vector));
     memset(pixel_datas->direct_radiance.data, 0, size * sizeof(Vector));
-    memset(pixel_datas->cur_photons.data, 0, size * sizeof(int));
+    memset(pixel_datas->cur_photons.data, 0, size * sizeof(float));
     memset(pixel_datas->cur_flux.data, 0, size * sizeof(Vector));
 }
 
@@ -60,10 +60,10 @@ void sppm_pixel_data_lookup_free(PixelDataLookup *lookup) {
 
 void sppm_pixel_data_free(PixelData *pixel_datas) {
     arr_free_float(&pixel_datas->radius);
-    arr_free_int(&pixel_datas->num_photons);
+    arr_free_float(&pixel_datas->num_photons);
     arr_free_vector(&pixel_datas->tau);
     arr_free_vector(&pixel_datas->direct_radiance);
-    arr_free_int(&pixel_datas->cur_photons);
+    arr_free_float(&pixel_datas->cur_photons);
     arr_free_vector(&pixel_datas->cur_flux);
     arr_free_vector(&pixel_datas->cur_vp_attenuation);
     arr_free(&pixel_datas->cur_vp_intersection);
@@ -265,7 +265,7 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup, PixelData *pix
     VectorArray attenuation_array = pixel_datas->cur_vp_attenuation;
     FloatArray radii = pixel_datas->radius;
     VectorArray cur_flux_array = pixel_datas->cur_flux;
-    IntArray cur_photons_array = pixel_datas->cur_photons;
+    FloatArray cur_photons_array = pixel_datas->cur_photons;
     for (int i = 0; i < sppm->ray_max_depth; i++) {
         Intersection isect;
         if (!scene_intersect(sppm->scene, &ray, &isect)) {
@@ -289,13 +289,13 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup, PixelData *pix
                     // Only contribute energy to diffuse materials
                     if (cur_vp_intersection->hit->material == DIFFUSE) {
                         // Vector bsdf = bsdf_eval_diffuse(cur_vp_intersection);
-                        // manual inline bsdf_eval_diffuse
+                        // manually inline bsdf_eval_diffuse
                         Vector bsdf = ZERO_VEC;
                         if (vv_dot(&cur_vp_intersection->wi, &cur_vp_intersection->n) < 0 && vv_dot(&cur_vp_intersection->wo, &cur_vp_intersection->n) > 0)
                             bsdf = vs_mul(&cur_vp_intersection->hit->albedo, INV_PI);
 
                         arr_set_add_vector(&cur_flux_array, pd_index, vv_mul(&bsdf, &light_radiance)); // flux += bsdf * L
-                        arr_set_add_int(&cur_photons_array, pd_index, 1);
+                        arr_set_add_float(&cur_photons_array, pd_index, 1.0);
                     }
                     else {
                         UNREACHABLE;
@@ -330,8 +330,8 @@ void sppm_consolidate(PixelData *pixel_datas, float alpha, size_t H, size_t W) {
     FloatArray radii = pixel_datas->radius;
     VectorArray cur_flux_array = pixel_datas->cur_flux;
     VectorArray tau_array = pixel_datas->tau;
-    IntArray cur_photons_array = pixel_datas->cur_photons;
-    IntArray num_photons_array = pixel_datas->num_photons;
+    FloatArray cur_photons_array = pixel_datas->cur_photons;
+    FloatArray num_photons_array = pixel_datas->num_photons;
     for (int i = 0; i < H; i++) {
         for (int j = 0; j < W; j++) {
             int idx = i * W + j;
@@ -339,8 +339,8 @@ void sppm_consolidate(PixelData *pixel_datas, float alpha, size_t H, size_t W) {
             float radius = arr_get_float(&radii, idx);
             Vector cur_flux = arr_get_vector(&cur_flux_array, idx);
             Vector tau = arr_get_vector(&tau_array, idx);
-            int cur_photons = arr_get_int(&cur_photons_array, idx);
-            int num_photons = arr_get_int(&num_photons_array, idx);
+            float cur_photons = arr_get_float(&cur_photons_array, idx);
+            float num_photons = arr_get_float(&num_photons_array, idx);
             if (cur_photons > 0) {
                 float new_num_photons = num_photons + 1.0f * alpha * cur_photons;
                 float new_radius = radius * sqrtf(new_num_photons / (num_photons + cur_photons));
@@ -350,12 +350,12 @@ void sppm_consolidate(PixelData *pixel_datas, float alpha, size_t H, size_t W) {
                     Vector tv2 = vv_add(&tau, &tv1);
                     arr_set_vector(&tau_array, idx, vs_mul(&tv2, multiplier));
                 }
-                arr_set_int(&num_photons_array, idx, new_num_photons);
+                arr_set_float(&num_photons_array, idx, new_num_photons);
                 arr_set_float(&radii, idx, new_radius);
             }
         }
     }
-    memset(pixel_datas->cur_photons.data, 0, H * W * sizeof(int));
+    memset(pixel_datas->cur_photons.data, 0, H * W * sizeof(float));
     memset(pixel_datas->cur_flux.data, 0, H * W * sizeof(Vector));
 }
 
