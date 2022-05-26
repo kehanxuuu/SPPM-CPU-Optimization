@@ -299,7 +299,7 @@ __m256 scene_intersect_m(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __
         isect->p.x = _mm256_blendv_ps(isect->p.x, _mm256_fmadd_ps(root, ray_d_x, ray_o_x), cur_do_intersect);
         isect->p.y = _mm256_blendv_ps(isect->p.y, _mm256_fmadd_ps(root, ray_d_y, ray_o_y), cur_do_intersect);
         isect->p.z = _mm256_blendv_ps(isect->p.z, _mm256_fmadd_ps(root, ray_d_z, ray_o_z), cur_do_intersect);
-
+        isect->interior.data = _mm256_blendv_ps(isect->interior.data, is_interior, cur_do_intersect);
         __m256 un_isect_n_x = _mm256_sub_ps(isect->p.x, sphere_c_x);
         __m256 un_isect_n_y = _mm256_sub_ps(isect->p.y, sphere_c_y);
         __m256 un_isect_n_z = _mm256_sub_ps(isect->p.z, sphere_c_z);

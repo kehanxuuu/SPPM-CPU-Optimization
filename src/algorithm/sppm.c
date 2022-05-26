@@ -407,7 +407,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             __m256 mesh_material = temp_isect.mesh_material.data;
             __m256 is_dielectric = _mm256_cmp_ps(_mm256_set1_ps(DIELECTRIC), mesh_material, _CMP_EQ_OQ);
 
-            __m256 samples0 = randf_full();
+            __m256 samples2 = randf_full();
 
             __m256 specular_res_x, specular_res_y, specular_res_z;
             __m256 dielectric_res_x, dielectric_res_y, dielectric_res_z;
@@ -416,11 +416,10 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             spec_wo_x = temp_isect.wo.x;
             spec_wo_y = temp_isect.wo.y;
             spec_wo_z = temp_isect.wo.z;
-            bsdf_sample_dielectric_m(&temp_isect, samples0, &dielectric_res_x, &dielectric_res_y, &dielectric_res_z);
+            bsdf_sample_dielectric_m(&temp_isect, samples2, &dielectric_res_x, &dielectric_res_y, &dielectric_res_z);
             temp_isect.wo.x = _mm256_blendv_ps(spec_wo_x, temp_isect.wo.x, is_dielectric);
             temp_isect.wo.y = _mm256_blendv_ps(spec_wo_y, temp_isect.wo.y, is_dielectric);
             temp_isect.wo.z = _mm256_blendv_ps(spec_wo_z, temp_isect.wo.z, is_dielectric);
-
             cur_attenuation_x = _mm256_blendv_ps(specular_res_x, dielectric_res_x, is_dielectric);
             cur_attenuation_y = _mm256_blendv_ps(specular_res_y, dielectric_res_y, is_dielectric);
             cur_attenuation_z = _mm256_blendv_ps(specular_res_z, dielectric_res_z, is_dielectric);
@@ -1041,7 +1040,7 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                 }
 
                 Vector isect_p = {isect.p.x, isect.p.y, isect.p.z};
-                Vector light_radiance = {light_radiance.x, light_radiance.y, light_radiance.z};
+                Vector light_radiance_vec = {light_radiance.x, light_radiance.y, light_radiance.z};
                 for (; cur_arr_ind < lookup->hash_table[ht_loc].size; cur_arr_ind++) {
                     int pd_index = arr_get_int(&lookup->hash_table[ht_loc], cur_arr_ind);
                     Vector cur_vp_attenuation = {pixel_datas->cur_vp_attenuation.x[pd_index],
@@ -1072,7 +1071,7 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                                     pixel_datas->cur_vp_intersection.mesh_albedo.z[pd_index]};
                             bsdf = vs_mul(&cur_vp_intersection_albedo, INV_PI);
                         }
-                        vv_muleq(&bsdf, &light_radiance);
+                        vv_muleq(&bsdf, &light_radiance_vec);
                         pixel_datas->cur_flux.x[pd_index] += bsdf.x;
                         pixel_datas->cur_flux.y[pd_index] += bsdf.y;
                         pixel_datas->cur_flux.z[pd_index] += bsdf.z;
