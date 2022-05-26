@@ -316,6 +316,7 @@ void sppm_photon_pass_photon(SPPM *sppm, PixelDataLookup *lookup, PixelData *pix
         }
 
         ray = (Ray) {isect.p, isect.wo, INFINITY};
+        ray.o = ray_at(&ray, EPSILON);
     }
 }
 
