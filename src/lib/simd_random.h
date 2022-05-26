@@ -5,7 +5,8 @@
 #include <stdint.h>
 #include "common.h"
 
-#define SIMD_RAND_MAX 0x7fffffff
+#define SIMD_RAND_MAX_FULL 0x7fffffff
+#define SIMD_RAND_MAX 0xffffffff
 
 typedef struct{
     uint32_t states[64] __attribute__((aligned(64)));

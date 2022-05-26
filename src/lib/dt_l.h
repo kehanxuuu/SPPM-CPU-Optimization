@@ -74,7 +74,7 @@ static inline void floatl_clear(FloatL* fl, size_t size){
 }
 
 static inline void intl_clear(IntL* il, size_t size){
-    memset(il->data, 0,sizeof(float) * size);
+    memset(il->data, 0,sizeof(int) * size);
 }
 
 static inline void vector3fl_free(Vector3fL* vecl){
@@ -99,7 +99,7 @@ static inline __m256 randf_full() {
     __m256i signed_rand = simd_rand_full();
     __m256i set_highest_bit_zero = _mm256_set1_epi32(INT32_MAX);
     __m256i unsigned_rand = _mm256_and_si256(signed_rand, set_highest_bit_zero);
-    return _mm256_div_ps(_mm256_cvtepi32_ps(unsigned_rand), _mm256_set1_ps((float)SIMD_RAND_MAX));
+    return _mm256_div_ps(_mm256_cvtepi32_ps(unsigned_rand), _mm256_set1_ps((float)SIMD_RAND_MAX_FULL));
 }
 
 static inline __m256 vector3fl_not_is_zero(__m256 x, __m256 y, __m256 z){
@@ -130,11 +130,6 @@ static inline void vector3fl_normalize(__m256 x, __m256 y, __m256 z, __m256* res
     *res_x = _mm256_mul_ps(x, inv_norm);
     *res_y = _mm256_mul_ps(y, inv_norm);
     *res_z = _mm256_mul_ps(z, inv_norm);
-}
-
-static inline __m256 vector3fl_rnorm(__m256 x, __m256 y, __m256 z){
-    __m256 norm2 = _mm256_add_ps(_mm256_mul_ps(x, x), _mm256_add_ps(_mm256_mul_ps(y, y), _mm256_mul_ps(z, z)));
-    return _mm256_rsqrt_ps(norm2);
 }
 
 static inline __m256 vector3fl_norm(__m256 x, __m256 y, __m256 z){

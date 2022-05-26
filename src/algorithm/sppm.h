@@ -28,13 +28,13 @@ struct PixelData {
     int size;
     int size_float_simd;
     FloatL radius;
-    IntL num_photons;
+    FloatL num_photons;
 
     VectorL tau;
     VectorL direct_radiance;
 
     // refreshed every iteration
-    IntL cur_photons;
+    FloatL cur_photons;
     VectorL cur_flux;
 
     // struct visible point

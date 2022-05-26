@@ -66,9 +66,9 @@ static inline __m256 _mm256_neg_ps(__m256 x){
 }
 
 static inline void _mm256_add_scatter_1_ps(__m256 x, float* base_addr, __m256i vindex){
-    float x_impl[8];
+    float x_impl[8] __attribute__((__aligned__(64)));
     _mm256_store_ps(x_impl, x);
-    int vindex_impl[8];
+    int vindex_impl[8] __attribute__((__aligned__(64)));
     _mm256_store_si256((__m256i *)vindex_impl, vindex);
     base_addr[vindex_impl[0]] += x_impl[0];
     base_addr[vindex_impl[1]] += x_impl[1];
@@ -81,9 +81,9 @@ static inline void _mm256_add_scatter_1_ps(__m256 x, float* base_addr, __m256i v
 }
 
 static inline void _mm256_add_scatter_1_epi32(__m256i x, int* base_addr, __m256i vindex){
-    int x_impl[8];
+    int x_impl[8] __attribute__((__aligned__(64)));
     _mm256_store_si256((__m256i *)x_impl, x);
-    int vindex_impl[8];
+    int vindex_impl[8] __attribute__((__aligned__(64)));
     _mm256_store_si256((__m256i *)vindex_impl, vindex);
     base_addr[vindex_impl[0]] += x_impl[0];
     base_addr[vindex_impl[1]] += x_impl[1];

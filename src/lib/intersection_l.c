@@ -40,19 +40,35 @@ void bsdf_sample_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* 
     __m256 specular_res_x, specular_res_y, specular_res_z;
     __m256 dielectric_res_x, dielectric_res_y, dielectric_res_z;
 
+    __m256 diff_wo_x, diff_wo_y, diff_wo_z, spec_wo_x, spec_wo_y, spec_wo_z;
     bsdf_sample_diffuse_m(isects, samples0, samples1, &diffuse_res_x, &diffuse_res_y, &diffuse_res_z);
+    diff_wo_x = isects->wo.x;
+    diff_wo_y = isects->wo.y;
+    diff_wo_z = isects->wo.z;
     bsdf_sample_specular_m(isects, &specular_res_x, &specular_res_y, &specular_res_z);
+    spec_wo_x = isects->wo.x;
+    spec_wo_y = isects->wo.y;
+    spec_wo_z = isects->wo.z;
     bsdf_sample_dielectric_m(isects, samples0, &dielectric_res_x, &dielectric_res_y, &dielectric_res_z);
 
-    __m256 t0, t1, t2;
-    t0 = _mm256_blendv_ps(  diffuse_res_x, specular_res_x, is_specular);
+    __m256 t0, t1, t2, t3, t4, t5;
+    t0 = _mm256_blendv_ps(diffuse_res_x, specular_res_x, is_specular);
     *res_x = _mm256_blendv_ps(t0, dielectric_res_x, is_dielectric);
 
-    t1 = _mm256_blendv_ps(  diffuse_res_y, specular_res_y, is_specular);
+    t1 = _mm256_blendv_ps(diffuse_res_y, specular_res_y, is_specular);
     *res_y = _mm256_blendv_ps(t1, dielectric_res_y, is_dielectric);
 
-    t2 = _mm256_blendv_ps(  diffuse_res_z, specular_res_z, is_specular);
+    t2 = _mm256_blendv_ps(diffuse_res_z, specular_res_z, is_specular);
     *res_z = _mm256_blendv_ps(t2, dielectric_res_z, is_dielectric);
+
+    t3 = _mm256_blendv_ps(diff_wo_x, spec_wo_x, is_specular);
+    isects->wo.x = _mm256_blendv_ps(t3, isects->wo.x, is_dielectric);
+
+    t4 = _mm256_blendv_ps(diff_wo_y, spec_wo_y, is_specular);
+    isects->wo.y = _mm256_blendv_ps(t4, isects->wo.y, is_dielectric);
+
+    t5 = _mm256_blendv_ps(diff_wo_z, spec_wo_z, is_specular);
+    isects->wo.z = _mm256_blendv_ps(t5, isects->wo.z, is_dielectric);
 }
 
 void bsdf_eval_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
@@ -70,13 +86,13 @@ void bsdf_eval_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* re
     bsdf_eval_dielectric_m(isects, &dielectric_res_x, &dielectric_res_y, &dielectric_res_z);
 
     __m256 t0, t1, t2;
-    t0 = _mm256_blendv_ps(  diffuse_res_x, specular_res_x, is_specular);
+    t0 = _mm256_blendv_ps(diffuse_res_x, specular_res_x, is_specular);
     *res_x = _mm256_blendv_ps(t0, dielectric_res_x, is_dielectric);
 
-    t1 = _mm256_blendv_ps(  diffuse_res_y, specular_res_y, is_specular);
+    t1 = _mm256_blendv_ps(diffuse_res_y, specular_res_y, is_specular);
     *res_y = _mm256_blendv_ps(t1, dielectric_res_y, is_dielectric);
 
-    t2 = _mm256_blendv_ps(  diffuse_res_z, specular_res_z, is_specular);
+    t2 = _mm256_blendv_ps(diffuse_res_z, specular_res_z, is_specular);
     *res_z = _mm256_blendv_ps(t2, dielectric_res_z, is_dielectric);
 }
 
@@ -375,7 +391,9 @@ void estimate_direct_lighting_m(struct Scene *scene, IntersectionM* isect, __m25
     __m256 to_light_y = _mm256_fmadd_ps(isect->n.y, _mm256_set1_ps(EPSILON), _mm256_sub_ps(sphere_c_y, isect->p.y));
     __m256 to_light_z = _mm256_fmadd_ps(isect->n.z, _mm256_set1_ps(EPSILON), _mm256_sub_ps(sphere_c_z, isect->p.z));
 
-    __m256 rdist = vector3fl_rnorm(to_light_x, to_light_y, to_light_z);
+    // fix precision problem of vector3fl_rnorm
+    __m256 dist = vector3fl_norm(to_light_x, to_light_y, to_light_z);
+    __m256 rdist = _mm256_div_ps(_mm256_set1_ps(1.0), dist);
 
     __m256 light_dir_x = _mm256_mul_ps(to_light_x, rdist);
     __m256 light_dir_y = _mm256_mul_ps(to_light_y, rdist);
@@ -401,7 +419,6 @@ void estimate_direct_lighting_m(struct Scene *scene, IntersectionM* isect, __m25
     __m256 shadow_ray_d_x = dir_x;
     __m256 shadow_ray_d_y = dir_y;
     __m256 shadow_ray_d_z = dir_z;
-    __m256 dist = _mm256_div_ps(One, rdist);
     __m256 t0 = _mm256_mul_ps(dist, cos_theta);
     __m256 t1 = _mm256_sub_ps(One, _mm256_mul_ps(cos_theta, cos_theta));
     __m256 t2 = _mm256_sqrt_ps(
