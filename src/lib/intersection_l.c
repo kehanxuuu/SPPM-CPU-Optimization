@@ -105,6 +105,8 @@ void bsdf_sample_diffuse_m(IntersectionM* isects, __m256 sample0, __m256 sample1
     __m256 n_z = isects->n.z;
 
     __m256 dot_res = vector3fl_dot(wi_x, wi_y, wi_z, n_x, n_y, n_z);
+    __m256 Zero = _mm256_setzero_ps();
+    __m256 cmp0 = _mm256_cmp_ps(dot_res, Zero, _CMP_GE_OQ);
 
 //    wo not used if false, so can set with arb value
     __m256 wo_x, wo_y, wo_z;
@@ -113,14 +115,9 @@ void bsdf_sample_diffuse_m(IntersectionM* isects, __m256 sample0, __m256 sample1
     isects->wo.y = wo_y;
     isects->wo.z = wo_z;
 
-    __m256 Zero = _mm256_setzero_ps();
-    __m256 cmp0 = _mm256_cmp_ps(dot_res, Zero, _CMP_GE_OQ);
-    __m256 albedo_x = isects->mesh_albedo.x;
-    __m256 albedo_y = isects->mesh_albedo.y;
-    __m256 albedo_z = isects->mesh_albedo.z;
-    *res_x = _mm256_blendv_ps(albedo_x, Zero, cmp0);
-    *res_y = _mm256_blendv_ps(albedo_y, Zero, cmp0);
-    *res_z = _mm256_blendv_ps(albedo_z, Zero, cmp0);
+    *res_x = _mm256_blendv_ps(isects->mesh_albedo.x, Zero, cmp0);
+    *res_y = _mm256_blendv_ps(isects->mesh_albedo.y, Zero, cmp0);
+    *res_z = _mm256_blendv_ps(isects->mesh_albedo.z, Zero, cmp0);
 }
 
 void bsdf_eval_diffuse_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
@@ -159,6 +156,10 @@ void bsdf_sample_specular_m(IntersectionM* isects, __m256* res_x, __m256* res_y,
     __m256 n_y = isects->n.y;
     __m256 n_z = isects->n.z;
 
+    __m256 dot_res = vector3fl_dot(wi_x, wi_y, wi_z, n_x, n_y, n_z);
+    __m256 Zero = _mm256_setzero_ps();
+    __m256 cmp0 = _mm256_cmp_ps(dot_res, Zero, _CMP_GE_OQ);
+
     __m256 neg_cos_wi_n = vector3fl_dot(wi_x, wi_y, wi_z, n_x, n_y, n_z);
     __m256 neg_cos_wi_n_2 = _mm256_mul_ps(_mm256_set1_ps(2.0f), neg_cos_wi_n);
     __m256 neg_scaled_n_2_x = _mm256_mul_ps(neg_cos_wi_n_2, n_x);
@@ -169,9 +170,9 @@ void bsdf_sample_specular_m(IntersectionM* isects, __m256* res_x, __m256* res_y,
     isects->wo.y = _mm256_sub_ps(wi_y, neg_scaled_n_2_y);
     isects->wo.z = _mm256_sub_ps(wi_z, neg_scaled_n_2_z);
 
-    *res_x = isects->mesh_albedo.x;
-    *res_y = isects->mesh_albedo.y;
-    *res_z = isects->mesh_albedo.z;
+    *res_x = _mm256_blendv_ps(isects->mesh_albedo.x, Zero, cmp0);
+    *res_y = _mm256_blendv_ps(isects->mesh_albedo.y, Zero, cmp0);
+    *res_z = _mm256_blendv_ps(isects->mesh_albedo.z, Zero, cmp0);
 }
 
 void bsdf_eval_specular_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
@@ -190,8 +191,11 @@ void bsdf_sample_dielectric_m(IntersectionM* isects, __m256 sample0, __m256* res
     __m256 n_y = isects->n.y;
     __m256 n_z = isects->n.z;
 
-    __m256 costheta1 = _mm256_neg_ps(vector3fl_dot(wi_x, wi_y, wi_z, n_x, n_y, n_z));
+    __m256 dot_res = vector3fl_dot(wi_x, wi_y, wi_z, n_x, n_y, n_z);
+    __m256 Zero = _mm256_setzero_ps();
+    __m256 cmp_dot = _mm256_cmp_ps(dot_res, Zero, _CMP_GE_OQ);
 
+    __m256 costheta1 = _mm256_neg_ps(dot_res);
     __m256 One = _mm256_set1_ps(1.0f);
     __m256 is_interior = isects->interior.data;
     __m256 ir = isects->mesh_ir.data;
@@ -237,9 +241,9 @@ void bsdf_sample_dielectric_m(IntersectionM* isects, __m256 sample0, __m256* res
     isects->wo.y = wo_y;
     isects->wo.z = wo_z;
 
-    *res_x = isects->mesh_albedo.x;
-    *res_y = isects->mesh_albedo.y;
-    *res_z = isects->mesh_albedo.z;
+    *res_x = _mm256_blendv_ps(isects->mesh_albedo.x, Zero, cmp_dot);
+    *res_y = _mm256_blendv_ps(isects->mesh_albedo.y, Zero, cmp_dot);
+    *res_z = _mm256_blendv_ps(isects->mesh_albedo.z, Zero, cmp_dot);
 }
 
 void bsdf_eval_dielectric_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
