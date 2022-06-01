@@ -5,6 +5,7 @@
 #include "simd_random.h"
 #include "simd_math.h"
 #include <immintrin.h>
+#include <stdlib.h>
 
 typedef struct {
     float* x;
@@ -38,11 +39,11 @@ typedef Vector3fL VectorL;
 typedef Vector3fM VectorM;
 
 static inline void* malloc_align(size_t bytes){
-    return _mm_malloc(bytes, ALIGN);
+    return aligned_alloc(ALIGN, bytes);
 }
 
 static inline void free_align(void* mem_addr){
-    _mm_free(mem_addr);
+    free(mem_addr);
 }
 
 static inline void vector3fl_init(Vector3fL* vecl, size_t size){
