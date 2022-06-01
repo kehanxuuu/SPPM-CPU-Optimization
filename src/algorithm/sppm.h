@@ -58,6 +58,8 @@ struct SPPM {
     Vector background;
     Scene *scene;
     Camera *camera;
+    float *launch_indices_x;
+    float *launch_indices_y;
 };
 
 typedef struct VisiblePoint VisiblePoint;
