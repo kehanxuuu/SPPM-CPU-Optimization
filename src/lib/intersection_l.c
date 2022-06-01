@@ -373,7 +373,7 @@ void estimate_direct_lighting_m(struct Scene *scene, IntersectionM* isect, __m25
         __m256 cmp0 = _mm256_and_ps(_mm256_cmp_ps(ac_prob_i, sample, _CMP_LE_OQ),
                                     _mm256_cmp_ps(sample, ac_prob_i1, _CMP_LT_OQ));
         pdf = _mm256_blendv_ps(pdf, _mm256_sub_ps(ac_prob_i1, ac_prob_i), cmp0);
-        __m256i mask_i = cmp0; // _mm256_cvtps_epi32(cmp0) does't work
+        __m256i mask_i = (__m256i)(cmp0); // _mm256_cvtps_epi32(cmp0) does't work
         emitter_id = _mm256_blendv_epi8(emitter_id, _mm256_set1_epi32(i), mask_i);
     }
 //  only spheres

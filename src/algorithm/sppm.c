@@ -658,7 +658,7 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
             __m256 cmp0 = _mm256_and_ps(_mm256_cmp_ps(ac_prob_i, sample, _CMP_LE_OQ),
                                         _mm256_cmp_ps(sample, ac_prob_i1, _CMP_LT_OQ));
             pdf_emitter = _mm256_blendv_ps(pdf_emitter, _mm256_sub_ps(ac_prob_i1, ac_prob_i), cmp0);
-            __m256i mask_i = cmp0;
+            __m256i mask_i = (__m256i)(cmp0);
             emitter_id = _mm256_blendv_epi8(emitter_id, _mm256_set1_epi32(j), mask_i);
         }
 //      only spheres
