@@ -304,7 +304,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
     int width_tracker;
     IntersectionM temp_isect;
     IntersectionM to_store_isect;
-    for(i = 0, width_tracker = 8; i < pixel_datas->size_float_simd; i += NUM_FLOAT_SIMD, width_tracker += NUM_FLOAT_SIMD) {
+    for(i = 0, width_tracker = 8; i < pixel_datas->size_float_simd; i += NUM_FLOAT_SIMD) {
         __m256 ray_o_x, ray_o_y, ray_o_z, ray_d_x, ray_d_y, ray_d_z, ray_t_max;
         __m256 samples0 = randf_full();
         __m256 samples1 = randf_full();
@@ -509,49 +509,49 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
                     __m256 t0 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
                     x = _mm256_add_ps(x, t0);
                     __m256 t1 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-                    y = _mm256_blend_ps(y, t1, 0b00000001);
+                    y = _mm256_blend_ps(y, t1, 0b10000000);
                     width_tracker = 1;
                     break;}
                 case 2: {
                     __m256 t0 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f);
                     x = _mm256_add_ps(x, t0);
-                    __m256 t1 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);  // ? why is t1 looking like this
-                    y = _mm256_blend_ps(y, t1, 0b00000011);
+                    __m256 t1 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+                    y = _mm256_blend_ps(y, t1, 0b11000000);
                     width_tracker = 2;
                     break;}
                 case 3: {
                     __m256 t0 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
                     x = _mm256_add_ps(x, t0);
                     __m256 t1 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 2.0f);
-                    y = _mm256_blend_ps(y, t1, 0b00000111);
+                    y = _mm256_blend_ps(y, t1, 0b11100000);
                     width_tracker = 3;
                     break;}
                 case 4: {
                     __m256 t0 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f);
                     x = _mm256_add_ps(x, t0);
                     __m256 t1 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 2.0f, 3.0f);
-                    y = _mm256_blend_ps(y, t1, 0b00001111);
+                    y = _mm256_blend_ps(y, t1, 0b11110000);
                     width_tracker = 4;
                     break;}
                 case 5: {
                     __m256 t0 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
                     x = _mm256_add_ps(x, t0);
                     __m256 t1 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 2.0f, 3.0f, 4.0f);
-                    y = _mm256_blend_ps(y, t1, 0b00011111);
+                    y = _mm256_blend_ps(y, t1, 0b11111000);
                     width_tracker = 5;
                     break;}
                 case 6: {
                     __m256 t0 = _mm256_setr_ps(0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
                     x = _mm256_add_ps(x, t0);
                     __m256 t1 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f);
-                    y = _mm256_blend_ps(y, t1, 0b00111111);
+                    y = _mm256_blend_ps(y, t1, 0b11111100);
                     width_tracker = 6;
                     break;}
                 case 7: {
                     __m256 t0 = _mm256_setr_ps(0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
                     x = _mm256_add_ps(x, t0);
                     __m256 t1 = _mm256_setr_ps(0.0f, 0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f);
-                    y = _mm256_blend_ps(y, t1, 0b01111111);
+                    y = _mm256_blend_ps(y, t1, 0b11111110);
                     width_tracker = 7;
                     break;}
                 case 0: {
