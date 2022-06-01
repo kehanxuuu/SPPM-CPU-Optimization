@@ -57,6 +57,10 @@ void scene_finish(struct Scene *scene) {
     for (size_t i = 0; i < scene->n_meshes; ++i) {
         if (!vv_equal(&scene_get(scene, i)->emission, &ZERO_VEC)) scene->n_emitters++;
     }
+    if (scene->n_emitters == 0) {
+        fprintf(stderr, "Expect one or more emitters!\n");
+        exit(1);
+    }
     scene->emitters = (Mesh **) malloc(scene->n_emitters * sizeof(Mesh *));
     scene->accum_probabilities = (float *) malloc((scene->n_emitters + 1) * sizeof(float));
 

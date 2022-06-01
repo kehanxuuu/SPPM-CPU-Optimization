@@ -1,39 +1,9 @@
-#include "scene.h"
-#include "camera.h"
+#include "scene_configs.h"
 #include "bitmap.h"
 #include "sppm.h"
 #include "pt.h"
 #include "normal.h"
 #include <time.h>
-
-void init_cornell_box(Scene *scene, Camera *camera) {
-    const float inf = 1e4f;
-    scene_init(scene);
-    Mesh *left = mesh_make_sphere((Vector) {inf + 1, 40.8f, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .25f, .25f}, ZERO_VEC, 1.0);
-    Mesh *right = mesh_make_sphere((Vector) {-inf + 99, 40.8f, 81.6f}, inf, DIFFUSE, (Vector) {.25f, .25f, .75f}, ZERO_VEC, 1.0);
-    Mesh *back = mesh_make_sphere((Vector) {50, 40.8f, inf}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
-//    Mesh *front = mesh_make_sphere((Vector) {50, 40.8f, -inf + 170}, inf, DIFFUSE, ZERO_VEC, ZERO_VEC, 1.0);
-    Mesh *bottom = mesh_make_sphere((Vector) {50, inf, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
-    Mesh *top = mesh_make_sphere((Vector) {50, -inf + 81.6f, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
-    Mesh *mirror = mesh_make_sphere((Vector) {27, 16.5f, 47}, 16.5f, SPECULAR, (Vector) {.999f, .999f, .999f}, ZERO_VEC, 1.0);
-    Mesh *glass = mesh_make_sphere((Vector) {73, 16.5f, 78}, 16.5f, DIELECTRIC, (Vector) {.999f, .999f, .999f}, ZERO_VEC, 1.5);
-    Mesh *light1 = mesh_make_sphere((Vector) {20, 81.6f - 16.5f, 81.6f}, 7.5f, DIFFUSE, ZERO_VEC, (Vector) {20, 10, 10}, 1.0);
-    Mesh *light2 = mesh_make_sphere((Vector) {80, 81.6f - 16.5f, 81.6f}, 5, DIFFUSE, ZERO_VEC, (Vector) {10, 10, 20}, 1.0);
-    scene_add(scene, left);
-    scene_add(scene, right);
-    scene_add(scene, back);
-//    scene_add(scene, front);
-    scene_add(scene, bottom);
-    scene_add(scene, top);
-    scene_add(scene, mirror);
-    scene_add(scene, glass);
-    scene_add(scene, light1);
-    scene_add(scene, light2);
-    scene_finish(scene);
-    camera->fov = 30 * M_PI / 180.f;
-    Vector eye = {50, 52, 295.6f}, target = vv_add(&eye, &(Vector) {0, -0.042612f, -1}), up = {0, 1, 0};
-    cam_look_at(camera, eye, target, up);
-}
 
 typedef struct {
     int width;
@@ -126,6 +96,7 @@ int main(int argc, char *argv[]) {
     Scene scene;
     Camera camera;
     init_cornell_box(&scene, &camera);
+    // init_sky(&scene, &camera);
     cam_set_resolution(&camera, params.width, params.height);
 
     Bitmap film;
@@ -155,7 +126,7 @@ int main(int argc, char *argv[]) {
     }
 
     bitmap_save_exr(&film, params.output_path);
-    fprintf(stderr,"Checksum: %.10f\n", bitmap_checksum(&film));
+    fprintf(stderr, "Checksum: %.10f\n", bitmap_checksum(&film));
     bitmap_free(&film);
 
     scene_free(&scene);
