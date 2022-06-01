@@ -501,10 +501,58 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
         _mm256_store_ps(&pixel_datas->cur_vp_intersection.interior.data[i], to_store_isect.interior.data);
 
         y = _mm256_add_ps(y, incr_amount);
-        width_tracker += NUM_FLOAT_SIMD;
+
         // TODO idea: pre-allocate a block of memory to store the x-y-indices of the pixels, and use load_pd instead of doing complex switch cases
+        if(width_tracker < 8 && width_tracker != 0){
+            switch (width_tracker) {
+                case 1: {
+                    __m256 t0 = _mm256_setr_ps(1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f);
+                    x = _mm256_add_ps(x, t0);
+                    __m256 t1 = _mm256_setr_ps(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 0.0f);
+                    y = _mm256_blend_ps(y, t1, 0b01111111);
+                    break;}
+                case 2: {
+                    __m256 t0 = _mm256_setr_ps(1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f);
+                    x = _mm256_add_ps(x, t0);
+                    __m256 t1 = _mm256_setr_ps(2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 0.0f, 0.0f);
+                    y = _mm256_blend_ps(y, t1, 0b00111111);
+                    break;}
+                case 3: {
+                    __m256 t0 = _mm256_setr_ps(1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f);
+                    x = _mm256_add_ps(x, t0);
+                    __m256 t1 = _mm256_setr_ps(3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 0.0f, 0.0f, 0.0f);
+                    y = _mm256_blend_ps(y, t1, 0b00011111);
+                    break;}
+                case 4: {
+                    __m256 t0 = _mm256_setr_ps(1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+                    x = _mm256_add_ps(x, t0);
+                    __m256 t1 = _mm256_setr_ps(4.0f, 5.0f, 6.0f, 7.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+                    y = _mm256_blend_ps(y, t1, 0b00001111);
+                    break;}
+                case 5: {
+                    __m256 t0 = _mm256_setr_ps(1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+                    x = _mm256_add_ps(x, t0);
+                    __m256 t1 = _mm256_setr_ps(5.0f, 6.0f, 7.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+                    y = _mm256_blend_ps(y, t1, 0b0000111);
+                    break;}
+                case 6: {
+                    __m256 t0 = _mm256_setr_ps(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+                    x = _mm256_add_ps(x, t0);
+                    __m256 t1 = _mm256_setr_ps( 6.0f, 7.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+                    y = _mm256_blend_ps(y, t1, 0b0000011);
+                    break;}
+                case 7: {
+                    __m256 t0 = _mm256_setr_ps(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+                    x = _mm256_add_ps(x, t0);
+                    __m256 t1 = _mm256_setr_ps( 7.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+                    y = _mm256_blend_ps(y, t1, 0b0000001);
+                    break;}
+            }
+        }
+        width_tracker += NUM_FLOAT_SIMD;
         if(width_tracker > W) {
-            switch ((i+NUM_FLOAT_SIMD) % W) {
+            int b = width_tracker % W;
+            switch (width_tracker % W) {
                 case 1: {
                     __m256 t0 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
                     x = _mm256_add_ps(x, t0);
@@ -554,7 +602,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
                     y = _mm256_blend_ps(y, t1, 0b11111110);
                     width_tracker = 7;
                     break;}
-                case 0: {
+                case 8: {
                     __m256 t0 = _mm256_set1_ps(1.0f);
                     x = _mm256_add_ps(x, t0);
                     y = _mm256_setr_ps(0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f);
