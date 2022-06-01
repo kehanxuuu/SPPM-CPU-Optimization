@@ -297,6 +297,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
 
     __m256 incr_amount = _mm256_set1_ps(NUM_FLOAT_SIMD);
 
+    // TODO should be y, x?
     __m256 x = _mm256_setzero_ps();
     __m256 y = _mm256_setr_ps(0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f);
     int i;
@@ -409,6 +410,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
 
             __m256 samples2 = randf_full();
 
+            // TODO idea: omit specular/dielectric branches when none of the rays in the batch hit non-diffuse surfaces
             __m256 specular_res_x, specular_res_y, specular_res_z;
             __m256 dielectric_res_x, dielectric_res_y, dielectric_res_z;
             bsdf_sample_specular_m(&temp_isect, &specular_res_x, &specular_res_y, &specular_res_z);
@@ -431,6 +433,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             __m256 cur_attenuation_is_zero = vector3fl_is_zero(cur_attenuation_x, cur_attenuation_y, cur_attenuation_z);
             not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(), cur_attenuation_is_zero);
 
+            // TODO blendv with not_completion_vector to rule out DIFFUSE rays?
             attenuation_x = _mm256_mul_ps(attenuation_x, cur_attenuation_x);
             attenuation_y = _mm256_mul_ps(attenuation_y, cur_attenuation_y);
             attenuation_z = _mm256_mul_ps(attenuation_z, cur_attenuation_z);
@@ -499,6 +502,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
 
         y = _mm256_add_ps(y, incr_amount);
         width_tracker += NUM_FLOAT_SIMD;
+        // TODO idea: pre-allocate a block of memory to store the x-y-indices of the pixels, and use load_pd instead of doing complex switch cases
         if(width_tracker > W) {
             switch ((i+NUM_FLOAT_SIMD) % W) {
                 case 1: {
@@ -511,7 +515,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
                 case 2: {
                     __m256 t0 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f);
                     x = _mm256_add_ps(x, t0);
-                    __m256 t1 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+                    __m256 t1 = _mm256_setr_ps(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);  // ? why is t1 looking like this
                     y = _mm256_blend_ps(y, t1, 0b00000011);
                     width_tracker = 2;
                     break;}
@@ -564,8 +568,9 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
     int y_impl[8] __attribute__((__aligned__(64)));
     _mm256_store_si256((__m256i *)x_impl, _mm256_cvtps_epi32(x));
     _mm256_store_si256((__m256i *)y_impl, _mm256_cvtps_epi32(y));
+    // remaining paths
     for(int k = 0; i < pixel_datas->size; i++, k++){
-        Ray ray = generate_ray(sppm->camera, x_impl[k], y_impl[k], (Vector2f) {randf(), randf()});
+        Ray ray = generate_ray(sppm->camera, x_impl[k], y_impl[k], (Vector2f) {randf(), randf()});  // TODO or the other way around?
         Vector attenuation = {1.0f, 1.0f, 1.0f};
         Vector vp_attenuation = ZERO_VEC;
         Vector direct_radiance = ZERO_VEC;
@@ -927,6 +932,7 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
         }
     }
 
+    // remaining photons
     for (; i < sppm->num_photons; i++) {
         Ray ray;
         float pdf_emitter, pdf_pos, pdf_dir;
