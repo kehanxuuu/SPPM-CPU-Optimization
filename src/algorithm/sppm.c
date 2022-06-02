@@ -1,5 +1,6 @@
 #include "sppm.h"
 #include <time.h>
+#include <stdlib.h>
 
 void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num_iter, float initial_radius, Scene *scene, Camera *camera,
                Vector background) {
@@ -1145,7 +1146,7 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
 
     // Init launch indices
     {
-        size_t size = W * H, ind = 0;
+        size_t size = W * H * sizeof(float), ind = 0;
         sppm->launch_indices_x = (float*) aligned_alloc(32, size);
         sppm->launch_indices_y = (float*) aligned_alloc(32, size);
         for (int y = 0; y < H; ++y) {
