@@ -3,6 +3,7 @@
 
 #include "scene.h"
 #include "camera.h"
+#include <time.h>
 
 const float inf = 1e4f;
 void init_cornell_box(Scene *scene, Camera *camera) {
@@ -36,11 +37,12 @@ void init_cornell_box(Scene *scene, Camera *camera) {
 void init_reflect_box(Scene *scene, Camera *camera) {
     scene_init(scene);
     Mesh *left = mesh_make_sphere((Vector) {inf-100, 40.8f, 81.6f}, inf, DIFFUSE, 
-        (Vector) {.75f, .25f, .25f}, ZERO_VEC, 1.0);
+        (Vector) {.197,.93,.210}, ZERO_VEC, 1.0);
     Mesh *right = mesh_make_sphere((Vector) {-inf+200, 40.8f, 81.6f}, inf, DIFFUSE, 
-        (Vector) {.25f, .25f, .75f}, ZERO_VEC, 1.0);
+        (Vector) {.240,.224,0}, ZERO_VEC, 1.0);
+    Mesh *bottom = mesh_make_sphere((Vector) {50, inf, 81.6f}, inf, DIFFUSE, 
+        (Vector) {.181,.166,.162}, ZERO_VEC, 1.0);
     Mesh *back = mesh_make_sphere((Vector) {50, 40.8f, inf}, inf, SPECULAR, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
-    Mesh *bottom = mesh_make_sphere((Vector) {50, inf, 81.6f}, inf, DIFFUSE, (Vector) {.5f, .5f, .5f}, ZERO_VEC, 1.0);
     Mesh *top = mesh_make_sphere((Vector) {50, 90, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
     
     Mesh *glass = mesh_make_sphere((Vector) {12.5, 2.5, 82}, 2.5, DIELECTRIC, (Vector) {.96 * .96, .96 * .96, .96 * .96}, ZERO_VEC, 1.5);
@@ -52,7 +54,7 @@ void init_reflect_box(Scene *scene, Camera *camera) {
     Mesh *glass_3 = mesh_make_sphere((Vector) {72.5, 12.5, 82}, 12.5, DIELECTRIC,
                                      (Vector) {.96 * .96, .96 * .96, .96 * .96}, ZERO_VEC, 1.5);
     
-    Mesh *light1 = mesh_make_sphere((Vector) {50, 200, 100}, 40, DIFFUSE, ZERO_VEC, (Vector) {20, 10, 10}, 1.0);
+    Mesh *light = mesh_make_sphere((Vector) {50, 200, 100}, 50, DIFFUSE, ZERO_VEC, (Vector) {20, 10, 10}, 1.0);
 
     scene_add(scene, left);
     scene_add(scene, right);
@@ -60,7 +62,7 @@ void init_reflect_box(Scene *scene, Camera *camera) {
     scene_add(scene, bottom);
     scene_add(scene, top);
 
-    scene_add(scene, light1);
+    scene_add(scene, light);
     scene_add(scene, glass);
     scene_add(scene, glass_0);
     scene_add(scene, glass_1);
@@ -75,12 +77,13 @@ void init_reflect_box(Scene *scene, Camera *camera) {
 void init_large_box(Scene *scene, Camera *camera) {
     scene_init(scene);
     Mesh *left = mesh_make_sphere((Vector) {inf-60, 40.8f, 81.6f}, inf, DIFFUSE, 
-        (Vector) {.75f, .25f, .25f}, ZERO_VEC, 1.0);
+        (Vector) {.233,0,.240}, ZERO_VEC, 1.0);
     Mesh *right = mesh_make_sphere((Vector) {-inf+160, 40.8f, 81.6f}, inf, DIFFUSE, 
-        (Vector) {.25f, .25f, .75f}, ZERO_VEC, 1.0);
-    Mesh *back = mesh_make_sphere((Vector) {50, 40.8f, inf}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
-    // Mesh *front = mesh_make_sphere((Vector) {50, 40.8f, -inf+300}, inf, DIFFUSE, ZERO_VEC, ZERO_VEC, 1.0);
-    Mesh *bottom = mesh_make_sphere((Vector) {50, inf, 81.6f}, inf, DIFFUSE, (Vector) {.5f, .5f, .5f}, ZERO_VEC, 1.0);
+        (Vector) {.260,.24,0}, ZERO_VEC, 1.0);
+    Mesh *back = mesh_make_sphere((Vector) {50, 40.8f, inf}, inf, DIFFUSE, 
+        (Vector) {.5f, .5f, .5f}, ZERO_VEC, 1.0);
+    Mesh *bottom = mesh_make_sphere((Vector) {50, inf, 81.6f}, inf, DIFFUSE, 
+        (Vector) {.212,.157,.127}, ZERO_VEC, 1.0);
     Mesh *top = mesh_make_sphere((Vector) {50, 90, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
     
     Mesh *white_mirror = mesh_make_sphere((Vector) {22, 26.5, 42}, 26.5, SPECULAR,
@@ -89,7 +92,7 @@ void init_large_box(Scene *scene, Camera *camera) {
                                      (Vector) {.96 * .96, .96 * .96, .96 * .96}, ZERO_VEC, 1.5);
     Mesh *glass_2 = mesh_make_sphere((Vector) {87, 22, 24}, 22, SPECULAR,
                                      (Vector) {.6 * .696, .6 * .696, .6 * .696}, ZERO_VEC, 1.5);
-    Mesh *light1 = mesh_make_sphere((Vector) {100, 90, 200}, 20, DIFFUSE, ZERO_VEC, (Vector) {40, 20, 20}, 1.0);
+    Mesh *light1 = mesh_make_sphere((Vector) {100, 90, 180}, 15, DIFFUSE, ZERO_VEC, (Vector) {40, 20, 20}, 1.0);
     
     scene_add(scene, left);
     scene_add(scene, right);
@@ -106,6 +109,54 @@ void init_large_box(Scene *scene, Camera *camera) {
     Vector eye = {50, 52, 295.6f}, target = vv_add(&eye, &(Vector) {0, -0.042612f, -1}), up = {0, 1, 0};
     cam_look_at(camera, eye, target, up);
 }
+
+void init_random_box(Scene *scene, Camera *camera) {
+    scene_init(scene);
+    Mesh *left = mesh_make_sphere((Vector) {inf-50, 40.8f, 81.6f}, inf, DIFFUSE, 
+        (Vector) {.75f, .25f, .25f}, ZERO_VEC, 1.0);
+    Mesh *right = mesh_make_sphere((Vector) {-inf+120, 40.8f, 81.6f}, inf, DIFFUSE, 
+        (Vector) {.25f, .25f, .75f}, ZERO_VEC, 1.0);
+    Mesh *back = mesh_make_sphere((Vector) {50, 40.8f, inf}, inf, DIFFUSE, 
+        (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
+    Mesh *bottom = mesh_make_sphere((Vector) {50, inf, 81.6f}, inf, DIFFUSE, 
+        (Vector) {.5f, .5f, .5f}, ZERO_VEC, 1.0);
+    Mesh *top = mesh_make_sphere((Vector) {50, 90, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
+    
+    // srand(time(NULL));
+    srand(11);
+    int counter = 0;
+    int r = rand() % 10;
+    int rmax = -inf;
+    for (int z = 0; z < 110; z += rmax) {
+        int prev_r = 0;
+        for (int x = -10; x < 115; x += prev_r+r) {
+            enum Material material = (r <= 5)? DIELECTRIC : SPECULAR;
+            Mesh *ball = mesh_make_sphere((Vector) {x, r, z}, r, material,
+                (Vector) {.96 * .96, .96 * .96, .96 * .96}, ZERO_VEC, 1.5);
+            scene_add(scene, ball);
+
+            rmax = (r > rmax)? r : rmax;
+            prev_r = r;
+            r = rand() % 10;
+            counter++;
+        } 
+    }
+    // printf("Totoal: %d\n", counter);
+    Mesh *light = mesh_make_sphere((Vector) {20, 50, 100}, 10, DIFFUSE, ZERO_VEC, (Vector) {40, 20, 20}, 1.0);
+    
+    scene_add(scene, left);
+    scene_add(scene, right);
+    scene_add(scene, back);
+    scene_add(scene, bottom);
+    scene_add(scene, top);
+
+    scene_add(scene, light);
+    scene_finish(scene);
+    camera->fov = 30 * M_PI / 180.f;
+    Vector eye = {50, 52, 295.6f}, target = vv_add(&eye, &(Vector) {0, -0.042612f, -1}), up = {0, 1, 0};
+    cam_look_at(camera, eye, target, up);
+}
+
 
 void init_sky(Scene *scene, Camera *camera) {
     scene_init(scene);
