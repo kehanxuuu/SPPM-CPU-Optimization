@@ -61,6 +61,8 @@ struct SPPM {
     float *launch_indices_x;
     float *launch_indices_y;
     float ray_avg_depth;
+    float photon_avg_depth;
+    float photon_avg_lookups;
 };
 
 typedef struct PixelData PixelData;

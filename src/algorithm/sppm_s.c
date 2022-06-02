@@ -256,6 +256,7 @@ void sppm_photon_pass_photon_s(SPPM_S *sppm, PixelDataLookupS *lookup, PixelData
     VectorArray cur_flux_array = pixel_datas->cur_flux;
     FloatArray cur_photons_array = pixel_datas->cur_photons;
     for (int i = 0; i < sppm->ray_max_depth; i++) {
+        sppm->photon_avg_depth++;
         Intersection isect;
         if (!scene_intersect(sppm->scene, &ray, &isect)) {
             break;
@@ -266,6 +267,7 @@ void sppm_photon_pass_photon_s(SPPM_S *sppm, PixelDataLookupS *lookup, PixelData
             Vector3u loc_3d = sppm_pixel_data_lookup_to_grid_s(lookup, &isect.p);
             size_t ht_loc = sppm_pixel_data_lookup_hash_s(lookup, &loc_3d);
             for(int cur_arr_ind = 0; cur_arr_ind < lookup->hash_table[ht_loc].size; cur_arr_ind++) {
+                sppm->photon_avg_lookups++;
                 int pd_index = arr_get_int(&lookup->hash_table[ht_loc], cur_arr_ind);
                 Vector attenuation = arr_get_vector(&attenuation_array, pd_index);
                 if (vv_equal(&attenuation, &ZERO_VEC)) // cur_vp_intersection not set in camera pass
@@ -310,9 +312,14 @@ void sppm_photon_pass_photon_s(SPPM_S *sppm, PixelDataLookupS *lookup, PixelData
 }
 
 void sppm_photon_pass_s(SPPM_S *sppm, PixelDataLookupS *lookup, PixelDataS *pixel_datas) {
+    sppm->photon_avg_depth = 0;
+    sppm->photon_avg_lookups = 0;
     for (int i = 0; i < sppm->num_photons; i++) {
         sppm_photon_pass_photon_s(sppm, lookup, pixel_datas);
     }
+    sppm->photon_avg_depth /= (float) sppm->num_photons;
+    sppm->photon_avg_lookups /= (float) sppm->num_photons;
+    fprintf(stderr, "\tphoton average depth: %f, hash table lookups: %f ", sppm->photon_avg_depth, sppm->photon_avg_lookups);
 }
 
 void sppm_consolidate_s(PixelDataS *pixel_datas, float alpha, size_t H, size_t W) {
