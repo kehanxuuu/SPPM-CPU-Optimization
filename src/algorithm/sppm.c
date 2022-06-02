@@ -301,6 +301,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
     int i;
     IntersectionM temp_isect;
     IntersectionM to_store_isect;
+    sppm->ray_avg_depth = 0;
     for (i = 0; i < pixel_datas->size_float_simd; i += NUM_FLOAT_SIMD) {
         x = _mm256_load_ps(&sppm->launch_indices_x[i]);
         y = _mm256_load_ps(&sppm->launch_indices_y[i]);
@@ -323,8 +324,8 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
 
         __m256 not_completion_vector = _mm256_castsi256_ps(_mm256_set1_epi32(-1)); // highest bit must be 1 -> for _mm256_movemask_ps to work
 
-        int c_depth;
-        for (c_depth = 0; c_depth < sppm->ray_max_depth; c_depth++) {
+        for (int c_depth = 0; c_depth < sppm->ray_max_depth; c_depth++) {
+            sppm->ray_avg_depth += NUM_FLOAT_SIMD;
             __m256 do_intersect = scene_intersect_m(sppm->scene, ray_o_x, ray_o_y, ray_o_z, ray_d_x, ray_d_y, ray_d_z,
                                                     &ray_t_max, &temp_isect);
 
@@ -513,6 +514,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
         Vector direct_radiance = ZERO_VEC;
         Intersection isect;
         for (int c_depth = 0; c_depth < sppm->ray_max_depth; c_depth++) {
+            sppm->ray_avg_depth++;
             if (!scene_intersect(sppm->scene, &ray, &isect)) {
                 vvv_fmaeq(&direct_radiance, &attenuation, &sppm->background);
                 break;
@@ -579,6 +581,8 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
         pixel_datas->cur_vp_intersection.wo.z[i] = isect.wo.z;
         pixel_datas->cur_vp_intersection.interior.data[i] = isect.interior;
     }
+    sppm->ray_avg_depth /= (float) pixel_datas->size;
+    fprintf(stderr, "\tray average depth: %f ", sppm->ray_avg_depth);
 }
 
 void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_datas) {

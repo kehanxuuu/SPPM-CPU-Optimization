@@ -165,6 +165,7 @@ void sppm_camera_pass_pixel_s(SPPM_S *sppm, int x, int y, Vector* direct_radianc
     *direct_radiance = ZERO_VEC;
 
     for (int i = 0; i < sppm->ray_max_depth; i++) {
+        sppm->ray_avg_depth++;
         Intersection isect;
         if (!scene_intersect(sppm->scene, &ray, &isect)) {
             vvv_fmaeq(direct_radiance, &attenuation, &sppm->background);
@@ -214,6 +215,7 @@ void sppm_camera_pass_pixel_s(SPPM_S *sppm, int x, int y, Vector* direct_radianc
 }
 
 void sppm_camera_pass_s(SPPM_S *sppm, PixelDataS *pixel_datas) {
+    sppm->ray_avg_depth = 0;
     size_t W, H;
     W = sppm->camera->W;
     H = sppm->camera->H;
@@ -229,6 +231,8 @@ void sppm_camera_pass_s(SPPM_S *sppm, PixelDataS *pixel_datas) {
             arr_add(&pixel_datas->cur_vp_intersection, &vp_intersection);
         }
     }
+    sppm->ray_avg_depth /= (float) (W * H);
+    fprintf(stderr, "\tray average depth: %f ", sppm->ray_avg_depth);
 }
 
 void sppm_photon_pass_photon_s(SPPM_S *sppm, PixelDataLookupS *lookup, PixelDataS *pixel_datas) {

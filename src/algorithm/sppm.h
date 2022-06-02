@@ -60,6 +60,7 @@ struct SPPM {
     Camera *camera;
     float *launch_indices_x;
     float *launch_indices_y;
+    float ray_avg_depth;
 };
 
 typedef struct PixelData PixelData;

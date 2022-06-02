@@ -50,6 +50,7 @@ struct SPPM_S {
     Vector background;
     Scene *scene;
     Camera *camera;
+    float ray_avg_depth;
 };
 
 typedef struct PixelDataS PixelDataS;
