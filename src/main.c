@@ -1,6 +1,7 @@
 #include "scene_configs.h"
 #include "bitmap.h"
 #include "sppm.h"
+#include "sppm_s.h"
 #include "pt.h"
 #include "normal.h"
 #include <time.h>
@@ -60,7 +61,7 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
             printf("    -d --depth             ray max depth\n");
             printf("    -p --photons_per_iter  number of photons per iteration\n");
             printf("    -r --init_radius       initial search radius\n");
-            printf("    -a --algorithm         integrator: \"pt\" for path tracing, \"sppm\" for photon mapping, or \"normal\" for quick visualization\n");
+            printf("    -a --algorithm         integrator: \"pt\" for path tracing, \"sppm\" for photon mapping (sequential version), \"sppm-simd\" for photon mapping (SIMD version, default), or \"normal\" for quick visualization\n");
             printf("    --help                 print this help text\n");
             exit(0);
         }
@@ -90,7 +91,7 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
 int main(int argc, char *argv[]) {
     clock_t tic = clock();
     simd_seed(1);
-    Params params = {512, 384, 6, 5, 200000, 2.0f, "sppm", "out.exr"};
+    Params params = {512, 384, 6, 5, 200000, 2.0f, "sppm-simd", "out.exr"};
     parse_args(argc, argv, &params);
 
     Scene scene;
@@ -109,7 +110,13 @@ int main(int argc, char *argv[]) {
         pt_init(&pt, params.num_iterations, params.ray_max_depth, &scene, &camera, background);
         pt_render(&pt, &film);
     }
-    else if (strcmp(params.algorithm, "sppm") == 0) {
+    else if (strcmp(params.algorithm, "sppm") == 0) {  // sequential
+        SPPM_S sppm;
+        sppm_init_s(&sppm, params.num_iterations, params.ray_max_depth, params.photon_num_per_iter, params.initial_radius,
+                    &scene, &camera, background);
+        sppm_render_s(&sppm, &film);
+    }
+    else if (strcmp(params.algorithm, "sppm-simd") == 0) {  // SIMD
         SPPM sppm;
         sppm_init(&sppm, params.num_iterations, params.ray_max_depth, params.photon_num_per_iter, params.initial_radius,
                   &scene, &camera, background);

@@ -62,7 +62,6 @@ struct SPPM {
     float *launch_indices_y;
 };
 
-typedef struct VisiblePoint VisiblePoint;
 typedef struct PixelData PixelData;
 typedef struct PixelDataLookup PixelDataLookup;
 typedef struct SPPM SPPM;
