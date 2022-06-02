@@ -70,14 +70,14 @@ static inline void _mm256_add_scatter_1_ps(__m256 x, float* base_addr, __m256i v
     _mm256_store_ps(x_impl, x);
     int vindex_impl[8] __attribute__((__aligned__(64)));
     _mm256_store_si256((__m256i *)vindex_impl, vindex);
-    base_addr[vindex_impl[0]] += x_impl[0];
-    base_addr[vindex_impl[1]] += x_impl[1];
-    base_addr[vindex_impl[2]] += x_impl[2];
-    base_addr[vindex_impl[3]] += x_impl[3];
-    base_addr[vindex_impl[4]] += x_impl[4];
-    base_addr[vindex_impl[5]] += x_impl[5];
-    base_addr[vindex_impl[6]] += x_impl[6];
-    base_addr[vindex_impl[7]] += x_impl[7];
+    if(x_impl[0]) base_addr[vindex_impl[0]] += x_impl[0];
+    if(x_impl[1]) base_addr[vindex_impl[1]] += x_impl[1];
+    if(x_impl[2]) base_addr[vindex_impl[2]] += x_impl[2];
+    if(x_impl[3]) base_addr[vindex_impl[3]] += x_impl[3];
+    if(x_impl[4]) base_addr[vindex_impl[4]] += x_impl[4];
+    if(x_impl[5]) base_addr[vindex_impl[5]] += x_impl[5];
+    if(x_impl[6]) base_addr[vindex_impl[6]] += x_impl[6];
+    if(x_impl[7]) base_addr[vindex_impl[7]] += x_impl[7];
 }
 
 static inline void _mm256_add_scatter_1_epi32(__m256i x, int* base_addr, __m256i vindex){
