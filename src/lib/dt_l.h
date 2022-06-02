@@ -35,11 +35,15 @@ typedef struct {
     void** data;
 } __attribute__((__aligned__(64))) PtrL;
 
+typedef struct {
+    float* data;
+} __attribute__((__aligned__(64))) Float4;
+
 typedef Vector3fL VectorL;
 typedef Vector3fM VectorM;
 
 static inline void* malloc_align(size_t bytes){
-    return aligned_alloc(ALIGN, bytes);
+    return aligned_alloc(ALIGN, ceil(1.0 * bytes / ALIGN) * ALIGN);
 }
 
 static inline void free_align(void* mem_addr){
@@ -64,6 +68,10 @@ static inline void intl_init(IntL* il, size_t size){
     il->data = malloc_align(sizeof(int) * size);
 }
 
+static inline void float4_init(Float4* f4l, size_t size){
+    f4l->data = malloc_align(sizeof(float) * size * 4);
+}
+
 static inline void vector3fl_clear(Vector3fL* vecl, size_t size){
     memset(vecl->x, 0, sizeof(float) * size);
     memset(vecl->y, 0, sizeof(float) * size);
@@ -72,6 +80,10 @@ static inline void vector3fl_clear(Vector3fL* vecl, size_t size){
 
 static inline void floatl_clear(FloatL* fl, size_t size){
     memset(fl->data, 0,sizeof(float) * size);
+}
+
+static inline void float4_clear(Float4* f4l, size_t size){
+    memset(f4l->data, 0,sizeof(float) * size * 4);
 }
 
 static inline void intl_clear(IntL* il, size_t size){
@@ -90,6 +102,10 @@ static inline void intl_free(IntL* il){
 
 static inline void floatl_free(FloatL* fl){
     free_align(fl->data);
+}
+
+static inline void float4_free(Float4* f4l){
+    free_align(f4l->data);
 }
 
 static inline void ptrl_free(PtrL* ptrl){

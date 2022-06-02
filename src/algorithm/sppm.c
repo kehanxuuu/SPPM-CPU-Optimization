@@ -20,8 +20,7 @@ void sppm_pixel_data_init(PixelData *pixel_datas, int size) {
     floatl_init(&pixel_datas->num_photons, size);
     vector3fl_init(&pixel_datas->tau, size);
     vector3fl_init(&pixel_datas->direct_radiance, size);
-    floatl_init(&pixel_datas->cur_photons, size);
-    vector3fl_init(&pixel_datas->cur_flux, size);
+    float4_init(&pixel_datas->cur_content, size);
     vector3fl_init(&pixel_datas->cur_vp_attenuation, size);
     intersection_l_init(&pixel_datas->cur_vp_intersection, size);
 
@@ -29,8 +28,7 @@ void sppm_pixel_data_init(PixelData *pixel_datas, int size) {
     floatl_clear(&pixel_datas->num_photons, size);
     vector3fl_clear(&pixel_datas->tau, size);
     vector3fl_clear(&pixel_datas->direct_radiance, size);
-    floatl_clear(&pixel_datas->cur_photons, size);
-    vector3fl_clear(&pixel_datas->cur_flux, size);
+    float4_clear(&pixel_datas->cur_content, size);
 }
 
 void sppm_pixel_data_lookup_init(PixelDataLookup *lookup, int init_size) {
@@ -64,8 +62,7 @@ void sppm_pixel_data_free(PixelData *pixel_datas) {
     floatl_free(&pixel_datas->num_photons);
     vector3fl_free(&pixel_datas->tau);
     vector3fl_free(&pixel_datas->direct_radiance);
-    floatl_free(&pixel_datas->cur_photons);
-    vector3fl_free(&pixel_datas->cur_flux);
+    float4_free(&pixel_datas->cur_content);
     vector3fl_free(&pixel_datas->cur_vp_attenuation);
     intersection_l_free(&pixel_datas->cur_vp_intersection);
 }
@@ -895,10 +892,7 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                         __m256 bsdf_y_times_rad = _mm256_mul_ps(bsdf_y, light_radiance_y);
                         __m256 bsdf_z_times_rad = _mm256_mul_ps(bsdf_z, light_radiance_z);
 
-                        _mm256_add_scatter_1_ps(_mm256_blendv_ps(_mm256_setzero_ps(), bsdf_x_times_rad, cmp0), pixel_datas->cur_flux.x, pd_index);
-                        _mm256_add_scatter_1_ps(_mm256_blendv_ps(_mm256_setzero_ps(), bsdf_y_times_rad, cmp0), pixel_datas->cur_flux.y, pd_index);
-                        _mm256_add_scatter_1_ps(_mm256_blendv_ps(_mm256_setzero_ps(), bsdf_z_times_rad, cmp0), pixel_datas->cur_flux.z, pd_index);
-                        _mm256_add_scatter_1_ps(_mm256_blendv_ps(_mm256_setzero_ps(), _mm256_set1_ps(1),  cmp0), pixel_datas->cur_photons.data, pd_index);
+                        _mm256_masked_scatter_add_var_ps(bsdf_x_times_rad, bsdf_y_times_rad, bsdf_z_times_rad, cmp0, pixel_datas->cur_content.data, pd_index);
                     }
 
                     for (; cur_arr_ind < lookup->hash_table[ht_loc_impl[j]].size; cur_arr_ind++) {
@@ -932,10 +926,10 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                             }
                             Vector light_radiance = { light_rad_x[j], light_rad_y[j], light_rad_z[j] };
                             vv_muleq(&bsdf, &light_radiance);
-                            pixel_datas->cur_flux.x[pd_index] += bsdf.x;
-                            pixel_datas->cur_flux.y[pd_index] += bsdf.y;
-                            pixel_datas->cur_flux.z[pd_index] += bsdf.z;
-                            pixel_datas->cur_photons.data[pd_index] += 1.0;
+                            pixel_datas->cur_content.data[4 * pd_index + 0] += bsdf.x;
+                            pixel_datas->cur_content.data[4 * pd_index + 1] += bsdf.y;
+                            pixel_datas->cur_content.data[4 * pd_index + 2] += bsdf.z;
+                            pixel_datas->cur_content.data[4 * pd_index + 3] += 1.0f;
                         }
                     }
                 }
@@ -1081,15 +1075,7 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                     bsdf_y = _mm256_mul_ps(bsdf_y, _mm256_set1_ps(light_radiance.y));
                     bsdf_z = _mm256_mul_ps(bsdf_z, _mm256_set1_ps(light_radiance.z));
 
-                    _mm256_add_scatter_1_ps(_mm256_blendv_ps(_mm256_setzero_ps(), bsdf_x, cmp0),
-                                            pixel_datas->cur_flux.x, pd_index);
-                    _mm256_add_scatter_1_ps(_mm256_blendv_ps(_mm256_setzero_ps(), bsdf_y, cmp0),
-                                            pixel_datas->cur_flux.y, pd_index);
-                    _mm256_add_scatter_1_ps(_mm256_blendv_ps(_mm256_setzero_ps(), bsdf_z, cmp0),
-                                            pixel_datas->cur_flux.z, pd_index);
-                    _mm256_add_scatter_1_ps(_mm256_blendv_ps(_mm256_setzero_ps(), _mm256_set1_ps(1), cmp0),
-                                               pixel_datas->cur_photons.data,
-                                               pd_index);
+                    _mm256_masked_scatter_add_var_ps(bsdf_x, bsdf_y, bsdf_z, cmp0, pixel_datas->cur_content.data, pd_index);
                 }
 
                 Vector isect_p = {isect.p.x, isect.p.y, isect.p.z};
@@ -1125,10 +1111,10 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                             bsdf = vs_mul(&cur_vp_intersection_albedo, INV_PI);
                         }
                         vv_muleq(&bsdf, &light_radiance_vec);
-                        pixel_datas->cur_flux.x[pd_index] += bsdf.x;
-                        pixel_datas->cur_flux.y[pd_index] += bsdf.y;
-                        pixel_datas->cur_flux.z[pd_index] += bsdf.z;
-                        pixel_datas->cur_photons.data[pd_index] += 1.0;
+                        pixel_datas->cur_content.data[4 * pd_index + 0] += bsdf.x;
+                        pixel_datas->cur_content.data[4 * pd_index + 1] += bsdf.y;
+                        pixel_datas->cur_content.data[4 * pd_index + 2] += bsdf.z;
+                        pixel_datas->cur_content.data[4 * pd_index + 3] += 1.0f;
                     }
                 }
             }
@@ -1156,14 +1142,11 @@ void sppm_consolidate(PixelData *pixel_datas, float alpha) {
         __m256 cur_vp_attenuation_y = _mm256_load_ps(&pixel_datas->cur_vp_attenuation.y[i]);
         __m256 cur_vp_attenuation_z = _mm256_load_ps(&pixel_datas->cur_vp_attenuation.z[i]);
         __m256 radius = _mm256_load_ps(&pixel_datas->radius.data[i]);
-        __m256 cur_flux_x = _mm256_load_ps(&pixel_datas->cur_flux.x[i]);
-        __m256 cur_flux_y = _mm256_load_ps(&pixel_datas->cur_flux.y[i]);
-        __m256 cur_flux_z = _mm256_load_ps(&pixel_datas->cur_flux.z[i]);
+        __m256 cur_flux_x, cur_flux_y, cur_flux_z, cur_photons;
+        _mm256_float4_descatter_ps(pixel_datas->cur_content.data, i, &cur_flux_x, &cur_flux_y, &cur_flux_z, &cur_photons);
         __m256 tau_x = _mm256_load_ps(&pixel_datas->tau.x[i]);
         __m256 tau_y = _mm256_load_ps(&pixel_datas->tau.y[i]);
         __m256 tau_z = _mm256_load_ps(&pixel_datas->tau.z[i]);
-
-        __m256 cur_photons = _mm256_load_ps(&pixel_datas->cur_photons.data[i]);
         __m256 num_photons = _mm256_load_ps(&pixel_datas->num_photons.data[i]);
 
         __m256 mask = _mm256_cmp_ps(cur_photons,  _mm256_setzero_ps(), _CMP_GT_OQ);
@@ -1180,11 +1163,6 @@ void sppm_consolidate(PixelData *pixel_datas, float alpha) {
         _mm256_store_ps(&pixel_datas->tau.z[i], _mm256_blendv_ps(tau_z, t0_z, mask));
         _mm256_store_ps(&pixel_datas->num_photons.data[i], _mm256_blendv_ps(num_photons, new_num_photons, mask));
         _mm256_store_ps(&pixel_datas->radius.data[i], _mm256_blendv_ps(radius, new_radius, mask));
-
-        _mm256_store_ps(&pixel_datas->cur_photons.data[i], _mm256_setzero_ps());
-        _mm256_store_ps(&pixel_datas->cur_flux.x[i], _mm256_setzero_ps());
-        _mm256_store_ps(&pixel_datas->cur_flux.y[i], _mm256_setzero_ps());
-        _mm256_store_ps(&pixel_datas->cur_flux.z[i], _mm256_setzero_ps());
     }
 
     for (; i < pixel_datas->size; i++) {
@@ -1192,13 +1170,13 @@ void sppm_consolidate(PixelData *pixel_datas, float alpha) {
         float cur_vp_attenuation_y = pixel_datas->cur_vp_attenuation.y[i];
         float cur_vp_attenuation_z = pixel_datas->cur_vp_attenuation.z[i];
         float radius = pixel_datas->radius.data[i];
-        float cur_flux_x = pixel_datas->cur_flux.x[i];
-        float cur_flux_y = pixel_datas->cur_flux.y[i];
-        float cur_flux_z = pixel_datas->cur_flux.z[i];
+        float cur_flux_x = pixel_datas->cur_content.data[4 * i];
+        float cur_flux_y = pixel_datas->cur_content.data[4 * i + 1];
+        float cur_flux_z = pixel_datas->cur_content.data[4 * i + 2];
         float tau_x = pixel_datas->tau.x[i];
         float tau_y = pixel_datas->tau.y[i];
         float tau_z = pixel_datas->tau.z[i];
-        float cur_photons = pixel_datas->cur_photons.data[i];
+        float cur_photons = pixel_datas->cur_content.data[4 * i + 3];
         float num_photons = pixel_datas->num_photons.data[i];
         if (cur_photons > 0) {
             float new_num_photons = num_photons + 1.0f * alpha * cur_photons;
@@ -1213,11 +1191,8 @@ void sppm_consolidate(PixelData *pixel_datas, float alpha) {
             pixel_datas->num_photons.data[i] = new_num_photons;
             pixel_datas->radius.data[i] = new_radius;
         }
-        pixel_datas->cur_photons.data[i] = 0;
-        pixel_datas->cur_flux.x[i] = 0;
-        pixel_datas->cur_flux.y[i] = 0;
-        pixel_datas->cur_flux.z[i] = 0;
     }
+    float4_clear(&pixel_datas->cur_content, pixel_datas->size);
 }
 
 void sppm_store(PixelData *pixel_datas, int num_iters, int num_photons, int H, int W, Bitmap *bitmap) {

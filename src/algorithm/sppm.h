@@ -34,8 +34,10 @@ struct PixelData {
     VectorL direct_radiance;
 
     // refreshed every iteration
-    FloatL cur_photons;
-    VectorL cur_flux;
+//    Includes:
+//    > FloatL cur_photons;
+//    > VectorL cur_flux;
+    Float4 cur_content;
 
     // struct visible point
     VectorL cur_vp_attenuation;
