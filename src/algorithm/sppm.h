@@ -42,6 +42,8 @@ struct PixelData {
     // struct visible point
     VectorL cur_vp_attenuation;
     IntersectionL cur_vp_intersection; // struct intersection
+
+    Float16 temp_transpose_buffer;
 };
 
 struct PixelDataLookup {
@@ -95,6 +97,8 @@ void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, int loc_x, int loc_y,
 void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_datas);
 
 void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas);
+
+void sppm_create_tranpose_buffer(PixelData *pixel_datas);
 
 void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_datas);
 
