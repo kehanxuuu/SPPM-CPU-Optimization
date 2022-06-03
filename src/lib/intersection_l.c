@@ -271,6 +271,11 @@ __m256 scene_intersect_m(SceneL *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 r
         __m256 discriminant = _mm256_sub_ps(_mm256_mul_ps(half_b, half_b), _mm256_mul_ps(a, c));
 
         __m256 cur_do_intersect = _mm256_cmp_ps(discriminant, _mm256_setzero_ps(), _CMP_GE_OQ);
+
+        if(_mm256_movemask_ps(cur_do_intersect) == 0){
+            continue;
+        }
+
         __m256 sqrt_d = _mm256_sqrt_ps(discriminant);
         __m256 root_small = _mm256_div_ps(_mm256_sub_ps(_mm256_neg_ps(half_b), sqrt_d), a);
         __m256 root_big = _mm256_div_ps(_mm256_add_ps(_mm256_neg_ps(half_b), sqrt_d), a);
@@ -334,8 +339,12 @@ __m256 scene_do_intersect_m(SceneL *scene, __m256 ray_o_x, __m256 ray_o_y, __m25
         __m256 half_b = vector3fl_dot(ray_d_x, ray_d_y, ray_d_z, oc_x, oc_y, oc_z);
         __m256 c = _mm256_sub_ps(vector3fl_dot(oc_x, oc_y, oc_z, oc_x, oc_y, oc_z), sphere_r2);
         __m256 discriminant = _mm256_sub_ps(_mm256_mul_ps(half_b, half_b), _mm256_mul_ps(a, c));
-
         __m256 cur_do_intersect = _mm256_cmp_ps(discriminant, _mm256_setzero_ps(), _CMP_GE_OQ);
+
+        if(_mm256_movemask_ps(cur_do_intersect) == 0){
+            continue;
+        }
+
         __m256 sqrt_d = _mm256_sqrt_ps(discriminant);
         __m256 root_small = _mm256_div_ps(_mm256_sub_ps(_mm256_neg_ps(half_b), sqrt_d), a);
         __m256 root_big = _mm256_div_ps(_mm256_add_ps(_mm256_neg_ps(half_b), sqrt_d), a);

@@ -860,7 +860,8 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                     shufmask = _mm256_add_epi32(shufmask, _mm256_set1_epi32(1));
 
                     int cur_arr_ind;
-                    for (cur_arr_ind = 0; cur_arr_ind < (lookup->hash_table[ht_loc_impl[j]].size / NUM_FLOAT_SIMD) * NUM_FLOAT_SIMD; cur_arr_ind += NUM_FLOAT_SIMD) {
+                    int inter_num = ((int)lookup->hash_table[ht_loc_impl[j]].size / NUM_FLOAT_SIMD) * NUM_FLOAT_SIMD;
+                    for (cur_arr_ind = 0; cur_arr_ind < inter_num; cur_arr_ind += NUM_FLOAT_SIMD) {
                         __m256 cur_vp_attenuation_x, cur_vp_attenuation_y, cur_vp_attenuation_z, radius;
                         __m256 cur_vp_intersection_x, cur_vp_intersection_y, cur_vp_intersection_z, cur_vp_intersection_n_x;
                         __m256 cur_vp_intersection_n_y, cur_vp_intersection_n_z, cur_vp_intersection_wi_x, cur_vp_intersection_wi_y;
@@ -1033,7 +1034,8 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                 __m256 cur_neg_ray_d_z = _mm256_neg_ps(_mm256_set1_ps(ray.d.z));
                 int ht_loc = sppm_pixel_data_lookup_hash(lookup, loc_x, loc_y, loc_z);
                 int cur_arr_ind;
-                for (cur_arr_ind = 0; cur_arr_ind < (lookup->hash_table[ht_loc].size / NUM_FLOAT_SIMD) * NUM_FLOAT_SIMD; cur_arr_ind += NUM_FLOAT_SIMD) {
+                int inter_num = (lookup->hash_table[ht_loc].size / NUM_FLOAT_SIMD) * NUM_FLOAT_SIMD;
+                for (cur_arr_ind = 0; cur_arr_ind < inter_num; cur_arr_ind += NUM_FLOAT_SIMD) {
                     __m256 cur_vp_attenuation_x, cur_vp_attenuation_y, cur_vp_attenuation_z, radius;
                     __m256 cur_vp_intersection_x, cur_vp_intersection_y, cur_vp_intersection_z, cur_vp_intersection_n_x;
                     __m256 cur_vp_intersection_n_y, cur_vp_intersection_n_z, cur_vp_intersection_wi_x, cur_vp_intersection_wi_y;
