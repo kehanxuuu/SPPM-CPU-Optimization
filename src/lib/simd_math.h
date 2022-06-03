@@ -114,50 +114,42 @@ static inline void _mm256_masked_scatter_add_var_ps(__m256 x, __m256 y, __m256 z
     r26 = _mm256_shuffle_ps(l01, l23, 0b1110111011101110);
     r37 = _mm256_shuffle_ps(u01, u23, 0b1110111011101110);
 
-    if(mask_res & 0b00000001)
-    {
+    if(mask_res & 0b00000001){
         __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[0]]);
         __m128 res = _mm_add_ps(inp, _mm256_castps256_ps128(r04));
         _mm_store_ps(&base_addr[4 * index_loc[0]], res);
     }
-    if(mask_res & 0b00000010)
-    {
+    if(mask_res & 0b00000010){
         __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[1]]);
         __m128 res = _mm_add_ps(inp, _mm256_castps256_ps128(r15));
         _mm_store_ps(&base_addr[4 * index_loc[1]], res);
     }
-    if(mask_res & 0b00000100)
-    {
+    if(mask_res & 0b00000100){
         __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[2]]);
         __m128 res = _mm_add_ps(inp, _mm256_castps256_ps128(r26));
         _mm_store_ps(&base_addr[4 * index_loc[2]], res);
     }
-    if(mask_res & 0b00001000)
-    {
+    if(mask_res & 0b00001000){
         __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[3]]);
         __m128 res = _mm_add_ps(inp, _mm256_castps256_ps128(r37));
         _mm_store_ps(&base_addr[4 * index_loc[3]], res);
     }
-    if(mask_res & 0b00010000)
-    {
+    if(mask_res & 0b00010000){
         __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[4]]);
         __m128 res = _mm_add_ps(inp, _mm256_extractf128_ps(r04, 1));
         _mm_store_ps(&base_addr[4 * index_loc[4]], res);
     }
-    if(mask_res & 0b00100000)
-    {
+    if(mask_res & 0b00100000){
         __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[5]]);
         __m128 res = _mm_add_ps(inp, _mm256_extractf128_ps(r15, 1));
         _mm_store_ps(&base_addr[4 * index_loc[5]], res);
     }
-    if(mask_res & 0b01000000)
-    {
+    if(mask_res & 0b01000000){
         __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[6]]);
         __m128 res = _mm_add_ps(inp, _mm256_extractf128_ps(r26, 1));
         _mm_store_ps(&base_addr[4 * index_loc[6]], res);
     }
-    if(mask_res & 0b1000000)
-    {
+    if(mask_res & 0b1000000){
         __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[7]]);
         __m128 res = _mm_add_ps(inp, _mm256_extractf128_ps(r37, 1));
         _mm_store_ps(&base_addr[4 * index_loc[7]], res);
