@@ -14,6 +14,7 @@ typedef struct {
     int photon_num_per_iter;
     float initial_radius;
     char *algorithm;
+    char *scene;
     char *output_path;
 } Params;
 
@@ -62,6 +63,7 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
             printf("    -p --photons_per_iter  number of photons per iteration\n");
             printf("    -r --init_radius       initial search radius\n");
             printf("    -a --algorithm         integrator: \"pt\" for path tracing, \"sppm\" for photon mapping (sequential version), \"sppm-simd\" for photon mapping (SIMD version, default), or \"normal\" for quick visualization\n");
+            printf("    -s --scene             test scene: \"cornell\", \"large\", \"reflect\", \"random\", \"surgery\"\n");
             printf("    --help                 print this help text\n");
             exit(0);
         }
@@ -72,6 +74,7 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
         else parse_long(photon_num_per_iter, "photon_num_per_iter", "-p", "--photons_per_iter")
         else parse_float(initial_radius, "initial_radius", "-r", "--init_radius")
         else parse_str(algorithm, "algorithm", "-a", "--algorithm")
+        else parse_str(scene, "sene", "-s", "--scene")
         else if (argv[i][0] == '-') {
             fprintf(stderr, "Unknown argument `%s`\n", argv[i]);
             exit(1);
@@ -96,12 +99,27 @@ int main(int argc, char *argv[]) {
 
     Scene scene;
     Camera camera;
-    // init_cornell_box(&scene, &camera);
-    // init_large_box(&scene, &camera);
-    // init_reflect_box(&scene, &camera);
-    // init_random_box(&scene, &camera);
-    init_surgery_box(&scene, &camera);
+
+    if (strcmp(params.scene, "cornell") == 0) {
+        init_cornell_box(&scene, &camera);
+    }
+    else if (strcmp(params.scene, "large") == 0) { 
+        init_large_box(&scene, &camera);
+    }
+    else if (strcmp(params.scene, "reflect") == 0) { 
+        init_reflect_box(&scene, &camera);
+    }
+    else if (strcmp(params.scene, "random") == 0) {
+        init_random_box(&scene, &camera);
+    }
+    else if (strcmp(params.scene, "surgery") == 0) {
+        init_surgery_box(&scene, &camera);
+    }
+    else {
+        init_cornell_box(&scene, &camera);
+    }
     // init_sky(&scene, &camera);
+    
     cam_set_resolution(&camera, params.width, params.height);
 
     Bitmap film;
