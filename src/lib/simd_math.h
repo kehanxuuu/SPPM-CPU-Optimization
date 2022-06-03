@@ -109,10 +109,10 @@ static inline void _mm256_masked_scatter_add_var_ps(__m256 x, __m256 y, __m256 z
     u23 = _mm256_unpackhi_ps(z, a);
 
     __m256 r04, r15, r26, r37;
-    r04 = _mm256_shuffle_ps(l01, l23, 0b0100010001000100);
-    r15 = _mm256_shuffle_ps(u01, u23, 0b0100010001000100);
-    r26 = _mm256_shuffle_ps(l01, l23, 0b1110111011101110);
-    r37 = _mm256_shuffle_ps(u01, u23, 0b1110111011101110);
+    r04 = _mm256_shuffle_ps(l01, l23, 0b01000100);
+    r15 = _mm256_shuffle_ps(u01, u23, 0b01000100);
+    r26 = _mm256_shuffle_ps(l01, l23, 0b11101110);
+    r37 = _mm256_shuffle_ps(u01, u23, 0b11101110);
 
     if(mask_res & 0b00000001){
         __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[0]]);

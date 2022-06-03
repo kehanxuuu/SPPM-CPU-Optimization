@@ -66,6 +66,7 @@ void sppm_pixel_data_free(PixelData *pixel_datas) {
     float4_free(&pixel_datas->cur_content);
     vector3fl_free(&pixel_datas->cur_vp_attenuation);
     intersection_l_free(&pixel_datas->cur_vp_intersection);
+    float16_free(&pixel_datas->temp_transpose_buffer);
 }
 
 int sppm_pixel_data_lookup_hash(PixelDataLookup *lookup, int x, int y, int z) {
