@@ -114,6 +114,7 @@ int main(int argc, char *argv[]) {
         sppm_init(&sppm, params.num_iterations, params.ray_max_depth, params.photon_num_per_iter, params.initial_radius,
                   &scene, &camera, background);
         sppm_render(&sppm, &film);
+        sppm_free(&sppm);
     }
     else if (strcmp(params.algorithm, "normal") == 0) {
         NormalVisualizer nv;

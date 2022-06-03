@@ -9,7 +9,8 @@ void sppm_init(SPPM *sppm, int num_iterations, int ray_max_depth, int photon_num
     sppm->initial_radius = initial_radius;
     sppm->alpha = 2.0f / 3.0f;
     sppm->background = background;
-    sppm->scene = scene;
+    sppm->scene_orig = scene;
+    scene_l_init_from(&sppm->scene, scene);
     sppm->camera = camera;
 }
 
@@ -324,7 +325,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
 
         int c_depth;
         for (c_depth = 0; c_depth < sppm->ray_max_depth; c_depth++) {
-            __m256 do_intersect = scene_intersect_m(sppm->scene, ray_o_x, ray_o_y, ray_o_z, ray_d_x, ray_d_y, ray_d_z,
+            __m256 do_intersect = scene_intersect_m(&sppm->scene, ray_o_x, ray_o_y, ray_o_z, ray_d_x, ray_d_y, ray_d_z,
                                                     &ray_t_max, &temp_isect);
 
             __m256 no_isect_direct_radiance_x = _mm256_fmadd_ps(attenuation_x, _mm256_set1_ps(sppm->background.x),
@@ -385,7 +386,7 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
                                                             cur_selected);
 
             __m256 Ld_x, Ld_y, Ld_z;
-            estimate_direct_lighting_m(sppm->scene, &temp_isect, &Ld_x, &Ld_y, &Ld_z);
+            estimate_direct_lighting_m(&sppm->scene, &temp_isect, &Ld_x, &Ld_y, &Ld_z);
             to_store_isect.wo.x = _mm256_blendv_ps(to_store_isect.wo.x, temp_isect.wo.x, cur_selected);
             to_store_isect.wo.y = _mm256_blendv_ps(to_store_isect.wo.y, temp_isect.wo.y, cur_selected);
             to_store_isect.wo.z = _mm256_blendv_ps(to_store_isect.wo.z, temp_isect.wo.z, cur_selected);
@@ -622,13 +623,13 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
         Vector direct_radiance = ZERO_VEC;
         Intersection isect;
         for (int c_depth = 0; c_depth < sppm->ray_max_depth; c_depth++) {
-            if (!scene_intersect(sppm->scene, &ray, &isect)) {
+            if (!scene_intersect(sppm->scene_orig, &ray, &isect)) {
                 vvv_fmaeq(&direct_radiance, &attenuation, &sppm->background);
                 break;
             }
             vvv_fmaeq(&direct_radiance, &attenuation, &isect.hit->emission);
             if (isect.hit->material == DIFFUSE) {
-                Vector Ld = estimate_direct_lighting(sppm->scene, &isect);
+                Vector Ld = estimate_direct_lighting(sppm->scene_orig, &isect);
                 vvv_fmaeq(&direct_radiance, &attenuation, &Ld);
                 vp_attenuation = attenuation;
                 break;
@@ -764,12 +765,12 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
     for (i = 0; i < (sppm->num_photons / NUM_FLOAT_SIMD) * NUM_FLOAT_SIMD; i += NUM_FLOAT_SIMD) {
         __m256 not_completion_vector = _mm256_castsi256_ps(_mm256_set1_epi32(-1));
 
-        __m256 pdf_emitter = _mm256_set1_ps(sppm->scene->accum_probabilities[1]);
+        __m256 pdf_emitter = _mm256_set1_ps(sppm->scene.accum_probabilities[1]);
         __m256i emitter_id = _mm256_setzero_si256();
         __m256 sample = randf_full();
-        for (int j = 0; j < sppm->scene->n_emitters; ++j) {
-            __m256 ac_prob_i = _mm256_set1_ps(sppm->scene->accum_probabilities[j]);
-            __m256 ac_prob_i1 = _mm256_set1_ps(sppm->scene->accum_probabilities[j + 1]);
+        for (int j = 0; j < sppm->scene.n_emitters; ++j) {
+            __m256 ac_prob_i = _mm256_set1_ps(sppm->scene.accum_probabilities[j]);
+            __m256 ac_prob_i1 = _mm256_set1_ps(sppm->scene.accum_probabilities[j + 1]);
             __m256 cmp0 = _mm256_and_ps(_mm256_cmp_ps(ac_prob_i, sample, _CMP_LE_OQ),
                                         _mm256_cmp_ps(sample, ac_prob_i1, _CMP_LT_OQ));
             pdf_emitter = _mm256_blendv_ps(pdf_emitter, _mm256_sub_ps(ac_prob_i1, ac_prob_i), cmp0);
@@ -779,21 +780,16 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
 //      only spheres
         int emitter_id_impl[NUM_FLOAT_SIMD] __attribute__((__aligned__(64)));
         _mm256_store_si256((__m256i *)emitter_id_impl, emitter_id);
-        Sphere *spheres[NUM_FLOAT_SIMD] __attribute__((__aligned__(64)));
-        for (int j = 0; j < NUM_FLOAT_SIMD; j++) {
-            spheres[j] = sppm->scene->emitters[emitter_id_impl[j]]->geometry->data;
-        }
+
+        __m256 sphere_c_x, sphere_c_y, sphere_c_z, sphere_r, emission_x, emission_y, emission_z;
+        transpose8x7(&sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[0]], &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[1]],
+                     &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[2]], &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[3]],
+                     &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[4]], &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[5]],
+                     &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[6]], &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[6]],
+                     &sphere_c_x, &sphere_c_y, &sphere_c_z, &sphere_r, &emission_x, &emission_y, &emission_z);
 
         __m256 normal_x, normal_y, normal_z;
         vector3fl_square_to_uniform_sphere(randf_full(), randf_full(), &normal_x, &normal_y, &normal_z);
-        __m256 sphere_c_x = _mm256_setr_ps(spheres[0]->c.x, spheres[1]->c.x, spheres[2]->c.x, spheres[3]->c.x,
-                                           spheres[4]->c.x, spheres[5]->c.x, spheres[6]->c.x, spheres[7]->c.x);
-        __m256 sphere_c_y = _mm256_setr_ps(spheres[0]->c.y, spheres[1]->c.y, spheres[2]->c.y, spheres[3]->c.y,
-                                           spheres[4]->c.y, spheres[5]->c.y, spheres[6]->c.y, spheres[7]->c.y);
-        __m256 sphere_c_z = _mm256_setr_ps(spheres[0]->c.z, spheres[1]->c.z, spheres[2]->c.z, spheres[3]->c.z,
-                                           spheres[4]->c.z, spheres[5]->c.z, spheres[6]->c.z, spheres[7]->c.z);
-        __m256 sphere_r = _mm256_setr_ps(spheres[0]->r, spheres[1]->r, spheres[2]->r, spheres[3]->r,
-                                         spheres[4]->r, spheres[5]->r, spheres[6]->r, spheres[7]->r);
         __m256 mult_s = _mm256_add_ps(sphere_r, _mm256_set1_ps(EPSILON));
         __m256 ray_o_x = _mm256_fmadd_ps(normal_x, mult_s, sphere_c_x);
         __m256 ray_o_y = _mm256_fmadd_ps(normal_y, mult_s, sphere_c_y);
@@ -808,31 +804,6 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
         __m256 pdf_dir = _mm256_set1_ps(M_1_PI * 0.5);
         __m256 ray_t_max = _mm256_set1_ps(INFINITY);
 
-        __m256 emission_x = _mm256_setr_ps(sppm->scene->emitters[emitter_id_impl[0]]->emission.x,
-                                           sppm->scene->emitters[emitter_id_impl[1]]->emission.x,
-                                           sppm->scene->emitters[emitter_id_impl[2]]->emission.x,
-                                           sppm->scene->emitters[emitter_id_impl[3]]->emission.x,
-                                           sppm->scene->emitters[emitter_id_impl[4]]->emission.x,
-                                           sppm->scene->emitters[emitter_id_impl[5]]->emission.x,
-                                           sppm->scene->emitters[emitter_id_impl[6]]->emission.x,
-                                           sppm->scene->emitters[emitter_id_impl[7]]->emission.x);
-        __m256 emission_y = _mm256_setr_ps(sppm->scene->emitters[emitter_id_impl[0]]->emission.y,
-                                           sppm->scene->emitters[emitter_id_impl[1]]->emission.y,
-                                           sppm->scene->emitters[emitter_id_impl[2]]->emission.y,
-                                           sppm->scene->emitters[emitter_id_impl[3]]->emission.y,
-                                           sppm->scene->emitters[emitter_id_impl[4]]->emission.y,
-                                           sppm->scene->emitters[emitter_id_impl[5]]->emission.y,
-                                           sppm->scene->emitters[emitter_id_impl[6]]->emission.y,
-                                           sppm->scene->emitters[emitter_id_impl[7]]->emission.y);
-        __m256 emission_z = _mm256_setr_ps(sppm->scene->emitters[emitter_id_impl[0]]->emission.z,
-                                           sppm->scene->emitters[emitter_id_impl[1]]->emission.z,
-                                           sppm->scene->emitters[emitter_id_impl[2]]->emission.z,
-                                           sppm->scene->emitters[emitter_id_impl[3]]->emission.z,
-                                           sppm->scene->emitters[emitter_id_impl[4]]->emission.z,
-                                           sppm->scene->emitters[emitter_id_impl[5]]->emission.z,
-                                           sppm->scene->emitters[emitter_id_impl[6]]->emission.z,
-                                           sppm->scene->emitters[emitter_id_impl[7]]->emission.z);
-
         __m256 t0 = _mm256_div_ps(One, _mm256_mul_ps(pdf_emitter, _mm256_mul_ps(pdf_pos, pdf_dir)));
         __m256 light_radiance_x = _mm256_mul_ps(emission_x, t0);
         __m256 light_radiance_y = _mm256_mul_ps(emission_y, t0);
@@ -840,7 +811,7 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
 
         IntersectionM temp_isect;
         for (int c_depth = 0; c_depth < sppm->ray_max_depth; c_depth++) {
-            __m256 do_intersect = scene_intersect_m(sppm->scene, ray_o_x, ray_o_y, ray_o_z, ray_d_x, ray_d_y, ray_d_z,
+            __m256 do_intersect = scene_intersect_m(&sppm->scene, ray_o_x, ray_o_y, ray_o_z, ray_d_x, ray_d_y, ray_d_z,
                                                     &ray_t_max, &temp_isect);
             not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(),
                                                      _mm256_andnot_ps(do_intersect, not_completion_vector));
@@ -1037,7 +1008,7 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
     for (; i < sppm->num_photons; i++) {
         Ray ray;
         float pdf_emitter, pdf_pos, pdf_dir;
-        Mesh *emitter = sample_emitter(sppm->scene, randf(), &pdf_emitter);
+        Mesh *emitter = sample_emitter(sppm->scene_orig, randf(), &pdf_emitter);
         ray = sphere_surface_photon_sample((Sphere *) emitter->geometry->data, (Vector2f) {randf(), randf()},
                                            (Vector2f) {randf(), randf()},
                                            &pdf_pos, &pdf_dir);
@@ -1045,7 +1016,7 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
         Vector light_radiance = vs_div(&emitter->emission, pdf_emitter * pdf_pos * pdf_dir);
         for (int c_depth = 0; c_depth < sppm->ray_max_depth; c_depth++) {
             Intersection isect;
-            if (!scene_intersect(sppm->scene, &ray, &isect)) {
+            if (!scene_intersect(sppm->scene_orig, &ray, &isect)) {
                 break;
             }
 
@@ -1317,4 +1288,8 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
 
     sppm_pixel_data_lookup_free(&lookup);
     sppm_pixel_data_free(&pixel_datas);
+}
+
+void sppm_free(SPPM* sppm){
+    scene_l_free(&sppm->scene);
 }

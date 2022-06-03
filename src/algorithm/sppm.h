@@ -19,6 +19,7 @@
 #include <immintrin.h>
 #include "intersection_l.h"
 #include "ray_l.h"
+#include "scene_l.h"
 
 #ifndef _SPPM_RADIUS_MULT
 #define _SPPM_RADIUS_MULT 2.0
@@ -54,13 +55,14 @@ struct PixelDataLookup {
 };
 
 struct SPPM {
+    SceneL scene;
     int num_iterations;
     int ray_max_depth;
     int num_photons;
     float initial_radius;
     float alpha;
     Vector background;
-    Scene *scene;
+    Scene *scene_orig;
     Camera *camera;
 };
 
@@ -107,5 +109,7 @@ void sppm_consolidate(PixelData *pixel_datas, float alpha);
 void sppm_store(PixelData *pixel_datas, int num_iters, int num_photons, int H, int W, Bitmap *bitmap);
 
 void sppm_render(SPPM *sppm, Bitmap *bitmap);
+
+void sppm_free(SPPM *sppm);
 
 #endif //TEAM32_SPPM_H

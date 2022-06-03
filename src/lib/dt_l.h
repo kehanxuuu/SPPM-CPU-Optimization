@@ -41,6 +41,10 @@ typedef struct {
 
 typedef struct {
     float* data;
+} __attribute__((__aligned__(64))) Float8;
+
+typedef struct {
+    float* data;
 } __attribute__((__aligned__(64))) Float16;
 
 typedef Vector3fL VectorL;
@@ -74,6 +78,10 @@ static inline void intl_init(IntL* il, size_t size){
 
 static inline void float4_init(Float4* f4l, size_t size){
     f4l->data = malloc_align(sizeof(float) * size * 4);
+}
+
+static inline void float8_init(Float8* f8l, size_t size){
+    f8l->data = malloc_align(sizeof(float) * size * 8);
 }
 
 static inline void float16_init(Float16* f16l, size_t size){
@@ -114,6 +122,10 @@ static inline void floatl_free(FloatL* fl){
 
 static inline void float4_free(Float4* f4l){
     free_align(f4l->data);
+}
+
+static inline void float8_free(Float8* f8l){
+    free_align(f8l->data);
 }
 
 static inline void float16_free(Float16* f16l){
