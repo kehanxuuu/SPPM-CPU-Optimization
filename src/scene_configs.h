@@ -157,6 +157,54 @@ void init_random_box(Scene *scene, Camera *camera) {
     cam_look_at(camera, eye, target, up);
 }
 
+void init_surgery_box(Scene *scene, Camera *camera) {
+    scene_init(scene);
+    Mesh *left = mesh_make_sphere((Vector) {inf-50, 40.8f, 81.6f}, inf, DIFFUSE, 
+        (Vector) {.25f, .25f, .75f}, ZERO_VEC, 1.0);
+    Mesh *right = mesh_make_sphere((Vector) {-inf+150, 40.8f, 81.6f}, inf, DIFFUSE, 
+        (Vector) {.25f, .25f, .75f}, ZERO_VEC, 1.0);
+    Mesh *back = mesh_make_sphere((Vector) {50, 40.8f, inf-150}, inf, DIFFUSE, 
+        (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
+    Mesh *bottom = mesh_make_sphere((Vector) {50, inf, 81.6f}, inf, SPECULAR, 
+        (Vector) {.5f, .5f, .5f}, ZERO_VEC, 1.0);
+    Mesh *top = mesh_make_sphere((Vector) {50, 90, 81.6f}, inf, DIFFUSE, (Vector) {.75f, .75f, .75f}, ZERO_VEC, 1.0);
+    
+    int counter = 0;
+    int r = 5;
+    int gap = 10;
+    for (int z = 0; z < 100; z += r+gap) {
+        for (int x = -10; x < 115; x += r+gap) {
+            Mesh *light = mesh_make_sphere((Vector) {x, 80, z}, r, DIFFUSE, ZERO_VEC, 
+                (Vector) {4.5,4.5,6.5}, 1.0);
+
+            scene_add(scene, light);
+            counter++;
+        } 
+    }
+    printf("Totoal: %d\n", counter);
+    Mesh *white_mirror = mesh_make_sphere((Vector) {50, 30, 10}, 30, SPECULAR,
+                                          (Vector) {.596, .596, .596}, ZERO_VEC, 1.0);
+    Mesh *glass_2 = mesh_make_sphere((Vector) {50, 20, 60}, 20, SPECULAR,
+                                     (Vector) {.6 * .696, .6 * .696, .6 * .696}, ZERO_VEC, 1.5);
+    Mesh *glass_1 = mesh_make_sphere((Vector) {50, 10, 90}, 10, DIELECTRIC,
+                                     (Vector) {.96 * .96, .96 * .96, .96 * .96}, ZERO_VEC, 1.5);
+    
+    scene_add(scene, left);
+    scene_add(scene, right);
+    scene_add(scene, back);
+    scene_add(scene, bottom);
+    scene_add(scene, top);
+
+    scene_add(scene, white_mirror);
+    scene_add(scene, glass_2);
+    scene_add(scene, glass_1);
+
+    scene_finish(scene);
+    camera->fov = 30 * M_PI / 180.f;
+    Vector eye = {50, 52, 295.6f}, target = vv_add(&eye, &(Vector) {0, -0.042612f, -1}), up = {0, 1, 0};
+    cam_look_at(camera, eye, target, up);
+}
+
 
 void init_sky(Scene *scene, Camera *camera) {
     scene_init(scene);

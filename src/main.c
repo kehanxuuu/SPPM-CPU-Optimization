@@ -99,7 +99,8 @@ int main(int argc, char *argv[]) {
     // init_cornell_box(&scene, &camera);
     // init_large_box(&scene, &camera);
     // init_reflect_box(&scene, &camera);
-    init_random_box(&scene, &camera);
+    // init_random_box(&scene, &camera);
+    init_surgery_box(&scene, &camera);
     // init_sky(&scene, &camera);
     cam_set_resolution(&camera, params.width, params.height);
 
