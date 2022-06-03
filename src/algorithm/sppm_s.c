@@ -275,7 +275,7 @@ void sppm_photon_pass_photon_s(SPPM_S *sppm, PixelDataLookupS *lookup, PixelData
                 Intersection *cur_vp_intersection = arr_get(&cur_vp_intersection_array, pd_index);
                 float radius = arr_get_float(&radii, pd_index);
                 Vector dist_between = vv_sub(&cur_vp_intersection->p, &isect.p);
-                if (v_norm_sqr(&dist_between) < radius * radius) {
+                if (v_norm_sqr(&dist_between) < radius * radius) {  // cmp0
                     cur_vp_intersection->wo = wo;
                     // Only contribute energy to diffuse materials
                     if (cur_vp_intersection->hit->material == DIFFUSE) {
@@ -283,6 +283,7 @@ void sppm_photon_pass_photon_s(SPPM_S *sppm, PixelDataLookupS *lookup, PixelData
                         // manually inline bsdf_eval_diffuse
                         Vector bsdf = ZERO_VEC;
                         if (vv_dot(&cur_vp_intersection->wi, &cur_vp_intersection->n) < 0 && vv_dot(&cur_vp_intersection->wo, &cur_vp_intersection->n) > 0)
+                            // cmp1
                             bsdf = vs_mul(&cur_vp_intersection->hit->albedo, INV_PI);
 
                         arr_set_add_vector(&cur_flux_array, pd_index, vv_mul(&bsdf, &light_radiance)); // flux += bsdf * L
