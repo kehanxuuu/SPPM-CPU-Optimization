@@ -94,7 +94,7 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
 int main(int argc, char *argv[]) {
     clock_t tic = clock();
     simd_seed(1);
-    Params params = {512, 384, 6, 5, 200000, 2.0f, "sppm-simd", "out.exr"};
+    Params params = {512, 384, 6, 5, 200000, 2.0f, "sppm-simd", "cornell", "out.exr"};
     parse_args(argc, argv, &params);
 
     Scene scene;
@@ -116,7 +116,8 @@ int main(int argc, char *argv[]) {
         init_surgery_box(&scene, &camera);
     }
     else {
-        init_cornell_box(&scene, &camera);
+        fprintf(stderr, "Invalid scene `%s`\n", params.scene);
+        exit(1);
     }
     // init_sky(&scene, &camera);
     

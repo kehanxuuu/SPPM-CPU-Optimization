@@ -92,7 +92,7 @@ void init_large_box(Scene *scene, Camera *camera) {
                                      (Vector) {.96 * .96, .96 * .96, .96 * .96}, ZERO_VEC, 1.5);
     Mesh *glass_2 = mesh_make_sphere((Vector) {87, 22, 24}, 22, SPECULAR,
                                      (Vector) {.6 * .696, .6 * .696, .6 * .696}, ZERO_VEC, 1.5);
-    Mesh *light1 = mesh_make_sphere((Vector) {100, 90, 180}, 15, DIFFUSE, ZERO_VEC, (Vector) {40, 20, 20}, 1.0);
+    Mesh *light1 = mesh_make_sphere((Vector) {105, 90, 180}, 18, DIFFUSE, ZERO_VEC, (Vector) {45, 25, 25}, 1.0);
     
     scene_add(scene, left);
     scene_add(scene, right);

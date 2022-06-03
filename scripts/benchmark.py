@@ -18,57 +18,66 @@ def get_cycles(out):
 def run_iter():
     results = []
     num_iter = 1
-    for _ in range(6):
-        num_iter *= 2
-        os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
-        out = subprocess.getoutput(' '.join(cmd + ['--iterations', str(num_iter)]))
-        num_cycles = get_cycles(out)
+    for algo in ['pt', 'sppm', 'sppm-simd']:
+        print(f"\n{algo=}")
+        for _ in range(6):
+            num_iter *= 2
+            os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
+            out = subprocess.getoutput(' '.join(cmd + ['--iterations', str(num_iter)] + ['--algorithm', algo]))
+            num_cycles = get_cycles(out)
 
-        print('iterations', num_iter)
-        print(f'{num_cycles=}')
+            print('iterations', num_iter)
+            print(f'{num_cycles=}')
 
-        results.append({
-            'iterations': num_iter,
-            'cycles': num_cycles,
-        })
+            results.append({
+                'algorithm': algo,
+                'iterations': num_iter,
+                'cycles': num_cycles,
+            })
     return results
 
 def run_photon():
     results = []
     num_potons = int(12.5e3/2)
-    for _ in range(7):
-        num_potons *= 2
-        os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
-        out = subprocess.getoutput(' '.join(cmd + ['--photons_per_iter', str(num_potons)]))
-        num_cycles = get_cycles(out)
+    for algo in ['pt', 'sppm', 'sppm-simd']:
+        print(f"\n{algo=}")
+        for _ in range(7):
+            num_potons *= 2
+            os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
+            out = subprocess.getoutput(' '.join(cmd + ['--photons_per_iter', str(num_potons)] + ['--algorithm', algo]))
+            num_cycles = get_cycles(out)
 
-        print('photons_per_iter', num_potons)
-        print(f'{num_cycles=}')
+            print('photons_per_iter', num_potons)
+            print(f'{num_cycles=}')
 
-        results.append({
-            'photons': num_potons,
-            'cycles': num_cycles,
-        })
+            results.append({
+                'algorithm': algo,
+                'photons': num_potons,
+                'cycles': num_cycles,
+            })
     return results
 
 def run_size():
     results = []
     h = 24
     w = 32
-    for _ in range(6):
-        h *= 2
-        w *= 2
-        os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
-        out = subprocess.getoutput(' '.join(cmd + ['--height', str(h), '--width', str(w)]))
-        num_cycles = get_cycles(out)
+    for algo in ['pt', 'sppm', 'sppm-simd']:
+        print(f"\n{algo=}")
+        for _ in range(6):
+            h *= 2
+            w *= 2
+            os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
+            out = subprocess.getoutput(' '.join(cmd + ['--height', str(h), '--width', str(w)] + ['--algorithm', algo]))
+            num_cycles = get_cycles(out)
 
-        print('height', h, 'width', w)
-        print(f'{num_cycles=}')
+            print('height', h, 'width', w)
+            print(f'{num_cycles=}')
 
-        results.append({
-            'image_size': h*w,
-            'cycles': num_cycles,
-        })
+            results.append({
+                'algorithm': algo,
+                'image_size': h*w,
+                'cycles': num_cycles,
+            })
     return results
 
 def main(args):
