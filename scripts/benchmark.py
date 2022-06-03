@@ -17,10 +17,10 @@ def get_cycles(out):
 
 def run_iter():
     results = []
-    num_iter = 1
     for scene in ['cornell', 'large', 'mirror', 'random', 'surgery']:
-        for algo in ['pt', 'sppm', 'sppm-simd']:
+        for algo in ['sppm', 'sppm-simd']:
             print(f"\n{scene=}, {algo=}")
+            num_iter = 1
             for _ in range(6):
                 num_iter *= 2
                 os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
@@ -43,10 +43,10 @@ def run_iter():
 
 def run_photon():
     results = []
-    num_potons = int(12.5e3/2)
     for scene in ['cornell', 'large', 'mirror', 'random', 'surgery']:
-        for algo in ['pt', 'sppm', 'sppm-simd']:
+        for algo in ['sppm', 'sppm-simd']:
             print(f"\n{scene=}, {algo=}")
+            num_potons = int(12.5e3/2)
             for _ in range(7):
                 num_potons *= 2
                 os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
@@ -69,11 +69,12 @@ def run_photon():
 
 def run_size():
     results = []
-    h = 24
-    w = 32
+    
     for scene in ['cornell', 'large', 'mirror', 'random', 'surgery']:
-        for algo in ['pt', 'sppm', 'sppm-simd']:
+        for algo in ['sppm', 'sppm-simd']:
             print(f"\n{scene=}, {algo=}")
+            h = 24
+            w = 32
             for _ in range(6):
                 h *= 2
                 w *= 2

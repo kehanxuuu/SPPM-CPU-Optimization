@@ -1,0 +1,8 @@
+scene,algorithm,photons,cycles
+cornell,sppm-baseline,12500,10048917974
+cornell,sppm-baseline,25000,13491038723
+cornell,sppm-baseline,50000,20554606780
+cornell,sppm-baseline,100000,34849454030
+cornell,sppm-baseline,200000,63860273304
+cornell,sppm-baseline,400000,121026178366
+cornell,sppm-baseline,800000,235505865161
