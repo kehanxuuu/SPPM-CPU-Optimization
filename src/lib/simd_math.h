@@ -97,60 +97,70 @@ static inline void _mm256_add_scatter_1_epi32(__m256i x, int* base_addr, __m256i
 
 static inline void _mm256_masked_scatter_add_var_ps(__m256 x, __m256 y, __m256 z, __m256 mask, float* base_addr, int* index_loc){
     int mask_res = _mm256_movemask_ps(mask);
-    float x_impl[8] __attribute__((__aligned__(64)));
-    _mm256_store_ps(x_impl, x);
-    float y_impl[8] __attribute__((__aligned__(64)));
-    _mm256_store_ps(y_impl, y);
-    float z_impl[8] __attribute__((__aligned__(64)));
-    _mm256_store_ps(z_impl, z);
+    if(mask_res == 0){
+        return;
+    }
+    __m256 a = _mm256_set1_ps(1.0f);
 
-    if(mask_res & 0b00000001){
-        base_addr[4 * index_loc[0] + 0] += x_impl[0];
-        base_addr[4 * index_loc[0] + 1] += y_impl[0];
-        base_addr[4 * index_loc[0] + 2] += z_impl[0];
-        base_addr[4 * index_loc[0] + 3] += 1;
+    __m256 l01, u01, l23, u23;
+    l01 = _mm256_unpacklo_ps(x, y);
+    u01 = _mm256_unpackhi_ps(x, y);
+    l23 = _mm256_unpacklo_ps(z, a);
+    u23 = _mm256_unpackhi_ps(z, a);
+
+    __m256 r04, r15, r26, r37;
+    r04 = _mm256_shuffle_ps(l01, l23, 0b0100010001000100);
+    r15 = _mm256_shuffle_ps(u01, u23, 0b0100010001000100);
+    r26 = _mm256_shuffle_ps(l01, l23, 0b1110111011101110);
+    r37 = _mm256_shuffle_ps(u01, u23, 0b1110111011101110);
+
+    if(mask_res & 0b00000001)
+    {
+        __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[0]]);
+        __m128 res = _mm_add_ps(inp, _mm256_castps256_ps128(r04));
+        _mm_store_ps(&base_addr[4 * index_loc[0]], res);
     }
-    if(mask_res & 0b00000010){
-        base_addr[4 * index_loc[1] + 0] += x_impl[1];
-        base_addr[4 * index_loc[1] + 1] += y_impl[1];
-        base_addr[4 * index_loc[1] + 2] += z_impl[1];
-        base_addr[4 * index_loc[1] + 3] += 1;
+    if(mask_res & 0b00000010)
+    {
+        __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[1]]);
+        __m128 res = _mm_add_ps(inp, _mm256_castps256_ps128(r15));
+        _mm_store_ps(&base_addr[4 * index_loc[1]], res);
     }
-    if(mask_res & 0b00000100){
-        base_addr[4 * index_loc[2] + 0] += x_impl[2];
-        base_addr[4 * index_loc[2] + 1] += y_impl[2];
-        base_addr[4 * index_loc[2] + 2] += z_impl[2];
-        base_addr[4 * index_loc[2] + 3] += 1;
+    if(mask_res & 0b00000100)
+    {
+        __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[2]]);
+        __m128 res = _mm_add_ps(inp, _mm256_castps256_ps128(r26));
+        _mm_store_ps(&base_addr[4 * index_loc[2]], res);
     }
-    if(mask_res & 0b00001000){
-        base_addr[4 * index_loc[3] + 0] += x_impl[3];
-        base_addr[4 * index_loc[3] + 1] += y_impl[3];
-        base_addr[4 * index_loc[3] + 2] += z_impl[3];
-        base_addr[4 * index_loc[3] + 3] += 1;
+    if(mask_res & 0b00001000)
+    {
+        __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[3]]);
+        __m128 res = _mm_add_ps(inp, _mm256_castps256_ps128(r37));
+        _mm_store_ps(&base_addr[4 * index_loc[3]], res);
     }
-    if(mask_res & 0b00010000){
-        base_addr[4 * index_loc[4] + 0] += x_impl[4];
-        base_addr[4 * index_loc[4] + 1] += y_impl[4];
-        base_addr[4 * index_loc[4] + 2] += z_impl[4];
-        base_addr[4 * index_loc[4] + 3] += 1;
+    if(mask_res & 0b00010000)
+    {
+        __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[4]]);
+        __m128 res = _mm_add_ps(inp, _mm256_extractf128_ps(r04, 1));
+        _mm_store_ps(&base_addr[4 * index_loc[4]], res);
     }
-    if(mask_res & 0b00100000){
-        base_addr[4 * index_loc[5] + 0] += x_impl[5];
-        base_addr[4 * index_loc[5] + 1] += y_impl[5];
-        base_addr[4 * index_loc[5] + 2] += z_impl[5];
-        base_addr[4 * index_loc[5] + 3] += 1;
+    if(mask_res & 0b00100000)
+    {
+        __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[5]]);
+        __m128 res = _mm_add_ps(inp, _mm256_extractf128_ps(r15, 1));
+        _mm_store_ps(&base_addr[4 * index_loc[5]], res);
     }
-    if(mask_res & 0b01000000){
-        base_addr[4 * index_loc[6] + 0] += x_impl[6];
-        base_addr[4 * index_loc[6] + 1] += y_impl[6];
-        base_addr[4 * index_loc[6] + 2] += z_impl[6];
-        base_addr[4 * index_loc[6] + 3] += 1;
+    if(mask_res & 0b01000000)
+    {
+        __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[6]]);
+        __m128 res = _mm_add_ps(inp, _mm256_extractf128_ps(r26, 1));
+        _mm_store_ps(&base_addr[4 * index_loc[6]], res);
     }
-    if(mask_res & 0b1000000){
-        base_addr[4 * index_loc[7] + 0] += x_impl[7];
-        base_addr[4 * index_loc[7] + 1] += y_impl[7];
-        base_addr[4 * index_loc[7] + 2] += z_impl[7];
-        base_addr[4 * index_loc[7] + 3] += 1;
+    if(mask_res & 0b1000000)
+    {
+        __m128 inp = _mm_load_ps(&base_addr[4 * index_loc[7]]);
+        __m128 res = _mm_add_ps(inp, _mm256_extractf128_ps(r37, 1));
+        _mm_store_ps(&base_addr[4 * index_loc[7]], res);
     }
 }
 
