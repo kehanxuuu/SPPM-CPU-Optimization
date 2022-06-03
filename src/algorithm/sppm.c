@@ -403,28 +403,37 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             direct_radiance_z = _mm256_blendv_ps(direct_radiance_z, dl_direct_radiance_z, cur_selected);
 
             not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(), cur_selected);
+            if (_mm256_movemask_ps(not_completion_vector) == 0) {  // all diffuse
+                break;
+            }
 
             __m256 cur_attenuation_x, cur_attenuation_y, cur_attenuation_z;
             __m256 mesh_material = temp_isect.mesh_material.data;
             __m256 is_dielectric = _mm256_cmp_ps(_mm256_set1_ps(DIELECTRIC), mesh_material, _CMP_EQ_OQ);
 
-            __m256 samples2 = randf_full();
-
-            // TODO idea: omit specular/dielectric branches when none of the rays in the batch hit non-diffuse surfaces
-            __m256 specular_res_x, specular_res_y, specular_res_z;
-            __m256 dielectric_res_x, dielectric_res_y, dielectric_res_z;
-            bsdf_sample_specular_m(&temp_isect, &specular_res_x, &specular_res_y, &specular_res_z);
-            __m256 spec_wo_x, spec_wo_y, spec_wo_z;
-            spec_wo_x = temp_isect.wo.x;
-            spec_wo_y = temp_isect.wo.y;
-            spec_wo_z = temp_isect.wo.z;
-            bsdf_sample_dielectric_m(&temp_isect, samples2, &dielectric_res_x, &dielectric_res_y, &dielectric_res_z);
-            temp_isect.wo.x = _mm256_blendv_ps(spec_wo_x, temp_isect.wo.x, is_dielectric);
-            temp_isect.wo.y = _mm256_blendv_ps(spec_wo_y, temp_isect.wo.y, is_dielectric);
-            temp_isect.wo.z = _mm256_blendv_ps(spec_wo_z, temp_isect.wo.z, is_dielectric);
-            cur_attenuation_x = _mm256_blendv_ps(specular_res_x, dielectric_res_x, is_dielectric);
-            cur_attenuation_y = _mm256_blendv_ps(specular_res_y, dielectric_res_y, is_dielectric);
-            cur_attenuation_z = _mm256_blendv_ps(specular_res_z, dielectric_res_z, is_dielectric);
+            int is_dielectric_int = _mm256_movemask_ps(is_dielectric);
+            if (is_dielectric_int == 0xFF) {  // all dielectric
+                __m256 samples2 = randf_full();
+                bsdf_sample_dielectric_m(&temp_isect, samples2, &cur_attenuation_x, &cur_attenuation_y, &cur_attenuation_z);
+            } else if (is_dielectric_int == 0) {  // all specular
+                bsdf_sample_specular_m(&temp_isect, &cur_attenuation_x, &cur_attenuation_y, &cur_attenuation_z);
+            } else {  // mixed
+                __m256 samples2 = randf_full();
+                __m256 specular_res_x, specular_res_y, specular_res_z;
+                __m256 dielectric_res_x, dielectric_res_y, dielectric_res_z;
+                bsdf_sample_specular_m(&temp_isect, &specular_res_x, &specular_res_y, &specular_res_z);
+                __m256 spec_wo_x, spec_wo_y, spec_wo_z;
+                spec_wo_x = temp_isect.wo.x;
+                spec_wo_y = temp_isect.wo.y;
+                spec_wo_z = temp_isect.wo.z;
+                bsdf_sample_dielectric_m(&temp_isect, samples2, &dielectric_res_x, &dielectric_res_y, &dielectric_res_z);
+                temp_isect.wo.x = _mm256_blendv_ps(spec_wo_x, temp_isect.wo.x, is_dielectric);
+                temp_isect.wo.y = _mm256_blendv_ps(spec_wo_y, temp_isect.wo.y, is_dielectric);
+                temp_isect.wo.z = _mm256_blendv_ps(spec_wo_z, temp_isect.wo.z, is_dielectric);
+                cur_attenuation_x = _mm256_blendv_ps(specular_res_x, dielectric_res_x, is_dielectric);
+                cur_attenuation_y = _mm256_blendv_ps(specular_res_y, dielectric_res_y, is_dielectric);
+                cur_attenuation_z = _mm256_blendv_ps(specular_res_z, dielectric_res_z, is_dielectric);
+            }
 
             to_store_isect.wo.x = _mm256_blendv_ps(to_store_isect.wo.x, temp_isect.wo.x, not_completion_vector);
             to_store_isect.wo.y = _mm256_blendv_ps(to_store_isect.wo.y, temp_isect.wo.y, not_completion_vector);
@@ -433,7 +442,6 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             __m256 cur_attenuation_is_zero = vector3fl_is_zero(cur_attenuation_x, cur_attenuation_y, cur_attenuation_z);
             not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(), cur_attenuation_is_zero);
 
-            // TODO blendv with not_completion_vector to rule out DIFFUSE rays?
             attenuation_x = _mm256_mul_ps(attenuation_x, cur_attenuation_x);
             attenuation_y = _mm256_mul_ps(attenuation_y, cur_attenuation_y);
             attenuation_z = _mm256_mul_ps(attenuation_z, cur_attenuation_z);
