@@ -63,7 +63,7 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
             printf("    -p --photons_per_iter  number of photons per iteration\n");
             printf("    -r --init_radius       initial search radius\n");
             printf("    -a --algorithm         integrator: \"pt\" for path tracing, \"sppm\" for photon mapping (sequential version), \"sppm-simd\" for photon mapping (SIMD version, default), or \"normal\" for quick visualization\n");
-            printf("    -s --scene             test scene: \"cornell\", \"large\", \"reflect\", \"random\", \"surgery\"\n");
+            printf("    -s --scene             test scene: \"cornell\", \"large\", \"mirror\", \"random\", \"surgery\"\n");
             printf("    --help                 print this help text\n");
             exit(0);
         }
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     else if (strcmp(params.scene, "large") == 0) { 
         init_large_box(&scene, &camera);
     }
-    else if (strcmp(params.scene, "reflect") == 0) { 
+    else if (strcmp(params.scene, "mirror") == 0) { 
         init_reflect_box(&scene, &camera);
     }
     else if (strcmp(params.scene, "random") == 0) {
