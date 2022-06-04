@@ -36,6 +36,7 @@ void sppm_pixel_data_init(PixelData *pixel_datas, int size) {
 void sppm_pixel_data_lookup_init(PixelDataLookup *lookup, int init_size) {
     lookup->fixed_size = init_size;
     lookup->hash_table = malloc(sizeof(IntArray) * init_size);
+
     for(int i = 0; i < init_size; i++) {
         arr_init_int(&lookup->hash_table[i], 20, 0);
     }

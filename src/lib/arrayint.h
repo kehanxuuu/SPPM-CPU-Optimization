@@ -47,11 +47,11 @@ static inline void arr_init_int(IntArray *arr, size_t capacity, size_t initial_s
     assert(initial_size <= capacity);
     arr->size = initial_size;
     arr->capacity = capacity;
-    arr->data = _mm_malloc(capacity * sizeof(int), ALIGN);
+    arr->data = malloc_align(capacity * sizeof(int));
 }
 
 static inline void arr_free_int(IntArray *arr) {
-    _mm_free(arr->data);
+    free_align(arr->data);
 }
 
 #endif
