@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
         init_large_box(&scene, &camera);
     }
     else if (strcmp(params.scene, "mirror") == 0) { 
-        init_reflect_box(&scene, &camera);
+        init_mirror_box(&scene, &camera);
     }
     else if (strcmp(params.scene, "random") == 0) {
         init_random_box(&scene, &camera);

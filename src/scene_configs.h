@@ -34,7 +34,7 @@ void init_cornell_box(Scene *scene, Camera *camera) {
     cam_look_at(camera, eye, target, up);
 }
 
-void init_reflect_box(Scene *scene, Camera *camera) {
+void init_mirror_box(Scene *scene, Camera *camera) {
     scene_init(scene);
     Mesh *left = mesh_make_sphere((Vector) {inf-100, 40.8f, 81.6f}, inf, DIFFUSE, 
         (Vector) {.197,.93,.210}, ZERO_VEC, 1.0);
