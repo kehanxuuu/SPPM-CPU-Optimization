@@ -832,12 +832,12 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                 _mm256_store_ps(isect_p_z_impl, temp_isect.p.z);
                 int not_complete = _mm256_movemask_ps(not_completion_vector);
 
-                float light_rad_x[8] __attribute__((__aligned__(64)));
-                _mm256_store_ps(light_rad_x, light_radiance_x);
-                float light_rad_y[8] __attribute__((__aligned__(64)));
-                _mm256_store_ps(light_rad_y, light_radiance_y);
-                float light_rad_z[8] __attribute__((__aligned__(64)));
-                _mm256_store_ps(light_rad_z, light_radiance_z);
+                float light_radiance_x_impl[8] __attribute__((__aligned__(64)));
+                _mm256_store_ps(light_radiance_x_impl, light_radiance_x);
+                float light_radiance_y_impl[8] __attribute__((__aligned__(64)));
+                _mm256_store_ps(light_radiance_y_impl, light_radiance_y);
+                float light_radiance_z_impl[8] __attribute__((__aligned__(64)));
+                _mm256_store_ps(light_radiance_z_impl, light_radiance_z);
 
                 __m256 neg_ray_d_x = _mm256_neg_ps(ray_d_x);
                 __m256 neg_ray_d_y = _mm256_neg_ps(ray_d_y);
@@ -892,9 +892,8 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                                      &pixel_datas->temp_transpose_buffer.data[16 * ind4 + 8], &pixel_datas->temp_transpose_buffer.data[16 * ind5 + 8],
                                      &pixel_datas->temp_transpose_buffer.data[16 * ind6 + 8], &pixel_datas->temp_transpose_buffer.data[16 * ind7 + 8],
                                      &cur_vp_intersection_n_y, &cur_vp_intersection_n_z, &cur_vp_intersection_wi_x, &cur_vp_intersection_wi_y,
-                                          &cur_vp_intersection_wi_z, &cur_vp_intersection_mesh_albedo_x, &cur_vp_intersection_mesh_albedo_y, &cur_vp_intersection_mesh_albedo_z);
+                                     &cur_vp_intersection_wi_z, &cur_vp_intersection_mesh_albedo_x, &cur_vp_intersection_mesh_albedo_y, &cur_vp_intersection_mesh_albedo_z);
 
-                        __m256 cur_vp_attenuation_is_zero = vector3fl_is_zero(cur_vp_attenuation_x, cur_vp_attenuation_y, cur_vp_attenuation_z);
                         __m256 dist_between_x = _mm256_sub_ps(cur_vp_intersection_x, cur_isect_p_x);
                         __m256 dist_between_y = _mm256_sub_ps(cur_vp_intersection_y, cur_isect_p_y);
                         __m256 dist_between_z = _mm256_sub_ps(cur_vp_intersection_z, cur_isect_p_z);
@@ -959,7 +958,7 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                                                                       pixel_datas->cur_vp_intersection.mesh_albedo.z[pd_index] };
                                 bsdf = vs_mul(&cur_vp_intersection_albedo, INV_PI);
                             }
-                            Vector light_radiance = { light_rad_x[j], light_rad_y[j], light_rad_z[j] };
+                            Vector light_radiance = { light_radiance_x_impl[j], light_radiance_y_impl[j], light_radiance_z_impl[j] };
                             vv_muleq(&bsdf, &light_radiance);
                             pixel_datas->cur_content.data[4 * pd_index + 0] += bsdf.x;
                             pixel_datas->cur_content.data[4 * pd_index + 1] += bsdf.y;
