@@ -785,7 +785,7 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
         transpose8x7(&sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[0]], &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[1]],
                      &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[2]], &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[3]],
                      &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[4]], &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[5]],
-                     &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[6]], &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[6]],
+                     &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[6]], &sppm->scene.emitters.emission_data.data[8 * emitter_id_impl[7]],
                      &sphere_c_x, &sphere_c_y, &sphere_c_z, &sphere_r, &emission_x, &emission_y, &emission_z);
 
         __m256 normal_x, normal_y, normal_z;
