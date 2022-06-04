@@ -5,6 +5,7 @@
 #include "simd_random.h"
 #include "simd_math.h"
 #include <immintrin.h>
+#include <stdlib.h>
 
 typedef struct {
     float* x;
@@ -34,15 +35,27 @@ typedef struct {
     void** data;
 } __attribute__((__aligned__(64))) PtrL;
 
+typedef struct {
+    float* data;
+} __attribute__((__aligned__(64))) Float4;
+
+typedef struct {
+    float* data;
+} __attribute__((__aligned__(64))) Float8;
+
+typedef struct {
+    float* data;
+} __attribute__((__aligned__(64))) Float16;
+
 typedef Vector3fL VectorL;
 typedef Vector3fM VectorM;
 
 static inline void* malloc_align(size_t bytes){
-    return _mm_malloc(bytes, ALIGN);
+    return aligned_alloc(ALIGN, ceil(1.0 * bytes / ALIGN) * ALIGN);
 }
 
 static inline void free_align(void* mem_addr){
-    _mm_free(mem_addr);
+    free(mem_addr);
 }
 
 static inline void vector3fl_init(Vector3fL* vecl, size_t size){
@@ -63,6 +76,18 @@ static inline void intl_init(IntL* il, size_t size){
     il->data = malloc_align(sizeof(int) * size);
 }
 
+static inline void float4_init(Float4* f4l, size_t size){
+    f4l->data = malloc_align(sizeof(float) * size * 4);
+}
+
+static inline void float8_init(Float8* f8l, size_t size){
+    f8l->data = malloc_align(sizeof(float) * size * 8);
+}
+
+static inline void float16_init(Float16* f16l, size_t size){
+    f16l->data = malloc_align(sizeof(float) * size * 16);
+}
+
 static inline void vector3fl_clear(Vector3fL* vecl, size_t size){
     memset(vecl->x, 0, sizeof(float) * size);
     memset(vecl->y, 0, sizeof(float) * size);
@@ -71,6 +96,10 @@ static inline void vector3fl_clear(Vector3fL* vecl, size_t size){
 
 static inline void floatl_clear(FloatL* fl, size_t size){
     memset(fl->data, 0,sizeof(float) * size);
+}
+
+static inline void float4_clear(Float4* f4l, size_t size){
+    memset(f4l->data, 0,sizeof(float) * size * 4);
 }
 
 static inline void intl_clear(IntL* il, size_t size){
@@ -89,6 +118,18 @@ static inline void intl_free(IntL* il){
 
 static inline void floatl_free(FloatL* fl){
     free_align(fl->data);
+}
+
+static inline void float4_free(Float4* f4l){
+    free_align(f4l->data);
+}
+
+static inline void float8_free(Float8* f8l){
+    free_align(f8l->data);
+}
+
+static inline void float16_free(Float16* f16l){
+    free_align(f16l->data);
 }
 
 static inline void ptrl_free(PtrL* ptrl){
