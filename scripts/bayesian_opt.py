@@ -1,7 +1,8 @@
 from skopt import gp_minimize, dump
 from skopt.space.space import Real, Categorical
 import numpy as np
-from subprocess import DEVNULL, STDOUT, check_call
+import subprocess
+from subprocess import *
 import os
 from time import time
 
@@ -20,9 +21,9 @@ def obj_fun(inps):
     radius_mult = inps[0]
     radius_type = inps[1]
     with open(os.devnull, 'wb') as devnull:
-        check_call(["cmake", ".", "-DCMAKE_C_COMPILER=/usr/bin/gcc",
-                   f"-DCMAKE_BUILD_TYPE=Profile", f"-D_SPPM_RADIUS_MULT={float(radius_mult)}"], stdout=devnull, stderr=devnull)
-        check_call(["make", "main", f"-j10", "VERBOSE=1"], stdout=devnull, stderr=devnull)
+        subprocess.run(["cmake", ".", "-DCMAKE_C_COMPILER=/usr/bin/gcc",
+            f"-DCMAKE_BUILD_TYPE=Profile", f"-D_SPPM_RADIUS_MULT={float(radius_mult)}"], stdout=devnull, stderr=devnull)
+        subprocess.run(["make", "main", f"-j10", "VERBOSE=1"], stdout=devnull, stderr=devnull)
         start = time() 
         try:
             check_call(["./src/main"], stdout=devnull, stderr=devnull, timeout=100)
