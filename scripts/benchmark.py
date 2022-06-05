@@ -73,8 +73,8 @@ def run_size():
     for scene in ['cornell', 'large', 'mirror', 'random', 'surgery']:
         for algo in ['sppm', 'sppm-simd']:
             print(f"\n{scene=}, {algo=}")
-            h = 24
-            w = 32
+            h = 12
+            w = 16
             for _ in range(6):
                 h *= 2
                 w *= 2
