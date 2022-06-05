@@ -30,45 +30,70 @@ void intersection_l_free(IntersectionL *isects){
 void bsdf_sample_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 mesh_material = isects->mesh_material.data;
     // __m256 is_diffuse = _mm256_cmp_ps(_mm256_set1_ps(DIFFUSE), mesh_material, _CMP_EQ_OQ);
-    __m256 is_specular = _mm256_cmp_ps(_mm256_set1_ps(SPECULAR), mesh_material, _CMP_EQ_OQ);
     __m256 is_dielectric = _mm256_cmp_ps(_mm256_set1_ps(DIELECTRIC), mesh_material, _CMP_EQ_OQ);
 
-    __m256 samples0 = randf_full();
-    __m256 samples1 = randf_full();
+    int is_dielectric_int = _mm256_movemask_ps(is_dielectric);
+    if (is_dielectric_int == 0xFF) {  // all dielectric
+        __m256 samples = randf_full();
+        bsdf_sample_dielectric_m(isects, samples, res_x, res_y, res_z);
+    } else if (is_dielectric_int == 0) {  // all specular/diffuse
+        __m256 is_specular = _mm256_cmp_ps(_mm256_set1_ps(SPECULAR), mesh_material, _CMP_EQ_OQ);
+        __m256 samples0 = randf_full();
+        __m256 samples1 = randf_full();
+        __m256 diffuse_res_x, diffuse_res_y, diffuse_res_z;
+        __m256 diff_wo_x, diff_wo_y, diff_wo_z;
+        bsdf_sample_diffuse_m(isects, samples0, samples1, &diffuse_res_x, &diffuse_res_y, &diffuse_res_z);
+        diff_wo_x = isects->wo.x;
+        diff_wo_y = isects->wo.y;
+        diff_wo_z = isects->wo.z;
+        bsdf_sample_specular_m(isects, res_x, res_y, res_z);
 
-    __m256 diffuse_res_x, diffuse_res_y, diffuse_res_z;
-    __m256 specular_res_x, specular_res_y, specular_res_z;
-    __m256 dielectric_res_x, dielectric_res_y, dielectric_res_z;
+        *res_x = _mm256_blendv_ps(diffuse_res_x, *res_x, is_specular);
+        *res_y = _mm256_blendv_ps(diffuse_res_y, *res_y, is_specular);
+        *res_z = _mm256_blendv_ps(diffuse_res_z, *res_z, is_specular);
 
-    __m256 diff_wo_x, diff_wo_y, diff_wo_z, spec_wo_x, spec_wo_y, spec_wo_z;
-    bsdf_sample_diffuse_m(isects, samples0, samples1, &diffuse_res_x, &diffuse_res_y, &diffuse_res_z);
-    diff_wo_x = isects->wo.x;
-    diff_wo_y = isects->wo.y;
-    diff_wo_z = isects->wo.z;
-    bsdf_sample_specular_m(isects, &specular_res_x, &specular_res_y, &specular_res_z);
-    spec_wo_x = isects->wo.x;
-    spec_wo_y = isects->wo.y;
-    spec_wo_z = isects->wo.z;
-    bsdf_sample_dielectric_m(isects, samples0, &dielectric_res_x, &dielectric_res_y, &dielectric_res_z);
+        isects->wo.x = _mm256_blendv_ps(diff_wo_x, isects->wo.x, is_specular);
+        isects->wo.y = _mm256_blendv_ps(diff_wo_y, isects->wo.y, is_specular);
+        isects->wo.z = _mm256_blendv_ps(diff_wo_z, isects->wo.z, is_specular);
+    } else {  // mixed
+        __m256 is_specular = _mm256_cmp_ps(_mm256_set1_ps(SPECULAR), mesh_material, _CMP_EQ_OQ);
+        __m256 samples0 = randf_full();
+        __m256 samples1 = randf_full();
 
-    __m256 t0, t1, t2, t3, t4, t5;
-    t0 = _mm256_blendv_ps(diffuse_res_x, specular_res_x, is_specular);
-    *res_x = _mm256_blendv_ps(t0, dielectric_res_x, is_dielectric);
+        __m256 diffuse_res_x, diffuse_res_y, diffuse_res_z;
+        __m256 specular_res_x, specular_res_y, specular_res_z;
+        __m256 dielectric_res_x, dielectric_res_y, dielectric_res_z;
 
-    t1 = _mm256_blendv_ps(diffuse_res_y, specular_res_y, is_specular);
-    *res_y = _mm256_blendv_ps(t1, dielectric_res_y, is_dielectric);
+        __m256 diff_wo_x, diff_wo_y, diff_wo_z, spec_wo_x, spec_wo_y, spec_wo_z;
+        bsdf_sample_diffuse_m(isects, samples0, samples1, &diffuse_res_x, &diffuse_res_y, &diffuse_res_z);
+        diff_wo_x = isects->wo.x;
+        diff_wo_y = isects->wo.y;
+        diff_wo_z = isects->wo.z;
+        bsdf_sample_specular_m(isects, &specular_res_x, &specular_res_y, &specular_res_z);
+        spec_wo_x = isects->wo.x;
+        spec_wo_y = isects->wo.y;
+        spec_wo_z = isects->wo.z;
+        bsdf_sample_dielectric_m(isects, samples0, &dielectric_res_x, &dielectric_res_y, &dielectric_res_z);
 
-    t2 = _mm256_blendv_ps(diffuse_res_z, specular_res_z, is_specular);
-    *res_z = _mm256_blendv_ps(t2, dielectric_res_z, is_dielectric);
+        __m256 t0, t1, t2, t3, t4, t5;
+        t0 = _mm256_blendv_ps(diffuse_res_x, specular_res_x, is_specular);
+        *res_x = _mm256_blendv_ps(t0, dielectric_res_x, is_dielectric);
 
-    t3 = _mm256_blendv_ps(diff_wo_x, spec_wo_x, is_specular);
-    isects->wo.x = _mm256_blendv_ps(t3, isects->wo.x, is_dielectric);
+        t1 = _mm256_blendv_ps(diffuse_res_y, specular_res_y, is_specular);
+        *res_y = _mm256_blendv_ps(t1, dielectric_res_y, is_dielectric);
 
-    t4 = _mm256_blendv_ps(diff_wo_y, spec_wo_y, is_specular);
-    isects->wo.y = _mm256_blendv_ps(t4, isects->wo.y, is_dielectric);
+        t2 = _mm256_blendv_ps(diffuse_res_z, specular_res_z, is_specular);
+        *res_z = _mm256_blendv_ps(t2, dielectric_res_z, is_dielectric);
 
-    t5 = _mm256_blendv_ps(diff_wo_z, spec_wo_z, is_specular);
-    isects->wo.z = _mm256_blendv_ps(t5, isects->wo.z, is_dielectric);
+        t3 = _mm256_blendv_ps(diff_wo_x, spec_wo_x, is_specular);
+        isects->wo.x = _mm256_blendv_ps(t3, isects->wo.x, is_dielectric);
+
+        t4 = _mm256_blendv_ps(diff_wo_y, spec_wo_y, is_specular);
+        isects->wo.y = _mm256_blendv_ps(t4, isects->wo.y, is_dielectric);
+
+        t5 = _mm256_blendv_ps(diff_wo_z, spec_wo_z, is_specular);
+        isects->wo.z = _mm256_blendv_ps(t5, isects->wo.z, is_dielectric);
+    }
 }
 
 void bsdf_eval_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
