@@ -21,7 +21,7 @@ def obj_fun(inps):
     radius_type = inps[1]
     with open(os.devnull, 'wb') as devnull:
         check_call(["cmake", "..", "-DCMAKE_C_COMPILER=/usr/bin/clang",
-                   f"-DCMAKE_BUILD_TYPE=Profile", f"-D_SPPM_RADIUS_MULT={float(radius_mult)}", f"-D_SPPM_RADIUS_TYPE={radius_type}"], stdout=devnull, stderr=devnull)
+                   f"-DCMAKE_BUILD_TYPE=Profile", f"-D_SPPM_RADIUS_MULT={float(radius_mult)}"], stdout=devnull, stderr=devnull)
         check_call(["make", "main", f"-j10", "VERBOSE=1"], stdout=devnull, stderr=devnull)
         start = time()
         try:
