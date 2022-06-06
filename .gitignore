@@ -26,3 +26,4 @@ main
 ext/
 experiments/
 CMakeLists.txt
+null.d
