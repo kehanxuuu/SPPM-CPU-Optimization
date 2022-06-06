@@ -17,75 +17,109 @@ def get_cycles(out):
 
 def run_iter():
     results = []
-    num_iter = 1
-    for _ in range(6):
-        num_iter *= 2
-        os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
-        out = subprocess.getoutput(' '.join(cmd + ['--iterations', str(num_iter)]))
-        num_cycles = get_cycles(out)
+    for scene in ['cornell', 'large', 'mirror', 'random', 'surgery']:
+        for algo in ['sppm', 'sppm-simd']:
+            print(f"\n{scene=}, {algo=}")
+            num_iter = 1
+            for _ in range(6):
+                num_iter *= 2
+                os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
+                out = subprocess.getoutput(' '.join(cmd + 
+                    ['--iterations', str(num_iter)] + 
+                    ['--algorithm', algo] + 
+                    ['--scene', scene]))
+                num_cycles = get_cycles(out)
 
-        print('iterations', num_iter)
-        print(f'{num_cycles=}')
+                print('iterations', num_iter)
+                print(f'{num_cycles=}')
 
-        results.append({
-            'iterations': num_iter,
-            'cycles': num_cycles,
-        })
+                results.append({
+                    'scene': scene,
+                    'algorithm': algo,
+                    'iterations': num_iter,
+                    'cycles': num_cycles,
+                })
     return results
 
 def run_photon():
     results = []
-    num_potons = int(12.5e3/2)
-    for _ in range(7):
-        num_potons *= 2
-        os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
-        out = subprocess.getoutput(' '.join(cmd + ['--photons_per_iter', str(num_potons)]))
-        num_cycles = get_cycles(out)
+    for scene in ['cornell', 'large', 'mirror', 'random', 'surgery']:
+        for algo in ['sppm', 'sppm-simd']:
+            print(f"\n{scene=}, {algo=}")
+            num_potons = int(12.5e3/2)
+            for _ in range(7):
+                num_potons *= 2
+                os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
+                out = subprocess.getoutput(' '.join(cmd + 
+                    ['--photons_per_iter', str(num_potons)] + 
+                    ['--algorithm', algo] + 
+                    ['--scene', scene]))
+                num_cycles = get_cycles(out)
 
-        print('photons_per_iter', num_potons)
-        print(f'{num_cycles=}')
+                print('photons_per_iter', num_potons)
+                print(f'{num_cycles=}')
 
-        results.append({
-            'photons': num_potons,
-            'cycles': num_cycles,
-        })
+                results.append({
+                    'scene': scene,
+                    'algorithm': algo,
+                    'photons': num_potons,
+                    'cycles': num_cycles,
+                })
     return results
 
 def run_size():
     results = []
-    h = 24
-    w = 32
-    for _ in range(6):
-        h *= 2
-        w *= 2
-        os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
-        out = subprocess.getoutput(' '.join(cmd + ['--height', str(h), '--width', str(w)]))
-        num_cycles = get_cycles(out)
+    
+    for scene in ['cornell', 'large', 'mirror', 'random', 'surgery']:
+        for algo in ['sppm', 'sppm-simd']:
+            print(f"\n{scene=}, {algo=}")
+            h = 12
+            w = 16
+            for _ in range(6):
+                h *= 2
+                w *= 2
+                os.system('echo 3 | sudo tee /proc/sys/vm/drop_caches >> /dev/null')
+                out = subprocess.getoutput(' '.join(cmd + 
+                    ['--height', str(h), '--width', str(w)] + 
+                    ['--algorithm', algo] + 
+                    ['--scene', scene]))
+                num_cycles = get_cycles(out)
 
-        print('height', h, 'width', w)
-        print(f'{num_cycles=}')
+                print('height', h, 'width', w)
+                print(f'{num_cycles=}')
 
-        results.append({
-            'image_size': h*w,
-            'cycles': num_cycles,
-        })
+                results.append({
+                    'scene': scene,
+                    'algorithm': algo,
+                    'image_size': h*w,
+                    'cycles': num_cycles,
+                })
     return results
 
-def main(args):
-    if args.xvar == 'size':
-        results = run_size()
-    elif args.xvar == 'photon':
-        results = run_photon()
-    else:
-        results = run_iter()
-    
-    print(results)
-
-    with open(f'{args.output}/{args.xvar}.csv', "w", newline="") as f:
+def dump_results(args, xvar, results):
+    with open(f'{args.output}/{xvar}.csv', "w", newline="") as f:
         headers = results[0].keys()
         cw = csv.DictWriter(f, headers, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
         cw.writeheader()
         cw.writerows(results)
+    return
+
+def main(args):
+    benchmarks = {
+        'size': run_size,
+        'photon': run_photon,
+        'iter': run_iter,
+    }
+
+    if args.xvar == 'all':
+        for xvar, run in benchmarks.items():
+            results = run()
+            dump_results(args, xvar, results)
+    else:
+        results = benchmarks[args.xvar]()
+        dump_results(args, args.xvar, results)
+    
+    return
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -93,7 +127,7 @@ if __name__ == '__main__':
         '-x',
         '--xvar',
         required=True,
-        metavar='[size, photon, iter]',
+        metavar='[size, photon, iter, all]',
         help='Horizontal axis'
     )
     parser.add_argument(

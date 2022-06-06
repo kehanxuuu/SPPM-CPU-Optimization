@@ -99,6 +99,7 @@ struct Mesh *sample_emitter(const struct Scene *scene, float sample, float *pdf)
             return scene->emitters[i];
         }
     }
+    *pdf = scene->accum_probabilities[1] - scene->accum_probabilities[0];
     return scene->emitters[0];
 }
 

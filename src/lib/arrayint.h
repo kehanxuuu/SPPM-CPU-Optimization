@@ -2,6 +2,7 @@
 #define _ARRAY_INT_H
 
 #include "array.h"
+#include "dt_l.h"
 
 typedef struct {
     size_t size;
@@ -12,7 +13,11 @@ typedef struct {
 static inline void arr_add_int(IntArray *arr, void *item) {
     if (arr->size == arr->capacity) {
         arr->capacity = _ARRAY_INCRE_MULT * arr->capacity;
-        arr->data = realloc(arr->data, arr->capacity * sizeof(int));
+        // realloc with align
+        int *old_data = arr->data;
+        arr->data = _mm_malloc(arr->capacity * sizeof(int), ALIGN);
+        memcpy(arr->data, old_data, arr->size * sizeof(int));
+        _mm_free(old_data);
     }
 
     void *target_addr = (uint8_t *) arr->data + arr->size * sizeof(int);
@@ -43,11 +48,11 @@ static inline void arr_init_int(IntArray *arr, size_t capacity, size_t initial_s
     assert(initial_size <= capacity);
     arr->size = initial_size;
     arr->capacity = capacity;
-    arr->data = malloc(capacity * sizeof(int));
+    arr->data = malloc_align(capacity * sizeof(int));
 }
 
 static inline void arr_free_int(IntArray *arr) {
-    free(arr->data);
+    free_align(arr->data);
 }
 
 #endif

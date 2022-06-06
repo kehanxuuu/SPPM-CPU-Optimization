@@ -1,0 +1,7 @@
+scene,algorithm,iterations,cycles
+cornell,sppm-baseline,2,25225475317
+cornell,sppm-baseline,4,45151574624
+cornell,sppm-baseline,8,81627052687
+cornell,sppm-baseline,16,148955110780
+cornell,sppm-baseline,32,271837799405
+cornell,sppm-baseline,64,480397931390

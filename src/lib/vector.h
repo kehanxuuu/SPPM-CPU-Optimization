@@ -203,6 +203,4 @@ static inline float randf() {
     float res = (float) simd_rand() / (float) SIMD_RAND_MAX;
     return res;
 }
-
-
 #endif //TEAM32_VECTOR_H

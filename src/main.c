@@ -1,6 +1,7 @@
 #include "scene_configs.h"
 #include "bitmap.h"
 #include "sppm.h"
+#include "sppm_s.h"
 #include "pt.h"
 #include "normal.h"
 #include <time.h>
@@ -13,6 +14,7 @@ typedef struct {
     int photon_num_per_iter;
     float initial_radius;
     char *algorithm;
+    char *scene;
     char *output_path;
 } Params;
 
@@ -60,7 +62,8 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
             printf("    -d --depth             ray max depth\n");
             printf("    -p --photons_per_iter  number of photons per iteration\n");
             printf("    -r --init_radius       initial search radius\n");
-            printf("    -a --algorithm         integrator: \"pt\" for path tracing, \"sppm\" for photon mapping, or \"normal\" for quick visualization\n");
+            printf("    -a --algorithm         integrator: \"pt\" for path tracing, \"sppm\" for photon mapping (sequential version), \"sppm-simd\" for photon mapping (SIMD version, default), or \"normal\" for quick visualization\n");
+            printf("    -s --scene             test scene: \"cornell\", \"large\", \"mirror\", \"random\", \"surgery\"\n");
             printf("    --help                 print this help text\n");
             exit(0);
         }
@@ -71,6 +74,7 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
         else parse_long(photon_num_per_iter, "photon_num_per_iter", "-p", "--photons_per_iter")
         else parse_float(initial_radius, "initial_radius", "-r", "--init_radius")
         else parse_str(algorithm, "algorithm", "-a", "--algorithm")
+        else parse_str(scene, "sene", "-s", "--scene")
         else if (argv[i][0] == '-') {
             fprintf(stderr, "Unknown argument `%s`\n", argv[i]);
             exit(1);
@@ -90,13 +94,33 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
 int main(int argc, char *argv[]) {
     clock_t tic = clock();
     simd_seed(1);
-    Params params = {512, 384, 6, 5, 200000, 2.0f, "sppm", "out.exr"};
+    Params params = {512, 384, 6, 5, 200000, 2.0f, "sppm-simd", "cornell", "out.exr"};
     parse_args(argc, argv, &params);
 
     Scene scene;
     Camera camera;
-    init_cornell_box(&scene, &camera);
+
+    if (strcmp(params.scene, "cornell") == 0) {
+        init_cornell_box(&scene, &camera);
+    }
+    else if (strcmp(params.scene, "large") == 0) { 
+        init_large_box(&scene, &camera);
+    }
+    else if (strcmp(params.scene, "mirror") == 0) { 
+        init_mirror_box(&scene, &camera);
+    }
+    else if (strcmp(params.scene, "random") == 0) {
+        init_random_box(&scene, &camera);
+    }
+    else if (strcmp(params.scene, "surgery") == 0) {
+        init_surgery_box(&scene, &camera);
+    }
+    else {
+        fprintf(stderr, "Invalid scene `%s`\n", params.scene);
+        exit(1);
+    }
     // init_sky(&scene, &camera);
+    
     cam_set_resolution(&camera, params.width, params.height);
 
     Bitmap film;
@@ -109,11 +133,18 @@ int main(int argc, char *argv[]) {
         pt_init(&pt, params.num_iterations, params.ray_max_depth, &scene, &camera, background);
         pt_render(&pt, &film);
     }
-    else if (strcmp(params.algorithm, "sppm") == 0) {
+    else if (strcmp(params.algorithm, "sppm") == 0) {  // sequential
+        SPPM_S sppm;
+        sppm_init_s(&sppm, params.num_iterations, params.ray_max_depth, params.photon_num_per_iter, params.initial_radius,
+                    &scene, &camera, background);
+        sppm_render_s(&sppm, &film);
+    }
+    else if (strcmp(params.algorithm, "sppm-simd") == 0) {  // SIMD
         SPPM sppm;
         sppm_init(&sppm, params.num_iterations, params.ray_max_depth, params.photon_num_per_iter, params.initial_radius,
                   &scene, &camera, background);
         sppm_render(&sppm, &film);
+        sppm_free(&sppm);
     }
     else if (strcmp(params.algorithm, "normal") == 0) {
         NormalVisualizer nv;

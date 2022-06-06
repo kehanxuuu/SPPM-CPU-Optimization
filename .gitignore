@@ -5,6 +5,7 @@
 /cmake-build-release/
 /cmake-build-*/
 *.exr
+!scenes/*.exr
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
@@ -25,3 +26,4 @@ main
 ext/
 experiments/
 CMakeLists.txt
+null.d

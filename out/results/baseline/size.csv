@@ -1,0 +1,7 @@
+scene,algorithm,image_size,cycles
+cornell,sppm-baseline,3072,13216143734
+cornell,sppm-baseline,12288,14793895146
+cornell,sppm-baseline,49152,22346807800
+cornell,sppm-baseline,196608,60798779383
+cornell,sppm-baseline,786432,210582865115
+cornell,sppm-baseline,3145728,755354371927
