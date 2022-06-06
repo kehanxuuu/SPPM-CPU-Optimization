@@ -30,70 +30,45 @@ void intersection_l_free(IntersectionL *isects){
 void bsdf_sample_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
     __m256 mesh_material = isects->mesh_material.data;
     // __m256 is_diffuse = _mm256_cmp_ps(_mm256_set1_ps(DIFFUSE), mesh_material, _CMP_EQ_OQ);
+    __m256 is_specular = _mm256_cmp_ps(_mm256_set1_ps(SPECULAR), mesh_material, _CMP_EQ_OQ);
     __m256 is_dielectric = _mm256_cmp_ps(_mm256_set1_ps(DIELECTRIC), mesh_material, _CMP_EQ_OQ);
 
-    int is_dielectric_int = _mm256_movemask_ps(is_dielectric);
-    if (is_dielectric_int == 0xFF) {  // all dielectric
-        __m256 samples = randf_full();
-        bsdf_sample_dielectric_m(isects, samples, res_x, res_y, res_z);
-    } else if (is_dielectric_int == 0) {  // all specular/diffuse
-        __m256 is_specular = _mm256_cmp_ps(_mm256_set1_ps(SPECULAR), mesh_material, _CMP_EQ_OQ);
-        __m256 samples0 = randf_full();
-        __m256 samples1 = randf_full();
-        __m256 diffuse_res_x, diffuse_res_y, diffuse_res_z;
-        __m256 diff_wo_x, diff_wo_y, diff_wo_z;
-        bsdf_sample_diffuse_m(isects, samples0, samples1, &diffuse_res_x, &diffuse_res_y, &diffuse_res_z);
-        diff_wo_x = isects->wo.x;
-        diff_wo_y = isects->wo.y;
-        diff_wo_z = isects->wo.z;
-        bsdf_sample_specular_m(isects, res_x, res_y, res_z);
+    __m256 samples0 = randf_full();
+    __m256 samples1 = randf_full();
 
-        *res_x = _mm256_blendv_ps(diffuse_res_x, *res_x, is_specular);
-        *res_y = _mm256_blendv_ps(diffuse_res_y, *res_y, is_specular);
-        *res_z = _mm256_blendv_ps(diffuse_res_z, *res_z, is_specular);
+    __m256 diffuse_res_x, diffuse_res_y, diffuse_res_z;
+    __m256 specular_res_x, specular_res_y, specular_res_z;
+    __m256 dielectric_res_x, dielectric_res_y, dielectric_res_z;
 
-        isects->wo.x = _mm256_blendv_ps(diff_wo_x, isects->wo.x, is_specular);
-        isects->wo.y = _mm256_blendv_ps(diff_wo_y, isects->wo.y, is_specular);
-        isects->wo.z = _mm256_blendv_ps(diff_wo_z, isects->wo.z, is_specular);
-    } else {  // mixed
-        __m256 is_specular = _mm256_cmp_ps(_mm256_set1_ps(SPECULAR), mesh_material, _CMP_EQ_OQ);
-        __m256 samples0 = randf_full();
-        __m256 samples1 = randf_full();
+    __m256 diff_wo_x, diff_wo_y, diff_wo_z, spec_wo_x, spec_wo_y, spec_wo_z;
+    bsdf_sample_diffuse_m(isects, samples0, samples1, &diffuse_res_x, &diffuse_res_y, &diffuse_res_z);
+    diff_wo_x = isects->wo.x;
+    diff_wo_y = isects->wo.y;
+    diff_wo_z = isects->wo.z;
+    bsdf_sample_specular_m(isects, &specular_res_x, &specular_res_y, &specular_res_z);
+    spec_wo_x = isects->wo.x;
+    spec_wo_y = isects->wo.y;
+    spec_wo_z = isects->wo.z;
+    bsdf_sample_dielectric_m(isects, samples0, &dielectric_res_x, &dielectric_res_y, &dielectric_res_z);
 
-        __m256 diffuse_res_x, diffuse_res_y, diffuse_res_z;
-        __m256 specular_res_x, specular_res_y, specular_res_z;
-        __m256 dielectric_res_x, dielectric_res_y, dielectric_res_z;
+    __m256 t0, t1, t2, t3, t4, t5;
+    t0 = _mm256_blendv_ps(diffuse_res_x, specular_res_x, is_specular);
+    *res_x = _mm256_blendv_ps(t0, dielectric_res_x, is_dielectric);
 
-        __m256 diff_wo_x, diff_wo_y, diff_wo_z, spec_wo_x, spec_wo_y, spec_wo_z;
-        bsdf_sample_diffuse_m(isects, samples0, samples1, &diffuse_res_x, &diffuse_res_y, &diffuse_res_z);
-        diff_wo_x = isects->wo.x;
-        diff_wo_y = isects->wo.y;
-        diff_wo_z = isects->wo.z;
-        bsdf_sample_specular_m(isects, &specular_res_x, &specular_res_y, &specular_res_z);
-        spec_wo_x = isects->wo.x;
-        spec_wo_y = isects->wo.y;
-        spec_wo_z = isects->wo.z;
-        bsdf_sample_dielectric_m(isects, samples0, &dielectric_res_x, &dielectric_res_y, &dielectric_res_z);
+    t1 = _mm256_blendv_ps(diffuse_res_y, specular_res_y, is_specular);
+    *res_y = _mm256_blendv_ps(t1, dielectric_res_y, is_dielectric);
 
-        __m256 t0, t1, t2, t3, t4, t5;
-        t0 = _mm256_blendv_ps(diffuse_res_x, specular_res_x, is_specular);
-        *res_x = _mm256_blendv_ps(t0, dielectric_res_x, is_dielectric);
+    t2 = _mm256_blendv_ps(diffuse_res_z, specular_res_z, is_specular);
+    *res_z = _mm256_blendv_ps(t2, dielectric_res_z, is_dielectric);
 
-        t1 = _mm256_blendv_ps(diffuse_res_y, specular_res_y, is_specular);
-        *res_y = _mm256_blendv_ps(t1, dielectric_res_y, is_dielectric);
+    t3 = _mm256_blendv_ps(diff_wo_x, spec_wo_x, is_specular);
+    isects->wo.x = _mm256_blendv_ps(t3, isects->wo.x, is_dielectric);
 
-        t2 = _mm256_blendv_ps(diffuse_res_z, specular_res_z, is_specular);
-        *res_z = _mm256_blendv_ps(t2, dielectric_res_z, is_dielectric);
+    t4 = _mm256_blendv_ps(diff_wo_y, spec_wo_y, is_specular);
+    isects->wo.y = _mm256_blendv_ps(t4, isects->wo.y, is_dielectric);
 
-        t3 = _mm256_blendv_ps(diff_wo_x, spec_wo_x, is_specular);
-        isects->wo.x = _mm256_blendv_ps(t3, isects->wo.x, is_dielectric);
-
-        t4 = _mm256_blendv_ps(diff_wo_y, spec_wo_y, is_specular);
-        isects->wo.y = _mm256_blendv_ps(t4, isects->wo.y, is_dielectric);
-
-        t5 = _mm256_blendv_ps(diff_wo_z, spec_wo_z, is_specular);
-        isects->wo.z = _mm256_blendv_ps(t5, isects->wo.z, is_dielectric);
-    }
+    t5 = _mm256_blendv_ps(diff_wo_z, spec_wo_z, is_specular);
+    isects->wo.z = _mm256_blendv_ps(t5, isects->wo.z, is_dielectric);
 }
 
 void bsdf_eval_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z){
@@ -278,13 +253,17 @@ void bsdf_eval_dielectric_m(IntersectionM* isects, __m256* res_x, __m256* res_y,
     *res_z = Zero;
 }
 
-__m256 scene_intersect_m(SceneL *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256* ray_t_max, IntersectionM* isect){
+__m256 scene_intersect_m(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256* ray_t_max, IntersectionM* isect){
     __m256 do_intersect = _mm256_setzero_ps();
     for (int mesh_idx = 0; mesh_idx < scene->n_meshes; ++mesh_idx) {
-        __m256 sphere_c_x = _mm256_set1_ps(scene->meshes.collision_sphere.data[4 * mesh_idx + 0]);
-        __m256 sphere_c_y = _mm256_set1_ps(scene->meshes.collision_sphere.data[4 * mesh_idx + 1]);
-        __m256 sphere_c_z = _mm256_set1_ps(scene->meshes.collision_sphere.data[4 * mesh_idx + 2]);
-        __m256 sphere_r2 = _mm256_set1_ps(scene->meshes.collision_sphere.data[4 * mesh_idx + 3]);
+        struct Mesh *mesh = scene_get(scene, mesh_idx);
+        struct Geometry *geometry = mesh->geometry;
+//      only spheres
+        struct Sphere *sphere = (struct Sphere *) geometry->data;
+        __m256 sphere_c_x = _mm256_set1_ps(sphere->c.x);
+        __m256 sphere_c_y = _mm256_set1_ps(sphere->c.y);
+        __m256 sphere_c_z = _mm256_set1_ps(sphere->c.z);
+        __m256 sphere_r2 = _mm256_set1_ps(sphere->r2);
 
         __m256 oc_x = _mm256_sub_ps(ray_o_x, sphere_c_x);
         __m256 oc_y = _mm256_sub_ps(ray_o_y, sphere_c_y);
@@ -296,11 +275,6 @@ __m256 scene_intersect_m(SceneL *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 r
         __m256 discriminant = _mm256_sub_ps(_mm256_mul_ps(half_b, half_b), _mm256_mul_ps(a, c));
 
         __m256 cur_do_intersect = _mm256_cmp_ps(discriminant, _mm256_setzero_ps(), _CMP_GE_OQ);
-
-        if(_mm256_movemask_ps(cur_do_intersect) == 0){
-            continue;
-        }
-
         __m256 sqrt_d = _mm256_sqrt_ps(discriminant);
         __m256 root_small = _mm256_div_ps(_mm256_sub_ps(_mm256_neg_ps(half_b), sqrt_d), a);
         __m256 root_big = _mm256_div_ps(_mm256_add_ps(_mm256_neg_ps(half_b), sqrt_d), a);
@@ -313,14 +287,18 @@ __m256 scene_intersect_m(SceneL *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 r
         do_intersect = _mm256_or_ps(do_intersect, cur_do_intersect);
 
         *ray_t_max = _mm256_blendv_ps(*ray_t_max, root, cur_do_intersect);
-        isect->mesh_material.data = _mm256_blendv_ps(isect->mesh_material.data, _mm256_set1_ps(scene->meshes.material_data.data[8 * mesh_idx + 0]), cur_do_intersect);
-        isect->mesh_albedo.x = _mm256_blendv_ps(isect->mesh_albedo.x, _mm256_set1_ps(scene->meshes.material_data.data[8 * mesh_idx + 1]), cur_do_intersect);
-        isect->mesh_albedo.y = _mm256_blendv_ps(isect->mesh_albedo.y, _mm256_set1_ps(scene->meshes.material_data.data[8 * mesh_idx + 2]), cur_do_intersect);
-        isect->mesh_albedo.z = _mm256_blendv_ps(isect->mesh_albedo.z, _mm256_set1_ps(scene->meshes.material_data.data[8 * mesh_idx + 3]), cur_do_intersect);
-        isect->mesh_emission.x = _mm256_blendv_ps(isect->mesh_emission.x, _mm256_set1_ps(scene->meshes.material_data.data[8 * mesh_idx + 4]), cur_do_intersect);
-        isect->mesh_emission.y = _mm256_blendv_ps(isect->mesh_emission.y, _mm256_set1_ps(scene->meshes.material_data.data[8 * mesh_idx + 5]), cur_do_intersect);
-        isect->mesh_emission.z = _mm256_blendv_ps(isect->mesh_emission.z, _mm256_set1_ps(scene->meshes.material_data.data[8 * mesh_idx + 6]), cur_do_intersect);
-        isect->mesh_ir.data = _mm256_blendv_ps(isect->mesh_ir.data, _mm256_set1_ps(scene->meshes.material_data.data[8 * mesh_idx + 7]), cur_do_intersect);
+        isect->mesh_material.data = _mm256_blendv_ps(isect->mesh_material.data, _mm256_set1_ps(mesh->material),
+                                                     cur_do_intersect);
+        isect->mesh_albedo.x = _mm256_blendv_ps(isect->mesh_albedo.x, _mm256_set1_ps(mesh->albedo.x), cur_do_intersect);
+        isect->mesh_albedo.y = _mm256_blendv_ps(isect->mesh_albedo.y, _mm256_set1_ps(mesh->albedo.y), cur_do_intersect);
+        isect->mesh_albedo.z = _mm256_blendv_ps(isect->mesh_albedo.z, _mm256_set1_ps(mesh->albedo.z), cur_do_intersect);
+        isect->mesh_emission.x = _mm256_blendv_ps(isect->mesh_emission.x, _mm256_set1_ps(mesh->emission.x),
+                                                  cur_do_intersect);
+        isect->mesh_emission.y = _mm256_blendv_ps(isect->mesh_emission.y, _mm256_set1_ps(mesh->emission.y),
+                                                  cur_do_intersect);
+        isect->mesh_emission.z = _mm256_blendv_ps(isect->mesh_emission.z, _mm256_set1_ps(mesh->emission.z),
+                                                  cur_do_intersect);
+        isect->mesh_ir.data = _mm256_blendv_ps(isect->mesh_ir.data, _mm256_set1_ps(mesh->ir), cur_do_intersect);
 
         isect->p.x = _mm256_blendv_ps(isect->p.x, _mm256_fmadd_ps(root, ray_d_x, ray_o_x), cur_do_intersect);
         isect->p.y = _mm256_blendv_ps(isect->p.y, _mm256_fmadd_ps(root, ray_d_y, ray_o_y), cur_do_intersect);
@@ -348,13 +326,17 @@ __m256 scene_intersect_m(SceneL *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 r
     return do_intersect;
 }
 
-__m256 scene_do_intersect_m(SceneL *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256 ray_t_max){
+__m256 scene_do_intersect_m(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256 ray_t_max){
     __m256 do_intersect = _mm256_setzero_ps();
     for (int mesh_idx = 0; mesh_idx < scene->n_meshes; ++mesh_idx) {
-        __m256 sphere_c_x = _mm256_set1_ps(scene->meshes.collision_sphere.data[4 * mesh_idx + 0]);
-        __m256 sphere_c_y = _mm256_set1_ps(scene->meshes.collision_sphere.data[4 * mesh_idx + 1]);
-        __m256 sphere_c_z = _mm256_set1_ps(scene->meshes.collision_sphere.data[4 * mesh_idx + 2]);
-        __m256 sphere_r2 = _mm256_set1_ps(scene->meshes.collision_sphere.data[4 * mesh_idx + 3]);;
+        struct Mesh *mesh = scene_get(scene, mesh_idx);
+        struct Geometry *geometry = mesh->geometry;
+//      only spheres
+        struct Sphere *sphere = (struct Sphere *) geometry->data;
+        __m256 sphere_c_x = _mm256_set1_ps(sphere->c.x);
+        __m256 sphere_c_y = _mm256_set1_ps(sphere->c.y);
+        __m256 sphere_c_z = _mm256_set1_ps(sphere->c.z);
+        __m256 sphere_r2 = _mm256_set1_ps(sphere->r2);
 
         __m256 oc_x = _mm256_sub_ps(ray_o_x, sphere_c_x);
         __m256 oc_y = _mm256_sub_ps(ray_o_y, sphere_c_y);
@@ -364,12 +346,8 @@ __m256 scene_do_intersect_m(SceneL *scene, __m256 ray_o_x, __m256 ray_o_y, __m25
         __m256 half_b = vector3fl_dot(ray_d_x, ray_d_y, ray_d_z, oc_x, oc_y, oc_z);
         __m256 c = _mm256_sub_ps(vector3fl_dot(oc_x, oc_y, oc_z, oc_x, oc_y, oc_z), sphere_r2);
         __m256 discriminant = _mm256_sub_ps(_mm256_mul_ps(half_b, half_b), _mm256_mul_ps(a, c));
+
         __m256 cur_do_intersect = _mm256_cmp_ps(discriminant, _mm256_setzero_ps(), _CMP_GE_OQ);
-
-        if(_mm256_movemask_ps(cur_do_intersect) == 0){
-            continue;
-        }
-
         __m256 sqrt_d = _mm256_sqrt_ps(discriminant);
         __m256 root_small = _mm256_div_ps(_mm256_sub_ps(_mm256_neg_ps(half_b), sqrt_d), a);
         __m256 root_big = _mm256_div_ps(_mm256_add_ps(_mm256_neg_ps(half_b), sqrt_d), a);
@@ -384,7 +362,7 @@ __m256 scene_do_intersect_m(SceneL *scene, __m256 ray_o_x, __m256 ray_o_y, __m25
     return do_intersect;
 }
 
-void estimate_direct_lighting_m(SceneL *scene, IntersectionM* isect, __m256* res_x, __m256* res_y, __m256* res_z) {
+void estimate_direct_lighting_m(struct Scene *scene, IntersectionM* isect, __m256* res_x, __m256* res_y, __m256* res_z) {
     __m256 pdf = _mm256_set1_ps(scene->accum_probabilities[1]);
     __m256i emitter_id = _mm256_setzero_si256();
     __m256 sample = randf_full();
@@ -401,13 +379,17 @@ void estimate_direct_lighting_m(SceneL *scene, IntersectionM* isect, __m256* res
 //  only spheres
     int emitter_id_impl[NUM_FLOAT_SIMD] __attribute__((__aligned__(64)));
     _mm256_store_si256((__m256i *) emitter_id_impl, emitter_id);
+    Sphere *spheres[NUM_FLOAT_SIMD];
+    for (int i = 0; i < NUM_FLOAT_SIMD; i++) {
+        spheres[i] = scene->emitters[emitter_id_impl[i]]->geometry->data;
+    }
 
-    __m256 sphere_c_x, sphere_c_y, sphere_c_z, sphere_r, Ld_x, Ld_y, Ld_z;
-    transpose8x7(&scene->emitters.emission_data.data[8 * emitter_id_impl[0]], &scene->emitters.emission_data.data[8 * emitter_id_impl[1]],
-                 &scene->emitters.emission_data.data[8 * emitter_id_impl[2]], &scene->emitters.emission_data.data[8 * emitter_id_impl[3]],
-                 &scene->emitters.emission_data.data[8 * emitter_id_impl[4]], &scene->emitters.emission_data.data[8 * emitter_id_impl[5]],
-                 &scene->emitters.emission_data.data[8 * emitter_id_impl[6]], &scene->emitters.emission_data.data[8 * emitter_id_impl[7]],
-                 &sphere_c_x, &sphere_c_y, &sphere_c_z, &sphere_r, &Ld_x, &Ld_y, &Ld_z);
+    __m256 sphere_c_x = _mm256_setr_ps(spheres[0]->c.x, spheres[1]->c.x, spheres[2]->c.x, spheres[3]->c.x,
+                                       spheres[4]->c.x, spheres[5]->c.x, spheres[6]->c.x, spheres[7]->c.x);
+    __m256 sphere_c_y = _mm256_setr_ps(spheres[0]->c.y, spheres[1]->c.y, spheres[2]->c.y, spheres[3]->c.y,
+                                       spheres[4]->c.y, spheres[5]->c.y, spheres[6]->c.y, spheres[7]->c.y);
+    __m256 sphere_c_z = _mm256_setr_ps(spheres[0]->c.z, spheres[1]->c.z, spheres[2]->c.z, spheres[3]->c.z,
+                                       spheres[4]->c.z, spheres[5]->c.z, spheres[6]->c.z, spheres[7]->c.z);
 
     __m256 to_light_x = _mm256_fmadd_ps(isect->n.x, _mm256_set1_ps(EPSILON), _mm256_sub_ps(sphere_c_x, isect->p.x));
     __m256 to_light_y = _mm256_fmadd_ps(isect->n.y, _mm256_set1_ps(EPSILON), _mm256_sub_ps(sphere_c_y, isect->p.y));
@@ -415,11 +397,14 @@ void estimate_direct_lighting_m(SceneL *scene, IntersectionM* isect, __m256* res
 
     // fix precision problem of vector3fl_rnorm
     __m256 dist = vector3fl_norm(to_light_x, to_light_y, to_light_z);
-    __m256 rdist = _mm256_div_ps(_mm256_set1_ps(1.0f), dist);
+    __m256 rdist = _mm256_div_ps(_mm256_set1_ps(1.0), dist);
 
     __m256 light_dir_x = _mm256_mul_ps(to_light_x, rdist);
     __m256 light_dir_y = _mm256_mul_ps(to_light_y, rdist);
     __m256 light_dir_z = _mm256_mul_ps(to_light_z, rdist);
+
+    __m256 sphere_r = _mm256_setr_ps(spheres[0]->r, spheres[1]->r, spheres[2]->r, spheres[3]->r,
+                                     spheres[4]->r, spheres[5]->r, spheres[6]->r, spheres[7]->r);
 
     __m256 One = _mm256_set1_ps(1.0f);
     __m256 sin_theta_max = _mm256_mul_ps(sphere_r, rdist);
@@ -462,6 +447,30 @@ void estimate_direct_lighting_m(SceneL *scene, IntersectionM* isect, __m256* res
     isect->wo.y = _mm256_blendv_ps(shadow_ray_d_y, isect->wo.y, cmp1);
     isect->wo.z = _mm256_blendv_ps(shadow_ray_d_z, isect->wo.z, cmp1);
 
+    __m256 Ld_x = _mm256_setr_ps(scene->emitters[emitter_id_impl[0]]->emission.x,
+                                 scene->emitters[emitter_id_impl[1]]->emission.x,
+                                 scene->emitters[emitter_id_impl[2]]->emission.x,
+                                 scene->emitters[emitter_id_impl[3]]->emission.x,
+                                 scene->emitters[emitter_id_impl[4]]->emission.x,
+                                 scene->emitters[emitter_id_impl[5]]->emission.x,
+                                 scene->emitters[emitter_id_impl[6]]->emission.x,
+                                 scene->emitters[emitter_id_impl[7]]->emission.x);
+    __m256 Ld_y = _mm256_setr_ps(scene->emitters[emitter_id_impl[0]]->emission.y,
+                                 scene->emitters[emitter_id_impl[1]]->emission.y,
+                                 scene->emitters[emitter_id_impl[2]]->emission.y,
+                                 scene->emitters[emitter_id_impl[3]]->emission.y,
+                                 scene->emitters[emitter_id_impl[4]]->emission.y,
+                                 scene->emitters[emitter_id_impl[5]]->emission.y,
+                                 scene->emitters[emitter_id_impl[6]]->emission.y,
+                                 scene->emitters[emitter_id_impl[7]]->emission.y);
+    __m256 Ld_z = _mm256_setr_ps(scene->emitters[emitter_id_impl[0]]->emission.z,
+                                 scene->emitters[emitter_id_impl[1]]->emission.z,
+                                 scene->emitters[emitter_id_impl[2]]->emission.z,
+                                 scene->emitters[emitter_id_impl[3]]->emission.z,
+                                 scene->emitters[emitter_id_impl[4]]->emission.z,
+                                 scene->emitters[emitter_id_impl[5]]->emission.z,
+                                 scene->emitters[emitter_id_impl[6]]->emission.z,
+                                 scene->emitters[emitter_id_impl[7]]->emission.z);
     __m256 bsdf_x, bsdf_y, bsdf_z;
     bsdf_eval_m(isect, &bsdf_x, &bsdf_y, &bsdf_z);
 

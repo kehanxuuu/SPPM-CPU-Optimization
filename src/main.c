@@ -1,7 +1,6 @@
 #include "scene_configs.h"
 #include "bitmap.h"
 #include "sppm.h"
-#include "sppm_s.h"
 #include "pt.h"
 #include "normal.h"
 #include <time.h>
@@ -93,8 +92,7 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
 
 int main(int argc, char *argv[]) {
     clock_t tic = clock();
-    simd_seed(1);
-    Params params = {512, 384, 6, 5, 200000, 2.0f, "sppm-simd", "cornell", "out.exr"};
+    Params params = {512, 384, 6, 5, 200000, 2.0f, "sppm", "cornell", "out.exr"};
     parse_args(argc, argv, &params);
 
     Scene scene;
@@ -133,18 +131,11 @@ int main(int argc, char *argv[]) {
         pt_init(&pt, params.num_iterations, params.ray_max_depth, &scene, &camera, background);
         pt_render(&pt, &film);
     }
-    else if (strcmp(params.algorithm, "sppm") == 0) {  // sequential
-        SPPM_S sppm;
-        sppm_init_s(&sppm, params.num_iterations, params.ray_max_depth, params.photon_num_per_iter, params.initial_radius,
-                    &scene, &camera, background);
-        sppm_render_s(&sppm, &film);
-    }
-    else if (strcmp(params.algorithm, "sppm-simd") == 0) {  // SIMD
+    else if (strcmp(params.algorithm, "sppm") == 0) {  // SIMD
         SPPM sppm;
         sppm_init(&sppm, params.num_iterations, params.ray_max_depth, params.photon_num_per_iter, params.initial_radius,
                   &scene, &camera, background);
         sppm_render(&sppm, &film);
-        sppm_free(&sppm);
     }
     else if (strcmp(params.algorithm, "normal") == 0) {
         NormalVisualizer nv;
