@@ -357,23 +357,6 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             cur_selected = _mm256_and_ps(is_diffuse, not_completion_vector);
 
             to_store_isect.mesh_index.data = _mm256_blendv_ps(to_store_isect.mesh_index.data, temp_isect.mesh_index.data, cur_selected);
-            to_store_isect.mesh_material.data = _mm256_blendv_ps(to_store_isect.mesh_material.data,
-                                                                 temp_isect.mesh_material.data, cur_selected);
-
-            to_store_isect.mesh_albedo.x = _mm256_blendv_ps(to_store_isect.mesh_albedo.x, temp_isect.mesh_albedo.x,
-                                                            cur_selected);
-            to_store_isect.mesh_albedo.y = _mm256_blendv_ps(to_store_isect.mesh_albedo.y, temp_isect.mesh_albedo.y,
-                                                            cur_selected);
-            to_store_isect.mesh_albedo.z = _mm256_blendv_ps(to_store_isect.mesh_albedo.z, temp_isect.mesh_albedo.z,
-                                                            cur_selected);
-            to_store_isect.mesh_emission.x = _mm256_blendv_ps(to_store_isect.mesh_emission.x,
-                                                              temp_isect.mesh_emission.x, cur_selected);
-            to_store_isect.mesh_emission.y = _mm256_blendv_ps(to_store_isect.mesh_emission.y,
-                                                              temp_isect.mesh_emission.y, cur_selected);
-            to_store_isect.mesh_emission.z = _mm256_blendv_ps(to_store_isect.mesh_emission.z,
-                                                              temp_isect.mesh_emission.z, cur_selected);
-            to_store_isect.mesh_ir.data = _mm256_blendv_ps(to_store_isect.mesh_ir.data, temp_isect.mesh_ir.data,
-                                                           cur_selected);
             to_store_isect.p.x = _mm256_blendv_ps(to_store_isect.p.x, temp_isect.p.x, cur_selected);
             to_store_isect.p.y = _mm256_blendv_ps(to_store_isect.p.y, temp_isect.p.y, cur_selected);
             to_store_isect.p.z = _mm256_blendv_ps(to_store_isect.p.z, temp_isect.p.z, cur_selected);
@@ -383,14 +366,9 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
             to_store_isect.wi.x = _mm256_blendv_ps(to_store_isect.wi.x, temp_isect.wi.x, cur_selected);
             to_store_isect.wi.y = _mm256_blendv_ps(to_store_isect.wi.y, temp_isect.wi.y, cur_selected);
             to_store_isect.wi.z = _mm256_blendv_ps(to_store_isect.wi.z, temp_isect.wi.z, cur_selected);
-            to_store_isect.interior.data = _mm256_blendv_ps(to_store_isect.interior.data, temp_isect.interior.data,
-                                                            cur_selected);
 
             __m256 Ld_x, Ld_y, Ld_z;
             estimate_direct_lighting_m(&sppm->scene, &temp_isect, &Ld_x, &Ld_y, &Ld_z);
-            to_store_isect.wo.x = _mm256_blendv_ps(to_store_isect.wo.x, temp_isect.wo.x, cur_selected);
-            to_store_isect.wo.y = _mm256_blendv_ps(to_store_isect.wo.y, temp_isect.wo.y, cur_selected);
-            to_store_isect.wo.z = _mm256_blendv_ps(to_store_isect.wo.z, temp_isect.wo.z, cur_selected);
             vp_attenuation_x = _mm256_blendv_ps(vp_attenuation_x, attenuation_x, cur_selected);
             vp_attenuation_y = _mm256_blendv_ps(vp_attenuation_y, attenuation_y, cur_selected);
             vp_attenuation_z = _mm256_blendv_ps(vp_attenuation_z, attenuation_z, cur_selected);
@@ -434,10 +412,6 @@ void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
                 cur_attenuation_y = _mm256_blendv_ps(specular_res_y, dielectric_res_y, is_dielectric);
                 cur_attenuation_z = _mm256_blendv_ps(specular_res_z, dielectric_res_z, is_dielectric);
             }
-
-            to_store_isect.wo.x = _mm256_blendv_ps(to_store_isect.wo.x, temp_isect.wo.x, not_completion_vector);
-            to_store_isect.wo.y = _mm256_blendv_ps(to_store_isect.wo.y, temp_isect.wo.y, not_completion_vector);
-            to_store_isect.wo.z = _mm256_blendv_ps(to_store_isect.wo.z, temp_isect.wo.z, not_completion_vector);
 
             __m256 cur_attenuation_is_zero = vector3fl_is_zero(cur_attenuation_x, cur_attenuation_y, cur_attenuation_z);
             not_completion_vector = _mm256_blendv_ps(not_completion_vector, _mm256_setzero_ps(), cur_attenuation_is_zero);
