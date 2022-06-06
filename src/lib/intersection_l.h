@@ -6,7 +6,6 @@
 #include "mesh.h"
 #include "scene.h"
 #include "simd_warping.h"
-#include "scene_l.h"
 
 // This struct describes a surface intersection
 typedef struct{
@@ -54,9 +53,9 @@ void bsdf_sample_dielectric_m(IntersectionM* isects, __m256 samples0, __m256* re
 
 void bsdf_eval_dielectric_m(IntersectionM* isects, __m256* res_x, __m256* res_y, __m256* res_z);
 
-__m256 scene_intersect_m(SceneL *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256* ray_t_max, IntersectionM* isect);
+__m256 scene_intersect_m(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256* ray_t_max, IntersectionM* isect);
 
-__m256 scene_do_intersect_m(SceneL *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256 ray_t_max);
+__m256 scene_do_intersect_m(struct Scene *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 ray_o_z, __m256 ray_d_x, __m256 ray_d_y, __m256 ray_d_z, __m256 ray_t_max);
 
-void estimate_direct_lighting_m(SceneL *scene, IntersectionM* isect, __m256* res_x, __m256* res_y, __m256* res_z);
+void estimate_direct_lighting_m(struct Scene *scene, IntersectionM* isect, __m256* res_x, __m256* res_y, __m256* res_z);
 #endif //TEAM32_INTERSECTION_L_H
