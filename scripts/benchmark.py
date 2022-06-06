@@ -18,7 +18,7 @@ def get_cycles(out):
 def run_iter():
     results = []
     for scene in ['cornell', 'large', 'mirror', 'random', 'surgery']:
-        for algo in ['sppm']:
+        for algo in ['sppm-simd']:
             print(f"\n{scene=}, {algo=}")
             num_iter = 1
             for _ in range(6):
@@ -44,7 +44,7 @@ def run_iter():
 def run_photon():
     results = []
     for scene in ['cornell', 'large', 'mirror', 'random', 'surgery']:
-        for algo in ['sppm']:
+        for algo in ['sppm-simd']:
             print(f"\n{scene=}, {algo=}")
             num_potons = int(12.5e3/2)
             for _ in range(7):
@@ -71,7 +71,7 @@ def run_size():
     results = []
     
     for scene in ['cornell', 'large', 'mirror', 'random', 'surgery']:
-        for algo in ['sppm']:
+        for algo in ['sppm-simd']:
             print(f"\n{scene=}, {algo=}")
             h = 12
             w = 16
