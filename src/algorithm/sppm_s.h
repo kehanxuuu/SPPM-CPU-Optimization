@@ -80,7 +80,7 @@ Vector3u sppm_pixel_data_lookup_to_grid_s(PixelDataLookupS *lookup, Vector *loc)
 
 void sppm_pixel_data_lookup_store_s(PixelDataLookupS *lookup, Vector3u *loc_3d, int pd_index);
 
-void sppm_build_pixel_data_lookup_s(PixelDataLookupS *lookup, PixelDataS *pixel_datas, size_t H, size_t W, int* branch_cache);
+void sppm_build_pixel_data_lookup_s(PixelDataLookupS *lookup, PixelDataS *pixel_datas, size_t H, size_t W);
 
 void sppm_camera_pass_pixel_s(SPPM_S *sppm, int x, int y, Vector* direct_radiance, Vector* vp_attenuation, Intersection* vp_intersection);
 
