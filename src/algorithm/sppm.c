@@ -118,7 +118,7 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
     __m256 grid_max_z = _mm256_set1_ps(-FLT_MAX);
     __m256 max_radius_l = _mm256_set1_ps(-FLT_MAX);
 
-    float branch_cache[pixel_datas->size];
+    float* branch_cache = malloc(pixel_datas->size * sizeof(float));
     int i;
     for(i = 0; i < pixel_datas->size_float_simd; i += NUM_FLOAT_SIMD){
         __m256 attenuation_x = _mm256_load_ps(&pixel_datas->cur_vp_attenuation.x[i]);
@@ -289,6 +289,8 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
             }
         }
     }
+
+    free(branch_cache);
 }
 
 void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {

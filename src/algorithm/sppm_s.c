@@ -97,7 +97,7 @@ void sppm_build_pixel_data_lookup_s(PixelDataLookupS *lookup, PixelDataS *pixel_
     VectorArray attenuation_array = pixel_datas->cur_vp_attenuation;
     Array cur_vp_intersection = pixel_datas->cur_vp_intersection;
 
-    int branch_cache[H * W];
+    int* branch_cache = malloc(H * W * sizeof(int));
     int k = 0;
     for (int i = 0; i < H; i++) {
         for (int j = 0; j < W; j++) {
@@ -154,6 +154,8 @@ void sppm_build_pixel_data_lookup_s(PixelDataLookupS *lookup, PixelDataS *pixel_
             }
         }
     }
+
+    free(branch_cache);
 }
 
 void sppm_camera_pass_pixel_s(SPPM_S *sppm, int x, int y, Vector* direct_radiance, Vector* vp_attenuation, Intersection* vp_intersection) {
