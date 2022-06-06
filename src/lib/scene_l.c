@@ -18,11 +18,20 @@ void emitter_l_free(EmitterL* emitter_l){
     float8_free(&emitter_l->emission_data);
 }
 
+void albedo_l_init(AlbedoL* albedo_l, size_t size){
+    float4_init(&albedo_l->albedo_data, size);
+}
+
+void albedo_l_free(AlbedoL* albedo_l){
+    float4_free(&albedo_l->albedo_data);
+}
+
 void scene_l_init_from(SceneL* scene_l, Scene *scene){
     scene_l->n_meshes = (int)scene->n_meshes;
     scene_l->n_emitters = (int)scene->n_emitters;
     mesh_l_init(&scene_l->meshes, scene_l->n_meshes);
     emitter_l_init(&scene_l->emitters, scene_l->n_emitters);
+    albedo_l_init(&scene_l->albedos, scene_l->n_meshes);
     scene_l->accum_probabilities = (float *) malloc_align((scene_l->n_emitters + 1) * sizeof(float));
     memcpy(scene_l->accum_probabilities, scene->accum_probabilities, (scene_l->n_emitters + 1) * sizeof(float));
     for(int i = 0; i < scene_l->n_meshes; i++){
@@ -41,6 +50,10 @@ void scene_l_init_from(SceneL* scene_l, Scene *scene){
         scene_l->meshes.material_data.data[8 * i + 5] = mesh->emission.y;
         scene_l->meshes.material_data.data[8 * i + 6] = mesh->emission.z;
         scene_l->meshes.material_data.data[8 * i + 7] = mesh->ir;
+
+        scene_l->albedos.albedo_data.data[4 * i + 0] = mesh->albedo.x;
+        scene_l->albedos.albedo_data.data[4 * i + 1] = mesh->albedo.y;
+        scene_l->albedos.albedo_data.data[4 * i + 2] = mesh->albedo.z;
     }
 
     for(int i = 0; i < scene_l->n_emitters; i++){
@@ -59,5 +72,6 @@ void scene_l_init_from(SceneL* scene_l, Scene *scene){
 void scene_l_free(SceneL* scene_l){
     mesh_l_free(&scene_l->meshes);
     emitter_l_free(&scene_l->emitters);
+    albedo_l_free(&scene_l->albedos);
     free(scene_l->accum_probabilities);
 }

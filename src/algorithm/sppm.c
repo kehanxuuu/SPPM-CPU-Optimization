@@ -816,12 +816,12 @@ void sppm_photon_pass(SPPM *sppm, PixelDataLookup *lookup, PixelData *pixel_data
                         int mesh_index_impl[8] __attribute__((__aligned__(64)));
                         _mm256_store_si256((__m256i *)mesh_index_impl, _mm256_cvtps_epi32(mesh_index));
 
-                        __m256 padding, cur_vp_intersection_mesh_albedo_x, cur_vp_intersection_mesh_albedo_y, cur_vp_intersection_mesh_albedo_z;
-                        transpose8x4(&sppm->scene.meshes.material_data.data[8 * mesh_index_impl[0]], &sppm->scene.meshes.material_data.data[8 * mesh_index_impl[1]],
-                                     &sppm->scene.meshes.material_data.data[8 * mesh_index_impl[2]], &sppm->scene.meshes.material_data.data[8 * mesh_index_impl[3]],
-                                     &sppm->scene.meshes.material_data.data[8 * mesh_index_impl[4]], &sppm->scene.meshes.material_data.data[8 * mesh_index_impl[5]],
-                                     &sppm->scene.meshes.material_data.data[8 * mesh_index_impl[6]], &sppm->scene.meshes.material_data.data[8 * mesh_index_impl[7]],
-                                     &padding , &cur_vp_intersection_mesh_albedo_x, &cur_vp_intersection_mesh_albedo_y, &cur_vp_intersection_mesh_albedo_z);
+                        __m256 cur_vp_intersection_mesh_albedo_x, cur_vp_intersection_mesh_albedo_y, cur_vp_intersection_mesh_albedo_z;
+                        transpose8x4_1(&sppm->scene.albedos.albedo_data.data[4 * mesh_index_impl[0]], &sppm->scene.albedos.albedo_data.data[4 * mesh_index_impl[1]],
+                                       &sppm->scene.albedos.albedo_data.data[4 * mesh_index_impl[2]], &sppm->scene.albedos.albedo_data.data[4 * mesh_index_impl[3]],
+                                       &sppm->scene.albedos.albedo_data.data[4 * mesh_index_impl[4]], &sppm->scene.albedos.albedo_data.data[4 * mesh_index_impl[5]],
+                                       &sppm->scene.albedos.albedo_data.data[4 * mesh_index_impl[6]], &sppm->scene.albedos.albedo_data.data[4 * mesh_index_impl[7]],
+                                       &cur_vp_intersection_mesh_albedo_x, &cur_vp_intersection_mesh_albedo_y, &cur_vp_intersection_mesh_albedo_z);
 
                         __m256 inv_pi = _mm256_set1_ps(INV_PI);
                         __m256 bsdf_x = _mm256_blendv_ps(_mm256_setzero_ps(), _mm256_mul_ps(cur_vp_intersection_mesh_albedo_x, inv_pi), cmp1);
