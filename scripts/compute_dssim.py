@@ -80,7 +80,7 @@ def get_dssim(img1, img2):
 
     dssim_avg = S.mean(dtype=np.float64)
 
-    print(f"{S.shape=}, {window=}")
+    # print(f"{S.shape=}, {window=}")
     return dssim_avg
 
 
@@ -89,7 +89,8 @@ if __name__ == "__main__":
     img1 = cv2.imread(path1)
     img2 = cv2.imread(path2)
 
-    print(f"{img1.shape=}")
-    print(f"{img2.shape=}")
+    # print(f"{img1.shape=}")
+    # print(f"{img2.shape=}")
 
-    print(f"\nDSSIM{path1, path2}={get_dssim(img1, img2)}")
+    print(f"{get_dssim(img1, img2): 0.5f}")
+    # print(f"\nDSSIM{path1, path2}={get_dssim(img1, img2)}")
