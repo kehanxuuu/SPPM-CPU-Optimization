@@ -291,10 +291,6 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
 }
 
 void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
-    int W, H;
-    W = sppm->camera->W;
-    H = sppm->camera->H;
-
     __m256 x;
     __m256 y;
     int i;
@@ -1158,8 +1154,8 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
     // Init launch indices
     {
         size_t size = W * H * sizeof(float), ind = 0;
-        sppm->launch_indices_x = (float*) aligned_alloc(32, size);
-        sppm->launch_indices_y = (float*) aligned_alloc(32, size);
+        sppm->launch_indices_x = (float*) malloc_align(size);
+        sppm->launch_indices_y = (float*) malloc_align(size);
         for (int y = 0; y < H; ++y) {
             for (int x = 0; x < W; ++x) {
                 sppm->launch_indices_x[ind] = (float) x;

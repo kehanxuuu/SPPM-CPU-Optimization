@@ -53,8 +53,19 @@ static inline __m256 _mm256_powf_ps(__m256 x, __m256 y){
 #endif
 }
 
+static inline void _mm256_sincosf_ps(__m256 x, __m256* sin, __m256* cos){
+#if !defined(__APPLE__)
+    *sin = _mm256_sinf_ps(x);
+    *cos = _mm256_cosf_ps(x);
+#else
+    sincos256_ps(x, sin, cos);
+#endif
+}
+
 static inline __m256 _mm256_tanf_ps(__m256 x){
-    return _mm256_div_ps(_mm256_sinf_ps(x), _mm256_cosf_ps(x));
+    __m256 sin, cos;
+    _mm256_sincosf_ps(x, &sin, &cos);
+    return _mm256_div_ps(sin, cos);
 }
 
 static inline __m256 _mm256_absf_ps(__m256 x){
