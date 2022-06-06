@@ -44,7 +44,7 @@ struct PixelData {
     VectorL cur_vp_attenuation;
     IntersectionL cur_vp_intersection; // struct intersection
 
-    Float16 temp_transpose_buffer;
+    Float8 temp_transpose_buffer;
 };
 
 struct PixelDataLookup {

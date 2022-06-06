@@ -10,6 +10,7 @@
 
 // This struct describes a surface intersection
 typedef struct{
+    FloatL mesh_index;
     FloatL mesh_material;
     VectorL mesh_albedo;
     VectorL mesh_emission;
@@ -22,6 +23,7 @@ typedef struct{
 } IntersectionL;
 
 typedef struct{
+    FloatM mesh_index;
     FloatM mesh_material;
     VectorM mesh_albedo;
     VectorM mesh_emission;
