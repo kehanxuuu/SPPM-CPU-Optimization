@@ -200,7 +200,8 @@ static inline Vector vv_min(const Vector *a, const Vector *b) {
 }
 
 static inline float randf() {
-    float res = (float) simd_rand() / (float) SIMD_RAND_MAX;
-    return res;
+    return (float) rand() / (float) RAND_MAX;
+//    float res = (float) simd_rand() / (float) SIMD_RAND_MAX;
+//    return res;
 }
 #endif //TEAM32_VECTOR_H
