@@ -87,7 +87,7 @@ void sppm_pixel_data_lookup_store_s(PixelDataLookupS *lookup, Vector3u *loc_3d, 
     arr_add_int(&lookup->hash_table[ht_loc], &pd_index);
 }
 
-void sppm_build_pixel_data_lookup_s(PixelDataLookupS *lookup, PixelDataS *pixel_datas, size_t H, size_t W) {
+void sppm_build_pixel_data_lookup_s(PixelDataLookupS *lookup, PixelDataS *pixel_datas, size_t H, size_t W, int* branch_cache) {
 //    grid data computation
     Vector grid_min = (Vector) {FLT_MAX, FLT_MAX, FLT_MAX};
     Vector grid_max = (Vector) {-FLT_MAX, -FLT_MAX, -FLT_MAX};
@@ -97,7 +97,6 @@ void sppm_build_pixel_data_lookup_s(PixelDataLookupS *lookup, PixelDataS *pixel_
     VectorArray attenuation_array = pixel_datas->cur_vp_attenuation;
     Array cur_vp_intersection = pixel_datas->cur_vp_intersection;
 
-    int branch_cache[H * W];
     int k = 0;
     for (int i = 0; i < H; i++) {
         for (int j = 0; j < W; j++) {
@@ -395,6 +394,9 @@ void sppm_render_s(SPPM_S *sppm, Bitmap *bitmap) {
 //    Loop
     struct PixelDataLookupS lookup;
     sppm_pixel_data_lookup_init_s(&lookup, H * W);
+
+    int* branch_cache = malloc(H * W * sizeof(int));
+
     for (int i = 0; i < num_iterations; i++) {
         clock_t start;
         float elapse;
@@ -406,7 +408,7 @@ void sppm_render_s(SPPM_S *sppm, Bitmap *bitmap) {
         tic, sppm_camera_pass_s(sppm, &pixel_datas), toc;
 
         fprintf(stderr, "\tBuild lookup");
-        tic, sppm_build_pixel_data_lookup_s(&lookup, &pixel_datas, H, W), toc;
+        tic, sppm_build_pixel_data_lookup_s(&lookup, &pixel_datas, H, W, branch_cache), toc;
 
         fprintf(stderr, "\tPhoton pass ");
         tic, sppm_photon_pass_s(sppm, &lookup, &pixel_datas), toc;
@@ -417,6 +419,7 @@ void sppm_render_s(SPPM_S *sppm, Bitmap *bitmap) {
 #undef tic
 #undef toc
     }
+    free(branch_cache);
     sppm_store_s(&pixel_datas, num_iterations, sppm->num_photons, H, W, bitmap);
 
     sppm_pixel_data_lookup_free_s(&lookup);
