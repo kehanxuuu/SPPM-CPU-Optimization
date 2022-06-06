@@ -18,7 +18,7 @@ def get_cycles(out):
 def run_iter():
     results = []
     for scene in ['cornell', 'large', 'mirror', 'random', 'surgery']:
-        for algo in ['sppm', 'sppm-simd']:
+        for algo in ['sppm']:
             print(f"\n{scene=}, {algo=}")
             num_iter = 1
             for _ in range(6):
@@ -44,7 +44,7 @@ def run_iter():
 def run_photon():
     results = []
     for scene in ['cornell', 'large', 'mirror', 'random', 'surgery']:
-        for algo in ['sppm', 'sppm-simd']:
+        for algo in ['sppm']:
             print(f"\n{scene=}, {algo=}")
             num_potons = int(12.5e3/2)
             for _ in range(7):
@@ -71,7 +71,7 @@ def run_size():
     results = []
     
     for scene in ['cornell', 'large', 'mirror', 'random', 'surgery']:
-        for algo in ['sppm', 'sppm-simd']:
+        for algo in ['sppm']:
             print(f"\n{scene=}, {algo=}")
             h = 12
             w = 16
@@ -97,7 +97,7 @@ def run_size():
     return results
 
 def dump_results(args, xvar, results):
-    with open(f'{args.output}/{xvar}.csv', "w", newline="") as f:
+    with open(f'{args.output}/stage-{args.stage}_{xvar}.csv', "w", newline="") as f:
         headers = results[0].keys()
         cw = csv.DictWriter(f, headers, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
         cw.writeheader()
@@ -123,6 +123,13 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-s',
+        '--stage',
+        required=True,
+        metavar='int',
+        help='Optimisation stage'
+    )
     parser.add_argument(
         '-x',
         '--xvar',
