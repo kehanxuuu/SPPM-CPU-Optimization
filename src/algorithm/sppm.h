@@ -100,7 +100,7 @@ void sppm_pixel_data_lookup_to_grid_l(PixelDataLookup *lookup, __m256 loc_x, __m
 
 void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, int loc_x, int loc_y, int loc_z, int pd_index);
 
-void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_datas);
+void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_datas, float* branch_cache);
 
 void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas);
 

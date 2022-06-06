@@ -109,7 +109,7 @@ void sppm_pixel_data_lookup_store(PixelDataLookup *lookup, int loc_x, int loc_y,
     arr_add_int(&lookup->hash_table[ht_loc], &pd_index);
 }
 
-void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_datas) {
+void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_datas, float* branch_cache) {
     __m256 grid_min_x = _mm256_set1_ps(FLT_MAX);
     __m256 grid_min_y = _mm256_set1_ps(FLT_MAX);
     __m256 grid_min_z = _mm256_set1_ps(FLT_MAX);
@@ -118,7 +118,6 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
     __m256 grid_max_z = _mm256_set1_ps(-FLT_MAX);
     __m256 max_radius_l = _mm256_set1_ps(-FLT_MAX);
 
-    float* branch_cache = malloc(pixel_datas->size * sizeof(float));
     int i;
     for(i = 0; i < pixel_datas->size_float_simd; i += NUM_FLOAT_SIMD){
         __m256 attenuation_x = _mm256_load_ps(&pixel_datas->cur_vp_attenuation.x[i]);
@@ -289,8 +288,6 @@ void sppm_build_pixel_data_lookup(PixelDataLookup *lookup, PixelData *pixel_data
             }
         }
     }
-
-    free(branch_cache);
 }
 
 void sppm_camera_pass(SPPM *sppm, PixelData *pixel_datas) {
@@ -1205,6 +1202,8 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
     struct PixelDataLookup lookup;
     sppm_pixel_data_lookup_init(&lookup, H * W);
 
+    float* branch_cache = malloc_align(pixel_datas.size * sizeof(float));
+
     for (int i = 0; i < num_iterations; i++) {
         clock_t start;
         float elapse;
@@ -1216,7 +1215,7 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
         tic, sppm_camera_pass(sppm, &pixel_datas), toc;
 
         fprintf(stderr, "\tBuild lookup");
-        tic, sppm_build_pixel_data_lookup(&lookup, &pixel_datas), toc;
+        tic, sppm_build_pixel_data_lookup(&lookup, &pixel_datas, branch_cache), toc;
 
         fprintf(stderr, "\tPhoton pass ");
         tic, sppm_photon_pass(sppm, &lookup, &pixel_datas), toc;
@@ -1231,6 +1230,8 @@ void sppm_render(SPPM *sppm, Bitmap *bitmap) {
 
     free(sppm->launch_indices_x);
     free(sppm->launch_indices_y);
+
+    free_align(branch_cache);
 
     sppm_pixel_data_lookup_free(&lookup);
     sppm_pixel_data_free(&pixel_datas);
