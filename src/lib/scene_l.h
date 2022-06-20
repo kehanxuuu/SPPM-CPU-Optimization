@@ -18,8 +18,14 @@ typedef struct {
 } EmitterL;
 
 typedef struct {
+    //  sphere c, sphere r, emission, padding
+    Float4 albedo_data;
+} AlbedoL;
+
+typedef struct {
     MeshL meshes; // store pointers to meshes
     EmitterL emitters;
+    AlbedoL albedos;
     float *accum_probabilities;  // accumulated probabilities for emitter sample
     int n_meshes;
     int n_emitters;
@@ -32,6 +38,10 @@ void mesh_l_free(MeshL* mesh_l);
 void emitter_l_init(EmitterL* emitter_l, size_t size);
 
 void emitter_l_free(EmitterL* emitter_l);
+
+void albedo_l_init(AlbedoL* emitter_l, size_t size);
+
+void albedo_l_free(AlbedoL* emitter_l);
 
 void scene_l_init_from(SceneL* scene_l, Scene *scene);
 

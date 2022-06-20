@@ -10,18 +10,17 @@ typedef struct {
     int *data;
 } IntArray;
 
-static inline void arr_add_int(IntArray *arr, void *item) {
+static inline void arr_add_int(IntArray *arr, int item) {
     if (arr->size == arr->capacity) {
         arr->capacity = _ARRAY_INCRE_MULT * arr->capacity;
         // realloc with align
         int *old_data = arr->data;
-        arr->data = _mm_malloc(arr->capacity * sizeof(int), ALIGN);
+        arr->data = malloc_align(arr->capacity * sizeof(int));
         memcpy(arr->data, old_data, arr->size * sizeof(int));
-        _mm_free(old_data);
+        free_align(old_data);
     }
 
-    void *target_addr = (uint8_t *) arr->data + arr->size * sizeof(int);
-    memcpy(target_addr, item, sizeof(int));
+    arr->data[arr->size] = item;
     arr->size++;
 }
 

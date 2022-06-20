@@ -53,8 +53,19 @@ static inline __m256 _mm256_powf_ps(__m256 x, __m256 y){
 #endif
 }
 
+static inline void _mm256_sincosf_ps(__m256 x, __m256* sin, __m256* cos){
+#if !defined(__APPLE__)
+    *sin = _mm256_sinf_ps(x);
+    *cos = _mm256_cosf_ps(x);
+#else
+    sincos256_ps(x, sin, cos);
+#endif
+}
+
 static inline __m256 _mm256_tanf_ps(__m256 x){
-    return _mm256_div_ps(_mm256_sinf_ps(x), _mm256_cosf_ps(x));
+    __m256 sin, cos;
+    _mm256_sincosf_ps(x, &sin, &cos);
+    return _mm256_div_ps(sin, cos);
 }
 
 static inline __m256 _mm256_absf_ps(__m256 x){
@@ -62,7 +73,7 @@ static inline __m256 _mm256_absf_ps(__m256 x){
 }
 
 static inline __m256 _mm256_neg_ps(__m256 x){
-    return _mm256_sub_ps(_mm256_setzero_ps(), x);
+    return _mm256_xor_ps(_mm256_set1_ps(-0.0f), x);
 }
 
 static inline void _mm256_add_scatter_1_ps(__m256 x, float* base_addr, __m256i vindex){
@@ -167,6 +178,75 @@ static inline void _mm256_float4_descatter_ps(float* base_addr, int index, __m25
     *res_a = _mm256_i32gather_ps(base_addr, vindex, sizeof(float));
 }
 
+static inline void transpose8x8_1(float* line_0, float* line_1, float* line_2, float* line_3,
+                                  float* line_4, float* line_5, float* line_6, __m256 line_7,
+                                  __m256* res_0, __m256* res_1, __m256* res_2, __m256* res_3,
+                                  __m256* res_4, __m256* res_5, __m256* res_6, __m256* res_7){
+    __m256  r0, r1, r2, r3, r4, r5, r6, r7;
+    __m256  t0, t1, t2, t3, t4, t5, t6, t7;
+
+    r0 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_0[0])), _mm_load_ps(&line_4[0]), 1);
+    r1 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_1[0])), _mm_load_ps(&line_5[0]), 1);
+    r2 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_2[0])), _mm_load_ps(&line_6[0]), 1);
+    r3 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_3[0])), _mm256_castps256_ps128 (line_7), 1);
+    r4 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_0[4])), _mm_load_ps(&line_4[4]), 1);
+    r5 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_1[4])), _mm_load_ps(&line_5[4]), 1);
+    r6 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_2[4])), _mm_load_ps(&line_6[4]), 1);
+    r7 = _mm256_blend_ps(_mm256_castps128_ps256(_mm_load_ps(&line_3[4])), line_7, 0b11110000);
+
+    t0 = _mm256_unpacklo_ps(r0, r1);
+    t1 = _mm256_unpackhi_ps(r0, r1);
+    t2 = _mm256_unpacklo_ps(r2, r3);
+    t3 = _mm256_unpackhi_ps(r2, r3);
+    t4 = _mm256_unpacklo_ps(r4, r5);
+    t5 = _mm256_unpackhi_ps(r4, r5);
+    t6 = _mm256_unpacklo_ps(r6, r7);
+    t7 = _mm256_unpackhi_ps(r6, r7);
+
+    *res_0 = _mm256_shuffle_ps(t0, t2, 0x44);
+    *res_1 = _mm256_shuffle_ps(t0, t2, 0xEE);
+    *res_2 = _mm256_shuffle_ps(t1, t3, 0x44);
+    *res_3 = _mm256_shuffle_ps(t1, t3, 0xEE);
+    *res_4 = _mm256_shuffle_ps(t4, t6, 0x44);
+    *res_5 = _mm256_shuffle_ps(t4, t6, 0xEE);
+    *res_6 = _mm256_shuffle_ps(t5, t7, 0x44);
+    *res_7 = _mm256_shuffle_ps(t5, t7, 0xEE);
+}
+
+static inline void transpose8x8v(__m256 line_0, __m256 line_1, __m256 line_2, __m256 line_3,
+                                   __m256 line_4, __m256 line_5, __m256 line_6, __m256 line_7,
+                                   __m256* res_0, __m256* res_1, __m256* res_2, __m256* res_3,
+                                   __m256* res_4, __m256* res_5, __m256* res_6, __m256* res_7){
+    __m256 t0, t1, t2, t3, t4, t5, t6, t7;
+    __m256 tt0, tt1, tt2, tt3, tt4, tt5, tt6, tt7;
+    t0 = _mm256_unpacklo_ps(line_0, line_1);
+    t1 = _mm256_unpackhi_ps(line_0, line_1);
+    t2 = _mm256_unpacklo_ps(line_2, line_3);
+    t3 = _mm256_unpackhi_ps(line_2, line_3);
+    t4 = _mm256_unpacklo_ps(line_4, line_5);
+    t5 = _mm256_unpackhi_ps(line_4, line_5);
+    t6 = _mm256_unpacklo_ps(line_6, line_7);
+    t7 = _mm256_unpackhi_ps(line_6, line_7);
+
+    tt0 = _mm256_shuffle_ps(t0, t2, _MM_SHUFFLE(1,0,1,0));
+    tt1 = _mm256_shuffle_ps(t0, t2, _MM_SHUFFLE(3,2,3,2));
+    tt2 = _mm256_shuffle_ps(t1, t3, _MM_SHUFFLE(1,0,1,0));
+    tt3 = _mm256_shuffle_ps(t1, t3, _MM_SHUFFLE(3,2,3,2));
+    tt4 = _mm256_shuffle_ps(t4, t6, _MM_SHUFFLE(1,0,1,0));
+    tt5 = _mm256_shuffle_ps(t4, t6, _MM_SHUFFLE(3,2,3,2));
+    tt6 = _mm256_shuffle_ps(t5, t7, _MM_SHUFFLE(1,0,1,0));
+    tt7 = _mm256_shuffle_ps(t5, t7, _MM_SHUFFLE(3,2,3,2));
+
+    *res_0 = _mm256_permute2f128_ps(tt0, tt4, 0x20);
+    *res_1 = _mm256_permute2f128_ps(tt1, tt5, 0x20);
+    *res_2 = _mm256_permute2f128_ps(tt2, tt6, 0x20);
+    *res_3 = _mm256_permute2f128_ps(tt3, tt7, 0x20);
+    *res_4 = _mm256_permute2f128_ps(tt0, tt4, 0x31);
+    *res_5 = _mm256_permute2f128_ps(tt1, tt5, 0x31);
+    *res_6 = _mm256_permute2f128_ps(tt2, tt6, 0x31);
+    *res_7 = _mm256_permute2f128_ps(tt3, tt7, 0x31);
+}
+
 static inline void transpose8x8(float* line_0, float* line_1, float* line_2, float* line_3,
                                 float* line_4, float* line_5, float* line_6, float* line_7,
                                 __m256* res_0, __m256* res_1, __m256* res_2, __m256* res_3,
@@ -234,6 +314,49 @@ static inline void transpose8x7(float* line_0, float* line_1, float* line_2, flo
     *res_4 = _mm256_shuffle_ps(t4, t6, 0x44);
     *res_5 = _mm256_shuffle_ps(t4, t6, 0xEE);
     *res_6 = _mm256_shuffle_ps(t5, t7, 0x44);
+}
+
+static inline void transpose8x4(float* line_0, float* line_1, float* line_2, float* line_3,
+                                float* line_4, float* line_5, float* line_6, float* line_7,
+                                __m256* res_0, __m256* res_1, __m256* res_2, __m256* res_3){
+    __m256  r0, r1, r2, r3;
+    __m256  t0, t1, t2, t3;
+
+    r0 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_0[0])), _mm_load_ps(&line_4[0]), 1);
+    r1 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_1[0])), _mm_load_ps(&line_5[0]), 1);
+    r2 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_2[0])), _mm_load_ps(&line_6[0]), 1);
+    r3 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_3[0])), _mm_load_ps(&line_7[0]), 1);
+
+    t0 = _mm256_unpacklo_ps(r0, r1);
+    t1 = _mm256_unpackhi_ps(r0, r1);
+    t2 = _mm256_unpacklo_ps(r2, r3);
+    t3 = _mm256_unpackhi_ps(r2, r3);
+
+    *res_0 = _mm256_shuffle_ps(t0, t2, 0x44);
+    *res_1 = _mm256_shuffle_ps(t0, t2, 0xEE);
+    *res_2 = _mm256_shuffle_ps(t1, t3, 0x44);
+    *res_3 = _mm256_shuffle_ps(t1, t3, 0xEE);
+}
+
+static inline void transpose8x4_1(float* line_0, float* line_1, float* line_2, float* line_3,
+                                float* line_4, float* line_5, float* line_6, float* line_7,
+                                __m256* res_0, __m256* res_1, __m256* res_2){
+    __m256  r0, r1, r2, r3;
+    __m256  t0, t1, t2, t3;
+
+    r0 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_0[0])), _mm_load_ps(&line_4[0]), 1);
+    r1 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_1[0])), _mm_load_ps(&line_5[0]), 1);
+    r2 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_2[0])), _mm_load_ps(&line_6[0]), 1);
+    r3 = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_load_ps(&line_3[0])), _mm_load_ps(&line_7[0]), 1);
+
+    t0 = _mm256_unpacklo_ps(r0, r1);
+    t1 = _mm256_unpackhi_ps(r0, r1);
+    t2 = _mm256_unpacklo_ps(r2, r3);
+    t3 = _mm256_unpackhi_ps(r2, r3);
+
+    *res_0 = _mm256_shuffle_ps(t0, t2, 0x44);
+    *res_1 = _mm256_shuffle_ps(t0, t2, 0xEE);
+    *res_2 = _mm256_shuffle_ps(t1, t3, 0x44);
 }
 
 static inline __m256i _mm256_mod_epi32(__m256i x, __m256i y){

@@ -84,7 +84,7 @@ Vector3u sppm_pixel_data_lookup_to_grid_s(PixelDataLookupS *lookup, Vector *loc)
 
 void sppm_pixel_data_lookup_store_s(PixelDataLookupS *lookup, Vector3u *loc_3d, int pd_index) {
     size_t ht_loc = sppm_pixel_data_lookup_hash_s(lookup, loc_3d);
-    arr_add_int(&lookup->hash_table[ht_loc], &pd_index);
+    arr_add_int(&lookup->hash_table[ht_loc], pd_index);
 }
 
 void sppm_build_pixel_data_lookup_s(PixelDataLookupS *lookup, PixelDataS *pixel_datas, size_t H, size_t W, int* branch_cache) {

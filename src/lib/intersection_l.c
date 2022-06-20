@@ -1,6 +1,7 @@
 #include "intersection_l.h"
 
 void intersection_l_init(IntersectionL *isects, size_t size){
+    floatl_init(&isects->mesh_index, size);
     floatl_init(&isects->mesh_material, size);
     vector3fl_init(&isects->mesh_albedo, size);
     vector3fl_init(&isects->mesh_emission, size);
@@ -13,6 +14,7 @@ void intersection_l_init(IntersectionL *isects, size_t size){
 }
 
 void intersection_l_free(IntersectionL *isects){
+    floatl_free(&isects->mesh_index);
     floatl_free(&isects->mesh_material);
     vector3fl_free(&isects->mesh_albedo);
     vector3fl_free(&isects->mesh_emission);
@@ -313,6 +315,8 @@ __m256 scene_intersect_m(SceneL *scene, __m256 ray_o_x, __m256 ray_o_y, __m256 r
         do_intersect = _mm256_or_ps(do_intersect, cur_do_intersect);
 
         *ray_t_max = _mm256_blendv_ps(*ray_t_max, root, cur_do_intersect);
+
+        isect->mesh_index.data = _mm256_blendv_ps(isect->mesh_index.data, _mm256_set1_ps((float)mesh_idx), cur_do_intersect);
         isect->mesh_material.data = _mm256_blendv_ps(isect->mesh_material.data, _mm256_set1_ps(scene->meshes.material_data.data[8 * mesh_idx + 0]), cur_do_intersect);
         isect->mesh_albedo.x = _mm256_blendv_ps(isect->mesh_albedo.x, _mm256_set1_ps(scene->meshes.material_data.data[8 * mesh_idx + 1]), cur_do_intersect);
         isect->mesh_albedo.y = _mm256_blendv_ps(isect->mesh_albedo.y, _mm256_set1_ps(scene->meshes.material_data.data[8 * mesh_idx + 2]), cur_do_intersect);

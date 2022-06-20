@@ -33,8 +33,10 @@ void vector3fl_square_to_cosine_hemisphere(__m256 sample0, __m256 sample1, __m25
     __m256 r = _mm256_sqrt_ps( sample1);
 
     __m256 l_x, l_y, l_z;
-    l_x = _mm256_mul_ps(r, _mm256_cosf_ps(phi));
-    l_y = _mm256_mul_ps(r, _mm256_sinf_ps(phi));
+    __m256 sin_res, cos_res;
+    _mm256_sincosf_ps(phi, &sin_res, &cos_res);
+    l_x = _mm256_mul_ps(r, cos_res);
+    l_y = _mm256_mul_ps(r, sin_res);
     // __m256 t0 = _mm256_sub_ps(_mm256_sub_ps(_mm256_set1_ps(1.0f), _mm256_mul_ps(l_x, l_x)), _mm256_mul_ps(l_y, l_y));
     __m256 t0 = _mm256_sub_ps(_mm256_set1_ps(1.0f), _mm256_mul_ps(r, r));
     l_z = _mm256_sqrt_ps(_mm256_max_ps(_mm256_setzero_ps(), t0));
@@ -47,8 +49,10 @@ void vector3fl_square_to_uniform_hemisphere(__m256 sample0, __m256 sample1, __m2
     __m256 t0 = _mm256_sub_ps(_mm256_set1_ps(1.0f), _mm256_mul_ps(sample1, sample1));
     __m256 r = _mm256_sqrt_ps(_mm256_max_ps(_mm256_setzero_ps(), t0));
 
-    __m256 d_x = _mm256_mul_ps(r, _mm256_cosf_ps(phi));
-    __m256 d_y = _mm256_mul_ps(r, _mm256_sinf_ps(phi));
+    __m256 sin_res, cos_res;
+    _mm256_sincosf_ps(phi, &sin_res, &cos_res);
+    __m256 d_x = _mm256_mul_ps(r, cos_res);
+    __m256 d_y = _mm256_mul_ps(r, sin_res);
     vector3fl_to_world(d_x, d_y, sample1, normal_x, normal_y, normal_z, res_x, res_y, res_z);
 }
 
@@ -59,8 +63,10 @@ void vector3fl_square_to_uniform_sphere(__m256 sample0, __m256 sample1, __m256* 
     __m256 z = _mm256_fmsub_ps(_mm256_set1_ps(2.0f), sample1, _mm256_set1_ps(1.0f));
     __m256 r = _mm256_sqrt_ps(_mm256_sub_ps(_mm256_set1_ps(1.0f), _mm256_mul_ps(z, z)));
 
-    *res_x = _mm256_mul_ps(r, _mm256_cosf_ps(phi));
-    *res_y = _mm256_mul_ps(r, _mm256_sinf_ps(phi));
+    __m256 sin_res, cos_res;
+    _mm256_sincosf_ps(phi, &sin_res, &cos_res);
+    *res_x = _mm256_mul_ps(r, cos_res);
+    *res_y = _mm256_mul_ps(r, sin_res);
     *res_z = z;
 }
 
@@ -70,8 +76,10 @@ void vector3fl_square_to_uniform_cone(__m256 sample0, __m256 sample1, __m256 cos
     __m256 sin_theta = _mm256_sqrt_ps(_mm256_max_ps(_mm256_setzero_ps(), t0));
     __m256 phi = _mm256_mul_ps(_mm256_set1_ps(M_2PI), sample1);
 
-    __m256 d_x = _mm256_mul_ps(sin_theta, _mm256_cosf_ps(phi));
-    __m256 d_y = _mm256_mul_ps(sin_theta, _mm256_sinf_ps(phi));
+    __m256 sin_res, cos_res;
+    _mm256_sincosf_ps(phi, &sin_res, &cos_res);
+    __m256 d_x = _mm256_mul_ps(sin_theta, cos_res);
+    __m256 d_y = _mm256_mul_ps(sin_theta, sin_res);
     vector3fl_to_world(d_x, d_y, cos_theta, normal_x, normal_y, normal_z, res_x, res_y, res_z);
 }
 

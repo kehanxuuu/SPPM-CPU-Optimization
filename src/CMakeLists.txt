@@ -19,32 +19,32 @@ target_link_libraries(main rt_lib)
 target_link_libraries(main rt_alg)
 
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "arm64") # M1 mac doesn't support -march=native and -lubsan
-    target_compile_options(rt_lib PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion>)
-    target_link_options(rt_lib PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion>)
+    target_compile_options(rt_lib PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion -DDEBUG>)
+    target_link_options(rt_lib PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion -DDEBUG>)
 
     target_compile_options(rt_lib PUBLIC $<$<CONFIG:RELEASE>:-Wall -ffast-math>)
     target_link_options(rt_lib PUBLIC $<$<CONFIG:RELEASE>:-Wall -ffast-math>)
 
-    target_compile_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math>)
-    target_link_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math>)
+    target_compile_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math -DNDEBUG>)
+    target_link_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math -DNDEBUG>)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin") # Intel mac doesn't support -lubsan and -lm
-    target_compile_options(rt_lib PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion -march=native>)
-    target_link_options(rt_lib PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion -march=native>)
+    target_compile_options(rt_lib PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion -march=native -DDEBUG>)
+    target_link_options(rt_lib PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion -march=native -DDEBUG>)
 
     target_compile_options(rt_lib PUBLIC $<$<CONFIG:RELEASE>:-Wall -ffast-math -march=native>)
     target_link_options(rt_lib PUBLIC $<$<CONFIG:RELEASE>:-Wall -ffast-math -march=native>)
 
-    target_compile_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math -march=native>)
-    target_link_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math -march=native>)
+    target_compile_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math -march=native -DNDEBUG>)
+    target_link_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math -march=native -DNDEBUG>)
 else()
-    target_compile_options(rt_lib PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -march=native>)
-    target_link_options(rt_lib PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -lubsan -march=native -lm>)
+    target_compile_options(rt_lib PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -march=native -DDEBUG>)
+    target_link_options(rt_lib PUBLIC $<$<CONFIG:DEBUG>:-Wall -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -lubsan -march=native -lm -DDEBUG>)
 
     target_compile_options(rt_lib PUBLIC $<$<CONFIG:RELEASE>:-Wall -ffast-math -march=native>)
     target_link_options(rt_lib PUBLIC $<$<CONFIG:RELEASE>:-Wall -ffast-math -march=native -lm>)
 
-    target_compile_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math -march=native>)
-    target_link_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math -march=native -lm>)
+    target_compile_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math -march=native -DNDEBUG>)
+    target_link_options(rt_lib PUBLIC $<$<CONFIG:PROFILE>:-Wall -g -O3 -ffast-math -march=native -lm -DNDEBUG>)
 endif()
 
 if(DEFINED _SPPM_RADIUS_MULT)
