@@ -45,4 +45,12 @@ typedef struct Sphere Sphere;
 
 #define NUM_FLOAT_SIMD 8
 
+static inline void *malloc_align(size_t bytes) {
+    return aligned_alloc(ALIGN, ceil(1.0 * bytes / ALIGN) * ALIGN);
+}
+
+static inline void free_align(void *mem_addr) {
+    free(mem_addr);
+}
+
 #endif //TEAM32_COMMON_H

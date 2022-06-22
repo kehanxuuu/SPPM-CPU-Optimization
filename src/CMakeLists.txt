@@ -4,10 +4,17 @@ include_directories(${OPENEXR_INCLUDE_DIRS})
 # TODO: separate CMakeLists into own directory
 
 aux_source_directory(lib LIB_SOURCES)
+if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "arm64")  # exclude SIMD files from compilation
+    list(REMOVE_ITEM LIB_SOURCES "lib/avx_mathfun.c" "lib/intersection_l.c" "lib/scene_l.c" "lib/simd_random.c" "lib/simd_warping.c")
+endif()
+
 add_library(rt_lib ${LIB_SOURCES})
 target_link_libraries(rt_lib IlmImf)
 
 aux_source_directory(algorithm ALG_SOURCES)
+if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "arm64")  # exclude SIMD files from compilation
+    list(REMOVE_ITEM ALG_SOURCES "algorithm/sppm.c")
+endif()
 add_library(rt_alg ${ALG_SOURCES})
 target_link_libraries(rt_alg rt_lib)
 

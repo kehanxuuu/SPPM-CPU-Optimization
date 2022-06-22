@@ -1,6 +1,8 @@
 #include "scene_configs.h"
 #include "bitmap.h"
+#ifndef __arm64__
 #include "sppm.h"
+#endif
 #include "sppm_s.h"
 #include "pt.h"
 #include "normal.h"
@@ -62,7 +64,11 @@ if (strcmp(argv[i], short_param_name) == 0 || strcmp(argv[i], full_param_name) =
             printf("    -d --depth             ray max depth\n");
             printf("    -p --photons_per_iter  number of photons per iteration\n");
             printf("    -r --init_radius       initial search radius\n");
+#if __arm64__
+            printf("    -a --algorithm         integrator: \"pt\" for path tracing, \"sppm\" for photon mapping (sequential version, default), or \"normal\" for quick visualization\n");
+#else
             printf("    -a --algorithm         integrator: \"pt\" for path tracing, \"sppm\" for photon mapping (sequential version), \"sppm-simd\" for photon mapping (SIMD version, default), or \"normal\" for quick visualization\n");
+#endif
             printf("    -s --scene             test scene: \"cornell\", \"large\", \"mirror\", \"random\", \"surgery\"\n");
             printf("    --help                 print this help text\n");
             exit(0);
@@ -95,6 +101,9 @@ int main(int argc, char *argv[]) {
     clock_t tic = clock();
     simd_seed(1);
     Params params = {512, 384, 6, 5, 200000, 2.0f, "sppm-simd", "cornell", "out.exr"};
+#if __arm64__
+    params.algorithm = "sppm";
+#endif
     parse_args(argc, argv, &params);
 
     Scene scene;
@@ -140,11 +149,16 @@ int main(int argc, char *argv[]) {
         sppm_render_s(&sppm, &film);
     }
     else if (strcmp(params.algorithm, "sppm-simd") == 0) {  // SIMD
+#if __arm64__
+        fprintf(stderr, "Error: SPPM SIMD version is currently not available on ARM architecture.\n");
+        exit(1);
+#else
         SPPM sppm;
         sppm_init(&sppm, params.num_iterations, params.ray_max_depth, params.photon_num_per_iter, params.initial_radius,
                   &scene, &camera, background);
         sppm_render(&sppm, &film);
         sppm_free(&sppm);
+#endif
     }
     else if (strcmp(params.algorithm, "normal") == 0) {
         NormalVisualizer nv;

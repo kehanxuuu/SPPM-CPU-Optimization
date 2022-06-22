@@ -2,7 +2,7 @@
 #define _ARRAY_INT_H
 
 #include "array.h"
-#include "dt_l.h"
+#include "common.h"
 
 typedef struct {
     size_t size;

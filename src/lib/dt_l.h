@@ -50,14 +50,6 @@ typedef struct {
 typedef Vector3fL VectorL;
 typedef Vector3fM VectorM;
 
-static inline void* malloc_align(size_t bytes){
-    return aligned_alloc(ALIGN, ceil(1.0 * bytes / ALIGN) * ALIGN);
-}
-
-static inline void free_align(void* mem_addr){
-    free(mem_addr);
-}
-
 static inline void vector3fl_init(Vector3fL* vecl, size_t size){
     vecl->x = malloc_align(sizeof(float) * size);
     vecl->y = malloc_align(sizeof(float) * size);

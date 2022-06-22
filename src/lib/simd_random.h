@@ -1,9 +1,16 @@
 #ifndef TEAM32_SIMD_RANDOM_C_H
 #define TEAM32_SIMD_RANDOM_C_H
 
+#include "common.h"
+
+#ifdef __arm64__
+
+#define SIMD_RAND_MAX RAND_MAX
+
+#else
+
 #include <immintrin.h>
 #include <stdint.h>
-#include "common.h"
 
 #define SIMD_RAND_MAX_FULL 0x7fffffff
 #define SIMD_RAND_MAX 0xffffffff
@@ -16,7 +23,13 @@ typedef struct{
 extern SimdRandomState simd_random_state_get_arb;
 extern SimdRandomState simd_random_state_get_full;
 
+#endif
+
 static inline uint32_t simd_rand(){
+#ifdef __arm64__
+    // Fallback on ARM mac
+    return (uint32_t) rand();
+#else
     if(simd_random_state_get_arb.cur_state < 64){
         return simd_random_state_get_arb.states[simd_random_state_get_arb.cur_state++];
     }else{
@@ -96,8 +109,10 @@ static inline uint32_t simd_rand(){
         simd_random_state_get_arb.cur_state = 1;
         return simd_random_state_get_arb.states[0];
     }
+#endif
 }
 
+#ifndef __arm64__
 static inline __m256i simd_rand_full(){
     if(simd_random_state_get_full.cur_state < 8){
         int prev_state = simd_random_state_get_full.cur_state++;
@@ -180,9 +195,11 @@ static inline __m256i simd_rand_full(){
         return t50;
     }
 }
+#endif
 
 static inline void simd_seed(int seed){
     srand(seed);
+#ifndef __arm64__
     simd_random_state_get_arb.cur_state = 64;
     for(int i = 0; i < 64; i++){
         simd_random_state_get_arb.states[i] = rand();
@@ -192,5 +209,6 @@ static inline void simd_seed(int seed){
     for(int i = 0; i < 64; i++){
         simd_random_state_get_full.states[i] = rand();
     }
+#endif
 }
 #endif //TEAM32_SIMD_RANDOM_C_H
