@@ -231,7 +231,7 @@ void sppm_camera_pass_s(SPPM_S *sppm, PixelDataS *pixel_datas) {
         }
     }
     sppm->ray_avg_depth /= (float) (W * H);
-    fprintf(stderr, "\tray average depth: %f ", sppm->ray_avg_depth);
+//    fprintf(stderr, "\tray average depth: %f ", sppm->ray_avg_depth);
 }
 
 void sppm_photon_pass_photon_s(SPPM_S *sppm, PixelDataLookupS *lookup, PixelDataS *pixel_datas) {
@@ -319,7 +319,7 @@ void sppm_photon_pass_s(SPPM_S *sppm, PixelDataLookupS *lookup, PixelDataS *pixe
     }
     sppm->photon_avg_depth /= (float) sppm->num_photons;
     sppm->photon_avg_lookups /= (float) sppm->num_photons;
-    fprintf(stderr, "\tphoton average depth: %f, hash table lookups: %f ", sppm->photon_avg_depth, sppm->photon_avg_lookups);
+//    fprintf(stderr, "\tphoton average depth: %f, hash table lookups: %f ", sppm->photon_avg_depth, sppm->photon_avg_lookups);
 }
 
 void sppm_consolidate_s(PixelDataS *pixel_datas, float alpha, size_t H, size_t W) {
@@ -329,6 +329,7 @@ void sppm_consolidate_s(PixelDataS *pixel_datas, float alpha, size_t H, size_t W
     VectorArray tau_array = pixel_datas->tau;
     FloatArray cur_photons_array = pixel_datas->cur_photons;
     FloatArray num_photons_array = pixel_datas->num_photons;
+    float avg_radius = 0;
     for (int i = 0; i < H; i++) {
         for (int j = 0; j < W; j++) {
             int idx = i * W + j;
@@ -341,6 +342,7 @@ void sppm_consolidate_s(PixelDataS *pixel_datas, float alpha, size_t H, size_t W
             if (cur_photons > 0) {
                 float new_num_photons = num_photons + 1.0f * alpha * cur_photons;
                 float new_radius = radius * sqrtf(new_num_photons / (num_photons + cur_photons));
+                avg_radius += new_radius;
                 {
                     float multiplier = (new_radius * new_radius) / (radius * radius);
                     Vector tv1 = vv_mul(&cur_vp_attenuation, &cur_flux);
@@ -352,6 +354,8 @@ void sppm_consolidate_s(PixelDataS *pixel_datas, float alpha, size_t H, size_t W
             }
         }
     }
+    avg_radius /= H * W;
+    fprintf(stderr, "\tcurrent average radius: %f", avg_radius);
     memset(pixel_datas->cur_photons.data, 0, H * W * sizeof(float));
     memset(pixel_datas->cur_flux.data, 0, H * W * sizeof(Vector));
 }
@@ -401,7 +405,7 @@ void sppm_render_s(SPPM_S *sppm, Bitmap *bitmap) {
         clock_t start;
         float elapse;
 #define tic start = clock()
-#define toc elapse = (float) (clock() - start) / CLOCKS_PER_SEC; fprintf(stderr, "\t%f sec\n", elapse)
+#define toc elapse = (float) (clock() - start) / CLOCKS_PER_SEC; fprintf(stderr, "\t%f sec, %f G clocks\n", elapse, elapse * 3.2)
 
         fprintf(stderr, "Current %d out of %d\n", i, num_iterations);
         fprintf(stderr, "\tCamera pass ");

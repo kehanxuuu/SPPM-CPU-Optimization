@@ -54,6 +54,7 @@ void scene_finish(struct Scene *scene) {
     if (scene->emitters) free(scene->emitters);
     if (scene->accum_probabilities) free(scene->accum_probabilities);
 
+    printf("Initializing a scene with %zu object%s\n", scene->n_meshes, scene->n_meshes == 1 ? "" : "s");
     for (size_t i = 0; i < scene->n_meshes; ++i) {
         if (!vv_equal(&scene_get(scene, i)->emission, &ZERO_VEC)) scene->n_emitters++;
     }
