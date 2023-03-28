@@ -78,7 +78,9 @@ The first three optimization stages focus on optimizing the non-vectorized versi
 
 The rest part of optimization works on creating a performant SIMD-paralleled SPPM. [Single data multiple instruction](https://en.wikipedia.org/wiki/Multiple_instruction,_single_data) (SIMD) is the widespread parallel computing architecture that executes the same instruction set on multiple data stored inside a register. `src/algorithm/sppm.c` shows the final accelerated version.
 
-### Analysis
+**The snapshot of each optimization stage is also stored in a separate branch (stage 0-5, stage 6 correspoinds to the main branch).**
+
+### Analysis at [Stage 0](https://github.com/Fiona730/SPPM-CPU-Optimization/tree/stage-0)
 
 We face several challenges when optimizing a rendering algorithm such as SPPM:
 
@@ -88,7 +90,7 @@ We face several challenges when optimizing a rendering algorithm such as SPPM:
 
 * The huge amount of stores and loads induces **memory bottleneck**. The entries of our large spatial data structure can reference memory locations far away from each other, therefore careful consideration should be taken when designing the data structure layout and access patterns.
 
-### Stage 1
+### [Stage 1](https://github.com/Fiona730/SPPM-CPU-Optimization/tree/stage-1)
 Optimizations in stage 1 are straightforward and self-explanatory.
 
 * Inline all vector math operations
@@ -98,7 +100,7 @@ Optimizations in stage 1 are straightforward and self-explanatory.
   * Allocate array space at the start of our program and reuse, instead of reallocating in each iteration
 <p align="center"><img src="img/ArrayLinkedList.png" height="200"></p>
 
-### Stage 2
+### [Stage 2](https://github.com/Fiona730/SPPM-CPU-Optimization/tree/stage-2)
 * Inline short but frequently-called functions
   * E.g. array access and setting functions, ray generation, reflectance evaluation
 * Type-specific Array
@@ -109,7 +111,7 @@ Optimizations in stage 1 are straightforward and self-explanatory.
   * Same if statement appear in consecutive for loops in `BuildLookUpTable()`
   * Store the results to circumvent redundant computation
 
-### Stage 3
+### [Stage 3](https://github.com/Fiona730/SPPM-CPU-Optimization/tree/stage-3)
 * Replace built-in `rand()` with self-implemented RNG to gain speed up
   * [Xorshift] (https://en.wikipedia.org/wiki/Xorshift) RNG
   * Extremely efficient, take less than 10 cycles per random number
@@ -119,7 +121,7 @@ Optimizations in stage 1 are straightforward and self-explanatory.
   * Compute 8 32-bit numbers per SIMD **__m256i** (SSE 256 bit register for integer) simultaneously
   * Unroll the loop 8 times in one generation (8 * 8 = 64)
 
-### Stage 4
+### [Stage 4](https://github.com/Fiona730/SPPM-CPU-Optimization/tree/stage-4)
 Starting from this point, we transform our SPPM algorithm to maximally SIMD architecture with [Intel intrinsics](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html).
 
 #### Horizontal Layout Vector (Failed Attempt)
@@ -147,7 +149,7 @@ Regarding the photon pass, processing 8 photons together would be inefficient be
 #### Slowdown
 After SPPM parallelization, our program actually suffers from a decrease in running speed. After observation, we believe the culprit of slowing down is the gathering and scattering operations inside the photon pass (mentioned above). Since the data structure has previously been converted to the SoA layout for convenience, gathering 16 elements with the same index from different arrays (i.e. in AoS, they are from the same struct) would imply up to 16 cache misses. As each photon gathers value from a group of different pixels, it is highly likely that there is little data reuse and proximity within this process, resulting in almost no temporal or spatial cache locality.
 
-### Stage 5
+### [Stage 5](https://github.com/Fiona730/SPPM-CPU-Optimization/tree/stage-5)
 This stage focuses on resolving the slowdown issue in the vectorized SPPM algorithm induced by scattering and gathering operations. To reduce the number of cache misses, we transform the strict SoA layout into a hybrid layout of SoA and AoS. The data necessary for each gather operations are in total 16 floats; they are grouped together in a struct and stored in a cache aligned array. This way, during the gather operation, only one cache line read is needed. A graphical explanation of this layout change can be found in the graph below.
 
 <p align="center"><img src="img/Transpose.png"></p>
@@ -156,7 +158,7 @@ To convert the 16 read elements from the previous horizontal (SoA) format into t
 
 Similar to gathering, a hybrid layout is also used for scattering, storing only the 4 output variables in an AoS layout by transpose and reducing the number of cache misses by a factor of 4. This requires a 4 x 8 transpose operation. Experiments show that the performance gain worth the overhead of matrix transpose (see Performance Analysis section).
 
-### Stage 6
+### [Stage 6](https://github.com/Fiona730/SPPM-CPU-Optimization/tree/main)
 Even after the massive amount of coding in stage 5, the program is still memory-bound. We turn to remove redundancy in variables needed to gather, eliminating the total number from 16 to 8. The analysis strongly entangles with the code details, and the inspiration it provides for general CPU program optimization is rather limited. If you are interested, please refer to Section 3.8 in the [report](img/Report.pdf).
 
 <p align="center"><img src="img/GatheredData.png" height="150"></p>
