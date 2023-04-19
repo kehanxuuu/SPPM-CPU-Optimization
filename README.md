@@ -1,6 +1,6 @@
 SPPM-CPU-Optimization
 =====================================
-**Authors: Kehan Xu ([LinkedIn](https://www.linkedin.com/in/kehan-xu-356139159/) | [Github](https://github.com/Fiona730) | [Personal Website](https://fiona730.github.io)), Zijun Hui ([LinkedIn](https://www.linkedin.com/in/kehan-xu-356139159/) | [Github](https://github.com/Fiona730)), Fengshi Zheng ([Github](https://github.com/JamesZFS)) and Hongyu He**
+**Authors: Kehan Xu ([LinkedIn](https://www.linkedin.com/in/kehan-xu-356139159/) | [Github](https://github.com/Fiona730) | [Personal Website](https://fiona730.github.io)), Zijun Hui ([LinkedIn](https://www.linkedin.com/in/zijun-hui-498336153/) | [Github](https://github.com/ZijunH)), Fengshi Zheng ([Github](https://github.com/JamesZFS)) and Hongyu He**
 
 <p align="center"><img src="img/teaser.png"></p>
 
